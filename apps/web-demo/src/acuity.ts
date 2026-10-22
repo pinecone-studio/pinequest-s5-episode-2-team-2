@@ -17,7 +17,7 @@ type Group = "child3" | "child4" | "child5" | "adult";
 type Eye = "right" | "left";
 type Direction = 0 | 90 | 180 | 270;
 
-const TEST_DISTANCE_MM = 2000;
+const TEST_DISTANCE_MM = 3000; // AAPOS screening distance (10 ft)
 // ISO/IEC 7810 ID-1 bank card, drawn upright so it fits a phone screen.
 const CARD_MM = { short: 53.98, long: 85.6 };
 const LEVELS = [1.0, 0.7, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0];
@@ -258,17 +258,21 @@ export function acuityFlow(s: Screens) {
       </main>`;
     const e = app.querySelector<HTMLDivElement>("#e")!;
     const progress = app.querySelector<HTMLElement>("#progress")!;
+    // Skip levels too large for this screen; a scaled-down letter would give a wrong result.
+    const maxPx = Math.min(window.innerWidth - 40, window.innerHeight * 0.5);
+    const fitting = LEVELS.filter((l) => optotypePx(l, pxPerMm ?? 6) <= maxPx);
+    const levels = fitting.length ? fitting : LEVELS;
 
     const next = () => {
       const dirs: Direction[] = [0, 90, 180, 270];
       let d = dirs[Math.floor(Math.random() * 4)]!;
       if (d === direction) d = dirs[(dirs.indexOf(d) + 1 + Math.floor(Math.random() * 3)) % 4]!;
       direction = d;
-      const size = optotypePx(LEVELS[level]!, pxPerMm ?? 6);
+      const size = optotypePx(levels[level]!, pxPerMm ?? 6);
       e.style.width = `${size}px`;
       e.style.height = `${size}px`;
       e.style.transform = `rotate(${direction}deg)`;
-      progress.textContent = t.acuity.progress(level + 1, LEVELS.length);
+      progress.textContent = t.acuity.progress(level + 1, levels.length);
     };
 
     const answer = (d: Direction | null) => {
@@ -276,8 +280,8 @@ export function acuityFlow(s: Screens) {
       if (d === direction) correct += 1;
       const majority = Math.floor(PER_LEVEL / 2) + 1;
       if (correct >= majority || shown - correct > PER_LEVEL - majority) {
-        if (correct >= majority) passed = LEVELS[level]!;
-        const done = correct < majority || level === LEVELS.length - 1;
+        if (correct >= majority) passed = levels[level]!;
+        const done = correct < majority || level === levels.length - 1;
         if (done) {
           results[eye] = passed;
           show(eye === "right" ? () => cover("left") : result);
