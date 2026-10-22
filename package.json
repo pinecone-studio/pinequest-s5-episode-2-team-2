@@ -6,14 +6,18 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "lint": "eslint .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "mobile": "npm run start --workspace @app/mobile",
+    "mobile:ios": "npm run ios --workspace @app/mobile",
+    "mobile:android": "npm run android --workspace @app/mobile",
+    "mobile:export": "npm exec --workspace @app/mobile -- expo export --platform ios --output-dir dist/ios"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

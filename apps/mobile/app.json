@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "mobile",
+    "slug": "mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "studio.pinecone.pinequest.team2"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "studio.pinecone.pinequest.team2"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "pinequest",
+    "plugins": ["expo-router", "expo-sqlite"]
+  }
+}

@@ -102,6 +102,22 @@ export interface Child {
   createdAt: string;
 }
 
+export type ScanFailure = "MODEL_UNAVAILABLE" | "MODEL_ERROR" | "TIMEOUT";
+
+export interface PolicyInput {
+  summary: ScanSummary;
+  /** Reasons the rejected frames were rejected, in order of first appearance. */
+  qualityReasons: QualityReason[];
+  /** Set when the scan could not be measured at all. */
+  failure: ScanFailure | null;
+}
+
+export interface Decision {
+  outcome: Outcome;
+  /** Empty only for NO_VISIBLE_SIGN. */
+  reasons: ReasonCode[];
+}
+
 export interface PolicyConfig {
   /** Asymmetry score at or above which the outcome is REFER. Unitless. */
   referAsymmetry: number;
