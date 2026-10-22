@@ -11,16 +11,28 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how we work.
 
 ## Structure
 
-| Path           | Contents                                       |
-| -------------- | ---------------------------------------------- |
-| `apps/mobile/` | Expo (React Native, TypeScript) app            |
-| `ml/`          | Annotation, fine-tuning, evaluation, export    |
-| `docs/`        | Capture protocol, model card, limitations      |
+| Path             | Contents                                                    |
+| ---------------- | ----------------------------------------------------------- |
+| `apps/mobile/`   | Expo (React Native, TypeScript) app                         |
+| `packages/core/` | Shared types, decision logic and mocks (`@app/core`, no UI) |
+| `ml/`            | Annotation, fine-tuning, evaluation, export                 |
+| `docs/`          | Capture protocol, model card, limitations                   |
 
-Setup instructions will be added with the project scaffold.
+## Development
+
+Requires Node 22+ (see `.nvmrc`).
+
+```bash
+npm install
+npm run lint
+npm run typecheck
+npm test
+```
+
+Mobile app setup will be added with the app scaffold.
 
 ## Dataset licenses
 
-| Dataset | Source | License |
-| ------- | ------ | ------- |
-| _(add a row for every dataset used)_ | | |
+| Dataset                              | Source | License |
+| ------------------------------------ | ------ | ------- |
+| _(add a row for every dataset used)_ |        |         |

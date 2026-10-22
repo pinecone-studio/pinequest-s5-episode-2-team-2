@@ -35,7 +35,14 @@
 
 ## Before you push
 
-- Lint, typecheck and tests pass locally. _(commands will be added with the project scaffold)_
+- Lint, typecheck and tests pass locally:
+
+  ```bash
+  npm run format
+  npm run lint
+  npm run typecheck
+  npm test
+  ```
 
 ## Data and privacy (mandatory)
 
