@@ -1,6 +1,13 @@
 /** Pixel coordinates in the full-resolution camera frame. */
 export type Point = { x: number; y: number };
 
+/** 8-bit grayscale pixels, row by row. Never stored; only measured. */
+export interface GrayImage {
+  width: number;
+  height: number;
+  data: ArrayLike<number>;
+}
+
 /**
  * Side of the eye in the image, not the anatomical side.
  * With the back camera, the image-left eye is the child's right eye.
