@@ -9,13 +9,13 @@ comparable no matter who took it. Read this fully before your first session.
 
 ## 1. Equipment
 
-| Item | Notes |
-| ---- | ----- |
-| iPhone with a back torch | Record the model in the data sheet. Use the same phone for a whole session. |
-| Phone stand or tripod | Hand-held only if no stand is available; note it in the data sheet. |
-| 35 cm measuring string or ruler | From the camera lens to the bridge of the nose. |
-| Printed calibration sheet | `docs/calibration-sheet.md`, printed at 100% scale and checked with a ruler. |
-| Chair | The person sits upright with the head straight. |
+| Item                            | Notes                                                                        |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| iPhone with a back torch        | Record the model in the data sheet. Use the same phone for a whole session.  |
+| Phone stand or tripod           | Hand-held only if no stand is available; note it in the data sheet.          |
+| 35 cm measuring string or ruler | From the camera lens to the bridge of the nose.                              |
+| Printed calibration sheet       | `docs/calibration-sheet.md`, printed at 100% scale and checked with a ruler. |
+| Chair                           | The person sits upright with the head straight.                              |
 
 ## 2. Room
 
@@ -35,11 +35,11 @@ comparable no matter who took it. Read this fully before your first session.
 
 ## 4. What the person looks at
 
-| Scan type | Code | Look at |
-| --------- | ---- | ------- |
-| Normal | `N` | The camera lens (the small dark circle, not the torch). |
-| Calibration | `C` | A target on the calibration sheet taped around the lens (see the sheet). |
-| Intentional deviation | `D` | Adults only: deliberately cross or turn one eye while the other looks at the lens. |
+| Scan type             | Code | Look at                                                                            |
+| --------------------- | ---- | ---------------------------------------------------------------------------------- |
+| Normal                | `N`  | The camera lens (the small dark circle, not the torch).                            |
+| Calibration           | `C`  | A target on the calibration sheet taped around the lens (see the sheet).           |
+| Intentional deviation | `D`  | Adults only: deliberately cross or turn one eye while the other looks at the lens. |
 
 For children, say: "Look at the little black circle." A small sticker next to the lens helps.
 
@@ -48,11 +48,11 @@ For children, say: "Look at the little black circle." A small sticker next to th
 Each scan is a **3-second video** at 30 fps with the torch on. Single frames are extracted
 later, so one video gives many frames.
 
-| Scan type | Repeats | Who |
-| --------- | ------- | --- |
-| `N` normal | 3 | Everyone |
+| Scan type                                                       | Repeats           | Who                             |
+| --------------------------------------------------------------- | ----------------- | ------------------------------- |
+| `N` normal                                                      | 3                 | Everyone                        |
 | `C` calibration: 0°, 2.5°, 5°, 10° to the left and to the right | 1 each (7 videos) | Everyone who can follow targets |
-| `D` intentional deviation | 2 | Adults only, never children |
+| `D` intentional deviation                                       | 2                 | Adults only, never children     |
 
 Between repeats, ask the person to blink and look away for a moment, then reset to the target.
 Stop immediately if a child is tired or upset; a partial session is fine.
@@ -63,15 +63,15 @@ Stop immediately if a child is tired or upset; a partial session is fine.
 P{person}_{type}{angle}{dir}_r{repeat}_{device}_{yyyymmdd}.mov
 ```
 
-| Part | Example | Meaning |
-| ---- | ------- | ------- |
-| `person` | `P007` | Pseudonymous id from the data sheet. **Never** a name. |
-| `type` | `N`, `C`, `D` | Scan type from section 4. |
-| `angle` | `00`, `25`, `05`, `10` | Calibration angle: `25` means 2.5°. Empty for `N` and `D`. |
-| `dir` | `L`, `R` | Calibration direction from the person's point of view. Empty for 0°, `N` and `D`. |
-| `repeat` | `r1` | Repeat number. |
-| `device` | `ip13` | Phone model, short. |
-| `yyyymmdd` | `20261024` | Capture date. |
+| Part       | Example                | Meaning                                                                           |
+| ---------- | ---------------------- | --------------------------------------------------------------------------------- |
+| `person`   | `P007`                 | Pseudonymous id from the data sheet. **Never** a name.                            |
+| `type`     | `N`, `C`, `D`          | Scan type from section 4.                                                         |
+| `angle`    | `00`, `25`, `05`, `10` | Calibration angle: `25` means 2.5°. Empty for `N` and `D`.                        |
+| `dir`      | `L`, `R`               | Calibration direction from the person's point of view. Empty for 0°, `N` and `D`. |
+| `repeat`   | `r1`                   | Repeat number.                                                                    |
+| `device`   | `ip13`                 | Phone model, short.                                                               |
+| `yyyymmdd` | `20261024`             | Capture date.                                                                     |
 
 Examples: `P007_N_r2_ip13_20261024.mov`, `P007_C05L_r1_ip13_20261024.mov`,
 `P012_D_r1_ip15_20261025.mov`.
