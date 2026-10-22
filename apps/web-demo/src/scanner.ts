@@ -44,15 +44,19 @@ export function loadLandmarker(): Promise<FaceLandmarker> {
   return landmarker;
 }
 
-export async function startCamera(video: HTMLVideoElement): Promise<{ torch: boolean }> {
+export async function startCamera(
+  video: HTMLVideoElement,
+  facingMode: "environment" | "user" = "environment",
+): Promise<{ torch: boolean }> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: false,
-    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+    video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
   });
   video.srcObject = stream;
   await video.play();
   const track = stream.getVideoTracks()[0];
   let torch = false;
+  if (facingMode === "user") return { torch };
   try {
     const caps = track?.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
     if (track && caps.torch) {

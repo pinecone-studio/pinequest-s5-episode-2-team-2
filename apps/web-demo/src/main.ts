@@ -1,6 +1,7 @@
 import "./style.css";
 import { decide, summarizeFrames } from "@app/core";
 import type { EyeMeasure, Outcome, PolicyConfig } from "@app/core";
+import { acuityFlow } from "./acuity";
 import { analyzeFrame, loadLandmarker, startCamera, stopCamera } from "./scanner";
 import type { EyeCrop, FrameResult } from "./scanner";
 import { t } from "./strings";
@@ -50,12 +51,25 @@ function startScreen() {
       <img class="hero" src="/img/kid-telescope.png" alt="" />
       <div class="actions">
         <button class="btn primary" id="go">${t.start} ${icon.next}</button>
+        <button class="btn secondary" id="acuity">${t.acuity.startButton}</button>
         <button class="btn link" id="parents">${t.forParents}</button>
         <p class="footnote">${t.footerPrivacy} · ${t.footerNoDiagnosis}</p>
+        <p class="offline" id="offline" ${offlineReady ? "" : "hidden"}>${icon.check} ${t.offlineReady}</p>
       </div>
     </main>`;
   on("#go", () => show(scanScreen));
   on("#parents", () => show(parentsScreen));
+  on("#acuity", () =>
+    show(
+      acuityFlow({
+        app,
+        show,
+        setCleanup: (fn) => (cleanup = fn),
+        home: startScreen,
+        icon,
+      }),
+    ),
+  );
   // Load the face model early so the scan also works after going offline.
   loadLandmarker().catch(() => undefined);
 }
@@ -336,4 +350,26 @@ function parentsScreen() {
   on("#go", () => show(scanScreen));
 }
 
+let offlineReady = false;
+
+/** Caches the page, model and assets so the demo also runs in airplane mode. */
+async function setupOffline() {
+  if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.type !== "cached") return;
+    offlineReady = true;
+    const badge = app.querySelector<HTMLElement>("#offline");
+    if (badge) badge.hidden = false;
+  });
+  const registration = await navigator.serviceWorker.register("/sw.js");
+  await navigator.serviceWorker.ready;
+  await loadLandmarker();
+  const urls = [
+    new URL("/", location.href).href,
+    ...performance.getEntriesByType("resource").map((entry) => entry.name),
+  ];
+  (registration.active ?? navigator.serviceWorker.controller)?.postMessage({ type: "cache", urls });
+}
+
 show(startScreen);
+setupOffline().catch(() => undefined);
