@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="297mm" height="210mm" viewBox="0 0 297 210" font-family="Helvetica, Arial, sans-serif">
+<rect width="297" height="210" fill="#fff"/>
+<text x="148.5" y="14" font-size="6" text-anchor="middle" font-weight="bold">Calibration sheet: targets for 35 cm (lens to bridge of nose)</text>
+<text x="148.5" y="22" font-size="3.6" text-anchor="middle">Print at 100% / "Actual size" on A4 landscape. Check the 100 mm bar with a ruler before use. See docs/calibration-sheet.md</text>
+<line x1="10" y1="95" x2="287" y2="95" stroke="#bbb" stroke-width="0.3" stroke-dasharray="2 2"/>
+<circle cx="148.5" cy="95" r="5" fill="none" stroke="#000" stroke-width="0.5" stroke-dasharray="1 1"/>
+<line x1="146.5" y1="95" x2="150.5" y2="95" stroke="#000" stroke-width="0.3"/><line x1="148.5" y1="93" x2="148.5" y2="97" stroke="#000" stroke-width="0.3"/>
+<text x="148.5" y="86" font-size="3.6" text-anchor="middle" font-weight="bold">0° — cut out, main lens here</text>
+<circle cx="133.22" cy="95" r="3" fill="#E5484D"/><circle cx="133.22" cy="95" r="0.8" fill="#fff"/>
+<text x="133.22" y="109" font-size="3.6" text-anchor="middle" font-weight="bold">2.5° L</text>
+<text x="133.22" y="113.5" font-size="2.8" text-anchor="middle">15.3 mm</text>
+<circle cx="163.78" cy="95" r="3" fill="#E5484D"/><circle cx="163.78" cy="95" r="0.8" fill="#fff"/>
+<text x="163.78" y="109" font-size="3.6" text-anchor="middle" font-weight="bold">2.5° R</text>
+<text x="163.78" y="113.5" font-size="2.8" text-anchor="middle">15.3 mm</text>
+<circle cx="117.88" cy="95" r="3" fill="#E5484D"/><circle cx="117.88" cy="95" r="0.8" fill="#fff"/>
+<text x="117.88" y="105" font-size="3.6" text-anchor="middle" font-weight="bold">5° L</text>
+<text x="117.88" y="109.5" font-size="2.8" text-anchor="middle">30.6 mm</text>
+<circle cx="179.12" cy="95" r="3" fill="#E5484D"/><circle cx="179.12" cy="95" r="0.8" fill="#fff"/>
+<text x="179.12" y="105" font-size="3.6" text-anchor="middle" font-weight="bold">5° R</text>
+<text x="179.12" y="109.5" font-size="2.8" text-anchor="middle">30.6 mm</text>
+<circle cx="86.79" cy="95" r="3" fill="#E5484D"/><circle cx="86.79" cy="95" r="0.8" fill="#fff"/>
+<text x="86.79" y="105" font-size="3.6" text-anchor="middle" font-weight="bold">10° L</text>
+<text x="86.79" y="109.5" font-size="2.8" text-anchor="middle">61.7 mm</text>
+<circle cx="210.21" cy="95" r="3" fill="#E5484D"/><circle cx="210.21" cy="95" r="0.8" fill="#fff"/>
+<text x="210.21" y="105" font-size="3.6" text-anchor="middle" font-weight="bold">10° R</text>
+<text x="210.21" y="109.5" font-size="2.8" text-anchor="middle">61.7 mm</text>
+<rect x="98.5" y="170" width="100" height="4" fill="#000"/>
+<line x1="98.5" y1="168" x2="98.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="108.5" y1="168" x2="108.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="118.5" y1="168" x2="118.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="128.5" y1="168" x2="128.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="138.5" y1="168" x2="138.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="148.5" y1="168" x2="148.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="158.5" y1="168" x2="158.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="168.5" y1="168" x2="168.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="178.5" y1="168" x2="178.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="188.5" y1="168" x2="188.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<line x1="198.5" y1="168" x2="198.5" y2="176" stroke="#000" stroke-width="0.3"/>
+<text x="148.5" y="181" font-size="3.6" text-anchor="middle">This bar must measure exactly 100 mm</text>
+<text x="148.5" y="198" font-size="3" text-anchor="middle">L / R = the person's own left / right while facing this printed side. Offset = 350 mm × tan(angle).</text>
+</svg>
