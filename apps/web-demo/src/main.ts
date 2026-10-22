@@ -6,6 +6,7 @@ import {
   analyzeFrame,
   loadHandLandmarker,
   loadLandmarker,
+  loadPoseLandmarker,
   startCamera,
   stopCamera,
 } from "./scanner";
@@ -369,7 +370,7 @@ async function setupOffline() {
   });
   const registration = await navigator.serviceWorker.register("/sw.js");
   await navigator.serviceWorker.ready;
-  await Promise.all([loadLandmarker(), loadHandLandmarker()]);
+  await Promise.all([loadLandmarker(), loadHandLandmarker(), loadPoseLandmarker()]);
   const urls = [
     new URL("/", location.href).href,
     ...performance.getEntriesByType("resource").map((entry) => entry.name),

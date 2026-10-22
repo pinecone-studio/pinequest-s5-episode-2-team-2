@@ -66,6 +66,9 @@ button {
   color: #fff;
   box-shadow: 0 10px 24px rgba(47, 111, 237, 0.3);
 }
+.btn.primary.holding {
+  box-shadow: 0 0 0 4px #1f8a5b;
+}
 .btn.primary:disabled {
   opacity: 0.5;
   box-shadow: none;
@@ -792,6 +795,91 @@ input[type="range"] {
   color: #8a5a00;
 }
 .arrow.hit {
+  background: var(--blue);
+  color: #fff;
+}
+.cover-status {
+  min-height: 1.5em;
+  margin: 0;
+  font-weight: 900;
+  font-size: 18px;
+  color: #c98a12;
+}
+.cover-status[data-state="covered"] {
+  color: #1f8a5b;
+}
+.cover-status[data-state="covered"]::before {
+  content: "✓ ";
+}
+.cover-warn {
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #c98a12;
+  color: #fff;
+  font-weight: 800;
+  text-align: center;
+}
+.hand-debug {
+  width: 96px;
+  height: 96px;
+  border-radius: 10px;
+  background: #000;
+  transform: scaleX(-1);
+}
+#gesture-label {
+  font-size: 22px;
+}
+
+.feedback {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: #f1f5fb;
+  transition: background 0.2s;
+}
+.feedback.flash {
+  background: #dff5ea;
+}
+.fb-icon {
+  font-size: 56px;
+  line-height: 1;
+}
+.fb-text {
+  font-size: 24px;
+  font-weight: 900;
+}
+.gesture-steps {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.gesture-steps div {
+  min-width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #f1f5fb;
+}
+.gesture-steps span {
+  font-size: 40px;
+  line-height: 1;
+}
+.gesture-steps b {
+  font-size: 13px;
+}
+#cant.detected {
+  background: #ffe7b3;
+}
+#cant.hit {
   background: var(--blue);
   color: #fff;
 }

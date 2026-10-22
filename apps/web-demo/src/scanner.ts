@@ -1,4 +1,9 @@
-import { FaceLandmarker, FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
+import {
+  FaceLandmarker,
+  FilesetResolver,
+  HandLandmarker,
+  PoseLandmarker,
+} from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { measureEye, mirroredAsymmetry } from "@app/core";
 import type {
@@ -34,8 +39,41 @@ export interface FrameResult {
 const HAND_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 
+const POSE_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+
 let landmarker: Promise<FaceLandmarker> | null = null;
 let hands: Promise<HandLandmarker> | null = null;
+let poses: Promise<PoseLandmarker> | null = null;
+
+let coverHands: Promise<HandLandmarker> | null = null;
+
+/**
+ * A second hand detector for checking which eye is covered. Image mode has no timestamp
+ * order, so it can run on the face crop in the same frame as the pointing detector.
+ */
+export function loadCoverHandLandmarker(): Promise<HandLandmarker> {
+  coverHands ??= FilesetResolver.forVisionTasks(WASM_URL).then((fileset) =>
+    HandLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: HAND_MODEL_URL, delegate: "GPU" },
+      runningMode: "IMAGE",
+      numHands: 2,
+    }),
+  );
+  return coverHands;
+}
+
+/** Finds the body at a distance, so the hand can be cropped before hand detection. */
+export function loadPoseLandmarker(): Promise<PoseLandmarker> {
+  poses ??= FilesetResolver.forVisionTasks(WASM_URL).then((fileset) =>
+    PoseLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: POSE_MODEL_URL, delegate: "GPU" },
+      runningMode: "VIDEO",
+      numPoses: 1,
+    }),
+  );
+  return poses;
+}
 
 export function loadHandLandmarker(): Promise<HandLandmarker> {
   hands ??= FilesetResolver.forVisionTasks(WASM_URL).then((fileset) =>
