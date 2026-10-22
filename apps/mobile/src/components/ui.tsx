@@ -41,7 +41,10 @@ export function Button({ label, disabled, style, ...props }: PressableProps & { 
       accessibilityState={{ ...props.accessibilityState, disabled: !!disabled }}
       style={(state) => [
         styles.button,
-        { opacity: disabled ? 0.5 : state.pressed ? 0.8 : 1 },
+        {
+          backgroundColor: state.pressed ? theme.colors.primaryPressed : theme.colors.primary,
+          opacity: disabled ? 0.5 : 1,
+        },
         typeof style === "function" ? style(state) : style,
       ]}
     >
@@ -53,7 +56,7 @@ export function Button({ label, disabled, style, ...props }: PressableProps & { 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.colors.background },
   content: { flexGrow: 1, padding: theme.spacing.lg },
-  stack: { gap: theme.spacing.lg },
+  stack: { gap: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surface,
     borderColor: theme.colors.border,
@@ -61,6 +64,11 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.md,
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
+    shadowColor: theme.colors.text,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 1,
   },
   button: {
     minHeight: 48,
@@ -68,7 +76,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: theme.spacing.md,
     backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.sm,
+    borderRadius: theme.radius.pill,
   },
   buttonLabel: { color: theme.colors.onPrimary, fontWeight: "600" },
 });
