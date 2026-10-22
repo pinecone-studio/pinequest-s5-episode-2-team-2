@@ -1,0 +1,29 @@
+[project]
+name = "hirschberg"
+version = "0.1.0"
+description = "Heuristic corneal light reflex measurement (Hirschberg principle)"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "mediapipe",
+  "numpy",
+  "opencv-python-headless",
+]
+
+[dependency-groups]
+dev = [
+  "pytest",
+  "ruff",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
