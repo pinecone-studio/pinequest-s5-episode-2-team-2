@@ -1,12 +1,18 @@
 # Camera capture spike (#9)
 
-Status: preparation only. No iPhone build or physical-device measurement has
-been performed. This document does not establish camera or clinical feasibility.
+Status: native preparation validated. iOS project generation, the JavaScript
+bundle and an unsigned arm64 Release build pass on a Mac. Signed installation
+and physical-device measurements are still pending. This document does not
+establish camera or clinical feasibility.
 
-Preparation checks on Windows / Node 24.15.0: spike TypeScript and lint checks,
-three frame-counter tests and an iOS Metro/Hermes export passed. Expo skipped
-iOS native project generation on Windows; native build and measurements remain
-pending. Repository format, lint, typecheck and all 16 tests also passed.
+The earlier Windows preparation used Node 24.15.0; Expo skipped native iOS
+generation there. On 2026-10-22 the separate spike was recreated on macOS with
+Node 24.19.0 and Xcode 27.1. TypeScript, lint, five frame-counter tests, iOS
+Metro/Hermes export and `expo prebuild --platform ios --no-install` pass.
+The counter tests cover steady 30 FPS, delivery gaps, a sustained drop to 15 FPS,
+dimension/rotation validation, invalid timestamps and unexpected pixel formats.
+Repository format, lint, typecheck, all 49 tests and iOS Metro/Hermes export also
+pass on Node 24.19.0.
 
 ## Question and setup
 
@@ -16,24 +22,47 @@ back-camera torch on for 60 seconds at a usable rate, compared with 1920 x 1080?
 The throwaway app is kept outside this repository, as requested in issue #9.
 Its reproducible baseline is Expo SDK 53 / React Native 0.79.6,
 react-native-vision-camera 4.7.3 and react-native-worklets-core 1.6.3. This
-matches the issue's V4 API; current V5 docs describe different APIs. Native
-compatibility is pending an Xcode build. Do not change the production app's
-versions based on this preparation.
+matches the issue's V4 API; V5 uses different APIs. Native compilation passes;
+runtime compatibility is unverified. The V4 worklets Babel plugin requires the
+optional-chaining, nullish-coalescing and template-literals Babel plugins in
+this standalone app. Do not change the production app's versions based on this
+preparation.
+
+On this Mac, CocoaPods 1.16.2 installed the native dependencies with frame
+processors enabled and location APIs disabled. The first Release compilation
+hit the known fmt 11.0.2/modern AppleClang consteval error. The standalone spike
+includes an idempotent, version-checked `patch:fmt` script that disables fmt's
+consteval branch for AppleClang in its local Pods header. It must be rerun after
+a fresh pod installation. This workaround does not modify this repository or
+its production dependencies. With this patch, `xcodebuild` of the
+`Kamerynturshilt` scheme, Release configuration, generic iOS destination and
+`CODE_SIGNING_ALLOWED=NO` succeeds, including VisionCamera and worklets.
+`expo install --check` also reports compatible dependencies. An unsigned build
+cannot be installed as a normal development app on the physical iPhone.
 
 Request the wide-angle back camera, exact 4K or 1080p video dimensions, 30 FPS,
 torch on, YUV, HDR off, buffer compression off and stabilization off. Reject
-unsupported exact dimensions or observed frame dimensions that differ from the
-request. Log only scalar metadata, never pixels or media paths.
+unsupported exact dimensions or observed dimensions that differ from the request
+(portrait rotation of the same dimensions is accepted and logged as delivered).
+Log only scalar metadata, never pixels, device identifiers or media paths.
+
+The connected device is an iPhone 12 Pro Max (iPhone13,4), iOS 27.0.1. USB pairing
+and Developer Mode are confirmed. A valid Apple Development signing identity
+has not yet been configured, so connection alone is not a successful app run.
+The standalone bundle identifier is `mn.pinequest.cameraspike.uugana`; it is
+separate from the production app. Open `ios/Kamerynturshilt.xcworkspace`, set the
+development team and use the Release configuration for the measurements.
 
 ## Procedure
 
-1. Have the team supply Mongolian `TODO(copy)` labels and camera permission copy.
+1. The standalone controls and camera permission copy are in Mongolian. Review
+   them with the team before participant testing.
 2. On a Mac with Xcode, install the spike dependencies, prebuild iOS, and build
    to a real iPhone. Expo Go and a simulator cannot answer this question.
 3. Use an object for performance testing. Before any human capture, read the
    [capture protocol](../capture-protocol.md) and obtain the signed consent
-   required by CONTRIBUTING.md and the protocol owner. Wait for the referenced
-   consent and calibration documents if they are not yet available.
+   required by CONTRIBUTING.md and the protocol owner. The consent and
+   calibration documents are now present in `docs/`.
 4. Record model, iOS, build mode, ambient light, battery/Low Power Mode and
    thermal observations. Use a Release build and matching conditions for both
    resolutions. Start with a cool, unplugged phone; cool between runs.
@@ -53,10 +82,10 @@ request. Log only scalar metadata, never pixels or media paths.
 
 ## Results
 
-| iPhone / iOS | Requested resolution | Actual dimensions | FPS, initial | FPS, after 60 s | Pixel format | Thermal observation |
-| ------------ | -------------------- | ----------------- | ------------ | --------------- | ------------ | ------------------- |
-| Pending      | 3840 x 2160          | Not measured      | Not measured | Not measured    | Not measured | Not measured        |
-| Pending      | 1920 x 1080          | Not measured      | Not measured | Not measured    | Not measured | Not measured        |
+| iPhone / iOS               | Requested resolution | Actual dimensions | FPS, initial | FPS, after 60 s | Pixel format | Thermal observation |
+| -------------------------- | -------------------- | ----------------- | ------------ | --------------- | ------------ | ------------------- |
+| iPhone 12 Pro Max / 27.0.1 | 3840 x 2160          | Not measured      | Not measured | Not measured    | Not measured | Not measured        |
+| iPhone 12 Pro Max / 27.0.1 | 1920 x 1080          | Not measured      | Not measured | Not measured    | Not measured | Not measured        |
 
 | Required check                                                 | Result                                    |
 | -------------------------------------------------------------- | ----------------------------------------- |
@@ -79,7 +108,8 @@ proves the later model can meet its frame budget.
 ## Sources
 
 - [Issue #9](https://github.com/pinecone-studio/pinequest-s5-episode-2-team-2/issues/9)
-- [VisionCamera V4 formats](https://github.com/mrousavy/react-native-vision-camera/blob/v4.7.3/docs/docs/guides/FORMATS.mdx)
-- [VisionCamera V4 frame processors](https://github.com/mrousavy/react-native-vision-camera/blob/v4.7.3/docs/docs/guides/FRAME_PROCESSORS.mdx)
-- [VisionCamera V4 iOS timestamps](https://github.com/mrousavy/react-native-vision-camera/blob/v4.7.3/ios/FrameProcessors/Frame.m)
+- [VisionCamera V4 formats](https://github.com/margelo/react-native-vision-camera/blob/v4.7.3/docs/docs/guides/FORMATS.mdx)
+- [VisionCamera V4 frame processors](https://github.com/margelo/react-native-vision-camera/blob/v4.7.3/docs/docs/guides/FRAME_PROCESSORS.mdx)
+- [VisionCamera V4 iOS timestamps](https://github.com/margelo/react-native-vision-camera/blob/v4.7.3/package/ios/FrameProcessors/Frame.m)
 - [Expo native builds](https://docs.expo.dev/develop/development-builds/create-a-build/)
+- [fmt 11.0.2 AppleClang compatibility issue](https://github.com/fmtlib/fmt/issues/4740)
