@@ -771,3 +771,27 @@ input[type="range"] {
   font-weight: 800;
   color: #0f7a5a;
 }
+.gesture {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.gesture video {
+  width: 48px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  transform: scaleX(-1);
+  background: #e9eef7;
+}
+.arrow.detected {
+  background: #ffe7b3;
+  color: #8a5a00;
+}
+.arrow.hit {
+  background: var(--blue);
+  color: #fff;
+}

@@ -1,4 +1,4 @@
-import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
+import { FaceLandmarker, FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { measureEye, mirroredAsymmetry } from "@app/core";
 import type {
@@ -31,7 +31,22 @@ export interface FrameResult {
   crops: [EyeCrop, EyeCrop] | null;
 }
 
+const HAND_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+
 let landmarker: Promise<FaceLandmarker> | null = null;
+let hands: Promise<HandLandmarker> | null = null;
+
+export function loadHandLandmarker(): Promise<HandLandmarker> {
+  hands ??= FilesetResolver.forVisionTasks(WASM_URL).then((fileset) =>
+    HandLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: HAND_MODEL_URL, delegate: "GPU" },
+      runningMode: "VIDEO",
+      numHands: 1,
+    }),
+  );
+  return hands;
+}
 
 export function loadLandmarker(): Promise<FaceLandmarker> {
   landmarker ??= FilesetResolver.forVisionTasks(WASM_URL).then((fileset) =>

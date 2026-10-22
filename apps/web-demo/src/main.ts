@@ -2,7 +2,13 @@ import "./style.css";
 import { decide, summarizeFrames } from "@app/core";
 import type { EyeMeasure, Outcome, PolicyConfig } from "@app/core";
 import { acuityFlow } from "./acuity";
-import { analyzeFrame, loadLandmarker, startCamera, stopCamera } from "./scanner";
+import {
+  analyzeFrame,
+  loadHandLandmarker,
+  loadLandmarker,
+  startCamera,
+  stopCamera,
+} from "./scanner";
 import type { EyeCrop, FrameResult } from "./scanner";
 import { t } from "./strings";
 
@@ -363,7 +369,7 @@ async function setupOffline() {
   });
   const registration = await navigator.serviceWorker.register("/sw.js");
   await navigator.serviceWorker.ready;
-  await loadLandmarker();
+  await Promise.all([loadLandmarker(), loadHandLandmarker()]);
   const urls = [
     new URL("/", location.href).href,
     ...performance.getEntriesByType("resource").map((entry) => entry.name),

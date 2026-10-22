@@ -1,4 +1,5 @@
-import { loadLandmarker, startCamera, stopCamera } from "./scanner";
+import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
+import { loadHandLandmarker, loadLandmarker, startCamera, stopCamera } from "./scanner";
 import { t } from "./strings";
 
 // Tumbling-E distance acuity check. Optotype size follows the logMAR definition: the letter
@@ -56,6 +57,25 @@ function decimal(logMar: number): string {
   return (10 ** -logMar).toFixed(logMar >= 0.95 ? 1 : 2).replace(/0$/, "");
 }
 
+// TODO(tune): how long a pointing direction must hold, and how straight the finger must be.
+const HOLD_MS = 600;
+
+/** Direction the index finger points, from the person's point of view. */
+function pointing(lm: NormalizedLandmark[], w: number, h: number): Direction | null {
+  const wrist = lm[0];
+  const base = lm[5];
+  const tip = lm[8];
+  if (!wrist || !base || !tip) return null;
+  const dx = (tip.x - base.x) * w;
+  const dy = (tip.y - base.y) * h;
+  const palm = Math.hypot((base.x - wrist.x) * w, (base.y - wrist.y) * h);
+  if (Math.hypot(dx, dy) < 0.6 * palm) return null;
+  // Raw front-camera frames are not mirrored: the person's right is the image's left.
+  if (Math.abs(dx) > 1.5 * Math.abs(dy)) return dx < 0 ? 0 : 180;
+  if (Math.abs(dy) > 1.5 * Math.abs(dx)) return dy < 0 ? 270 : 90;
+  return null;
+}
+
 const E_SVG =
   '<svg viewBox="0 0 5 5" aria-hidden="true"><path d="M0 0h5v1H1v1h4v1H1v1h4v1H0z" fill="currentColor"/></svg>';
 
@@ -73,6 +93,7 @@ export function acuityFlow(s: Screens) {
   const results: Partial<Record<Eye, number | null>> = {};
 
   function who() {
+    loadHandLandmarker().catch(() => undefined);
     app.innerHTML = `
       <main class="screen page">
         ${header(t.acuity.title)}
@@ -223,6 +244,10 @@ export function acuityFlow(s: Screens) {
           <span id="progress"></span>
         </div>
         <div class="optotype" id="e">${E_SVG}</div>
+        <div class="gesture" id="gesture" hidden>
+          <video id="hand" playsinline muted autoplay></video>
+          <span>${t.acuity.gestureHint}</span>
+        </div>
         <div class="answers">
           <button class="arrow up" data-d="270" aria-label="${t.acuity.up}">↑</button>
           <button class="arrow left" data-d="180" aria-label="${t.acuity.left}">←</button>
@@ -271,6 +296,56 @@ export function acuityFlow(s: Screens) {
     on("#cant", () => answer(null));
     on("#back", () => show(who));
     next();
+    watchPointing(answer);
+  }
+
+  /** Lets the person answer alone by pointing; the arrow buttons keep working. */
+  function watchPointing(answer: (d: Direction) => void) {
+    const video = app.querySelector<HTMLVideoElement>("#hand")!;
+    const panel = app.querySelector<HTMLElement>("#gesture")!;
+    let running = true;
+    s.setCleanup(() => {
+      running = false;
+      stopCamera(video);
+    });
+    let candidate: Direction | null = null;
+    let since = 0;
+    let locked: Direction | null = null;
+    const mark = (d: Direction | null, cls: string) =>
+      app
+        .querySelectorAll<HTMLButtonElement>(".arrow")
+        .forEach((b) => b.classList.toggle(cls, d !== null && Number(b.dataset.d) === d));
+
+    Promise.all([startCamera(video, "user"), loadHandLandmarker()])
+      .then(([, handModel]) => {
+        if (!running) return;
+        panel.hidden = false;
+        const tick = () => {
+          if (!running) return;
+          if (video.readyState >= 2) {
+            const now = performance.now();
+            const lm = handModel.detectForVideo(video, now).landmarks[0];
+            const d = lm ? pointing(lm, video.videoWidth, video.videoHeight) : null;
+            if (d !== locked) locked = null;
+            if (d !== candidate) {
+              candidate = d;
+              since = now;
+            }
+            mark(locked === null ? candidate : null, "detected");
+            if (candidate !== null && locked === null && now - since >= HOLD_MS) {
+              locked = candidate;
+              mark(candidate, "hit");
+              setTimeout(() => mark(null, "hit"), 250);
+              answer(candidate);
+            }
+          }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      })
+      .catch(() => {
+        panel.hidden = true;
+      });
   }
 
   function result() {
