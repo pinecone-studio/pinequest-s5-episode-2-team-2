@@ -14,17 +14,17 @@ x = d × tan(θ)          d = 350 mm (capture-protocol.md)
 
 | Angle θ | Offset x at 35 cm | Prism dioptres (100 × tan θ) |
 | ------- | ----------------- | ---------------------------- |
-| 0°      | 0 mm (the lens)   | 0 Δ   |
-| 2.5°    | 15.3 mm           | 4.4 Δ |
-| 5°      | 30.6 mm           | 8.7 Δ |
-| 10°     | 61.7 mm           | 17.6 Δ |
+| 0°      | 0 mm (the lens)   | 0 Δ                          |
+| 2.5°    | 15.3 mm           | 4.4 Δ                        |
+| 5°      | 30.6 mm           | 8.7 Δ                        |
+| 10°     | 61.7 mm           | 17.6 Δ                       |
 
 Eye doctors usually describe deviation in prism dioptres (Δ), so the last column helps when
 we talk to them. If the capture distance changes, regenerate the sheet: every offset scales
 with `d`.
 
 **What it does and does not simulate.** Both eyes look at the same target, so both turn
-together. The torch reflex moves the same way in both eyes and the *mirrored asymmetry*
+together. The torch reflex moves the same way in both eyes and the _mirrored asymmetry_
 stays near zero. That is the point: calibration scans test that the reflex moves by the
 expected amount per degree, and that looking off-centre alone does not produce a false
 asymmetry. Real one-eyed deviation is covered by the adult-only `D` scans.
