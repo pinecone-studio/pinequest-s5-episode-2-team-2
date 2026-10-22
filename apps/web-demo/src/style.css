@@ -29,6 +29,14 @@ button {
   cursor: pointer;
 }
 
+[hidden] {
+  display: none !important;
+}
+
+.start .actions {
+  margin-top: auto;
+}
+
 .screen {
   max-width: 480px;
   min-height: 100dvh;
