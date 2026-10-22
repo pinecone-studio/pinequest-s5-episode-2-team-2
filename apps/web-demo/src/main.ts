@@ -1,12 +1,21 @@
 import "./style.css";
-import { summarizeFrames } from "@app/core";
-import type { EyeMeasure, PolicyInput } from "@app/core";
+import { decide, summarizeFrames } from "@app/core";
+import type { EyeMeasure, Outcome, PolicyConfig } from "@app/core";
 import { analyzeFrame, loadLandmarker, startCamera, stopCamera } from "./scanner";
 import type { EyeCrop, FrameResult } from "./scanner";
 import { t } from "./strings";
 
 const SCAN_MS = 3000;
+// TODO(tune): demo-only thresholds, not validated. Set from team test scans; shown as such.
+const DEMO_POLICY: PolicyConfig = {
+  referAsymmetry: 0.15,
+  minFramesUsed: 10,
+  maxSpread: 0.1,
+  validated: false,
+};
 const app = document.querySelector<HTMLDivElement>("#app")!;
+/** This session's scans, in memory only. */
+const history: { outcome: Outcome; score: number | null }[] = [];
 
 const icon = {
   back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
@@ -47,6 +56,8 @@ function startScreen() {
     </main>`;
   on("#go", () => show(scanScreen));
   on("#parents", () => show(parentsScreen));
+  // Load the face model early so the scan also works after going offline.
+  loadLandmarker().catch(() => undefined);
 }
 
 function drawOverlay(canvas: HTMLCanvasElement, w: number, h: number, frame: FrameResult | null) {
@@ -201,12 +212,15 @@ function cropCanvas(crop: EyeCrop): HTMLCanvasElement {
 }
 
 function resultScreen(frames: FrameResult[]) {
-  const { summary, qualityReasons }: Omit<PolicyInput, "failure"> = summarizeFrames(
-    frames.map((f) => f.analysis),
-  );
+  const scan = summarizeFrames(frames.map((f) => f.analysis));
+  const { summary } = scan;
+  const decision = decide({ ...scan, failure: null }, DEMO_POLICY);
+  const copy = t.outcomes[decision.outcome];
+  history.push({ outcome: decision.outcome, score: summary.asymmetryScore });
   const best = bestFrame(frames);
   const eyes = best?.analysis.eyes;
-  const reasonText = qualityReasons.map((r) => t.reasons[r] ?? r).join(" · ");
+  const tips = [...new Set(decision.reasons.map((r) => t.tips[r]).filter(Boolean))];
+  const next = decision.outcome === "RETAKE" && tips.length ? tips : copy.next;
 
   app.innerHTML = `
     <main class="screen page">
@@ -214,32 +228,64 @@ function resultScreen(frames: FrameResult[]) {
         <button class="round plain" id="back" aria-label="${t.back}">${icon.back}</button>
         <h1>${t.resultTitle}</h1>
       </header>
+      <section class="card verdict ${decision.outcome.toLowerCase()}">
+        <span class="verdict-dot" aria-hidden="true"></span>
+        <div>
+          <h2>${copy.title}</h2>
+          <p>${copy.body}</p>
+        </div>
+      </section>
       ${
         best && eyes
           ? `<section class="card">
               <div class="eyes" id="eyes"></div>
-              <div class="eye-values">
-                <div><span>${t.imageLeft}</span><strong>x ${fmt(eyes[0].reflexOffset!.x)} · y ${fmt(eyes[0].reflexOffset!.y)}</strong></div>
-                <div><span>${t.imageRight}</span><strong>x ${fmt(eyes[1].reflexOffset!.x)} · y ${fmt(eyes[1].reflexOffset!.y)}</strong></div>
-              </div>
-            </section>
-            <div class="legend">
-              <span><i class="dot teal"></i>${t.iris}</span>
-              <span><i class="dot amber"></i>${t.reflex}</span>
-              <span>${t.offsetHint}</span>
-            </div>
-            <section class="card">
-              <div class="diff">
-                <div><strong>${t.difference}</strong><span>${t.differenceHint}</span></div>
-                <b>${summary.asymmetryScore!.toFixed(2)}</b>
-              </div>
-              <div class="stats">
-                <div><span>${t.framesUsed}</span><strong>${summary.framesUsed} / ${summary.framesTotal}</strong></div>
-                <div><span>${t.spread}</span><strong>${summary.spread!.toFixed(2)}</strong></div>
+              <div class="legend">
+                <span><i class="dot teal"></i>${t.iris}</span>
+                <span><i class="dot amber"></i>${t.reflex}</span>
               </div>
             </section>`
-          : `<section class="card empty"><strong>${t.noResult}</strong><span>${reasonText}</span></section>`
+          : ""
       }
+      <section class="card plain-text">
+        <h3>${t.whatNext}</h3>
+        <ul>${next.map((line) => `<li>${line}</li>`).join("")}</ul>
+      </section>
+      <section class="card plain-text">
+        <h3>${t.whatItMeans}</h3>
+        <p>${t.explanation}</p>
+      </section>
+      ${
+        history.length > 1
+          ? `<section class="card plain-text">
+              <h3>${t.sessionTitle}</h3>
+              <ol class="history">${history
+                .map(
+                  (h, i) =>
+                    `<li><span class="verdict-dot small ${h.outcome.toLowerCase()}"></span>${t.scanNumber(i + 1)} · ${t.outcomes[h.outcome].short}${h.score === null ? "" : ` · ${h.score.toFixed(2)}`}</li>`,
+                )
+                .join("")}</ol>
+            </section>`
+          : ""
+      }
+      <details class="card details">
+        <summary>${t.details}</summary>
+        ${
+          eyes
+            ? `<div class="eye-values">
+                <div><span>${t.imageLeft}</span><strong>x ${fmt(eyes[0].reflexOffset!.x)} · y ${fmt(eyes[0].reflexOffset!.y)}</strong></div>
+                <div><span>${t.imageRight}</span><strong>x ${fmt(eyes[1].reflexOffset!.x)} · y ${fmt(eyes[1].reflexOffset!.y)}</strong></div>
+              </div>`
+            : ""
+        }
+        <div class="stats">
+          <div><span>${t.difference}</span><strong>${summary.asymmetryScore?.toFixed(2) ?? "—"}</strong></div>
+          <div><span>${t.framesUsed}</span><strong>${summary.framesUsed} / ${summary.framesTotal}</strong></div>
+          <div><span>${t.spread}</span><strong>${summary.spread?.toFixed(2) ?? "—"}</strong></div>
+          <div><span>${t.demoThreshold}</span><strong>${DEMO_POLICY.referAsymmetry.toFixed(2)}</strong></div>
+        </div>
+        <p class="hint">${t.offsetHint}. ${t.differenceHint}. ${t.thresholdNote}</p>
+      </details>
+      <p class="notice">${icon.info}<span>${t.whitePupil}</span></p>
       <p class="notice">${icon.info}<span>${t.notice}</span></p>
       <div class="spacer"></div>
       <div class="actions">
