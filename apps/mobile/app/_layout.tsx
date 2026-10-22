@@ -1,0 +1,37 @@
+import { useState } from "react";
+import { Stack } from "expo-router";
+import type { ErrorBoundaryProps } from "expo-router";
+import { SQLiteProvider } from "expo-sqlite";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Button, Screen, Text } from "../src/components/ui";
+import { migrateDatabase } from "../src/storage/migrations";
+
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  return (
+    <SafeAreaProvider>
+      <Screen>
+        <Text variant="title">TODO(copy): Startup error</Text>
+        <Text>TODO(copy): Startup error description</Text>
+        <Button label="TODO(copy): Retry" onPress={retry} />
+      </Screen>
+    </SafeAreaProvider>
+  );
+}
+
+export default function RootLayout() {
+  const [databaseError, setDatabaseError] = useState<Error | null>(null);
+  if (databaseError) throw databaseError;
+  return (
+    <SafeAreaProvider>
+      <StatusBar style="dark" />
+      <SQLiteProvider
+        databaseName="pinequest.db"
+        onInit={migrateDatabase}
+        onError={setDatabaseError}
+      >
+        <Stack screenOptions={{ headerShown: false }} />
+      </SQLiteProvider>
+    </SafeAreaProvider>
+  );
+}
