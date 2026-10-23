@@ -33,6 +33,7 @@ const TEST_DISTANCE_MM = 3000; // AAPOS screening distance (10 ft)
 // ISO/IEC 7810 ID-1 bank card, drawn upright so it fits a phone screen.
 const CARD_MM = { short: 53.98, long: 85.6 };
 const LEVELS = [1.0, 0.7, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0];
+// A level passes on a correct first letter; after a miss, 2 of 3 letters must be correct.
 const PER_LEVEL = 3;
 /** Line to pass, in logMAR: AAPOS screening lines for children; WHO ICD-11 mild impairment for adults. */
 const PASS_LINE: Record<Group, number> = { child3: 0.4, child4: 0.3, child5: 0.2, adult: 0.3 };
@@ -911,9 +912,10 @@ export function acuityFlow(s: Screens) {
       shown += 1;
       if (d === direction) correct += 1;
       const majority = Math.floor(PER_LEVEL / 2) + 1;
-      if (correct >= majority || shown - correct > PER_LEVEL - majority) {
-        if (correct >= majority) passed = levels[level]!;
-        const done = correct < majority || level === levels.length - 1;
+      const pass = correct >= majority || (shown === 1 && correct === 1);
+      if (pass || shown - correct > PER_LEVEL - majority) {
+        if (pass) passed = levels[level]!;
+        const done = !pass || level === levels.length - 1;
         if (done) {
           results[eye] = passed;
           show(eye === "right" ? () => cover("left") : result);
