@@ -1,8 +1,8 @@
 # TFLite face models spike (#16)
 
-Status: preparation done, iPhone measurements pending. Model shapes, preprocessing and
-decoding are verified on a Mac against MediaPipe. The app builds for iOS in Release with Xcode
-27.1 (unsigned, generic device); it has not run on an iPhone yet.
+Status: measured on an iPhone 12 Pro Max (iOS 26.5). Both models load and run through
+`react-native-fast-tflite` on CPU and with the CoreML delegate. CPU is faster for both models.
+Model shapes, preprocessing and decoding are verified on a Mac against MediaPipe.
 
 ## Question and setup
 
@@ -15,7 +15,7 @@ Expo SDK 58 / React Native 0.88 (the same as `apps/mobile`), react-native-fast-t
 because the spike needs pixels from a still image; the live camera path is a separate issue.
 CocoaPods resolves TensorFlowLiteC 2.17.0 with the CoreML subspec. `expo-doctor` flags
 fast-tflite as "untested on New Architecture" in React Native Directory; v3 is built on Nitro
-Modules and the Release build compiles, but this is only confirmed once it runs on a device.
+Modules, and it builds and runs on an iPhone with this setup (see Results).
 
 ## Models
 
@@ -85,38 +85,53 @@ landmarks 3.6 ms. These are not iPhone numbers.
 
 ## Procedure on the iPhone
 
-1. Install Xcode and CocoaPods, connect an iPhone in developer mode.
+1. Install Xcode and CocoaPods, connect an iPhone in developer mode, and add a signing team.
 2. In the spike app: `npm install`, then
    `npx expo run:ios --device --configuration Release`.
 3. The app runs detection, crop and landmarks on the bundled image on CPU and draws the
    landmarks, then times 50 runs of each model with CPU, CoreML and Metal after 5 warm-up runs.
    Only `runSync` is timed; Skia preprocessing is reported separately.
-4. Copy the `SPIKE_RESULT` log line into the issue and fill in the table below. Record iPhone
-   model, iOS version, battery / Low Power Mode and whether the phone was warm.
+4. The result is saved as `Documents/spike-result.json` in the app container; copy it with
+   `xcrun devicectl device copy from --domain-type appDataContainer`.
 
 ## Results
 
-| iPhone / iOS | Model     | Delegate | Median (ms)  | p95 (ms)     |
-| ------------ | --------- | -------- | ------------ | ------------ |
-| Pending      | Detector  | CPU      | Not measured | Not measured |
-| Pending      | Detector  | CoreML   | Not measured | Not measured |
-| Pending      | Landmarks | CPU      | Not measured | Not measured |
-| Pending      | Landmarks | CoreML   | Not measured | Not measured |
+iPhone 12 Pro Max (A14), iOS 26.5, Release build, cable connected. Battery level, Low Power Mode
+and thermal state were not recorded. The table is the first launch; a second launch gave
+medians within 5% of these (detector CPU 1.65 ms, landmarks CPU 6.92 ms, CoreML 3.95 and
+33.32 ms). Landmark match is measured against MediaPipe's desktop `FaceLandmarker` on the same
+820 × 1024 image.
 
-| Check                                        | Result       |
-| -------------------------------------------- | ------------ |
-| App builds for iOS (Release, unsigned)       | Passed       |
-| Both models load with CPU                    | Not verified |
-| Both models load with CoreML delegate        | Not verified |
-| Landmarks on device match the desktop result | Not verified |
-| Preprocessing time (Skia, CPU)               | Not measured |
+| iPhone / iOS             | Model     | Delegate | Median (ms) | p95 (ms) |
+| ------------------------ | --------- | -------- | ----------- | -------- |
+| iPhone 12 Pro Max / 26.5 | Detector  | CPU      | 1.69        | 1.80     |
+| iPhone 12 Pro Max / 26.5 | Detector  | CoreML   | 3.85        | 4.00     |
+| iPhone 12 Pro Max / 26.5 | Landmarks | CPU      | 7.18        | 7.49     |
+| iPhone 12 Pro Max / 26.5 | Landmarks | CoreML   | 33.30       | 36.35    |
+
+| Check                                        | Result                                                   |
+| -------------------------------------------- | -------------------------------------------------------- |
+| App builds for iOS (Release, signed)         | Passed (Xcode 27.1)                                      |
+| Both models load with CPU                    | Passed                                                   |
+| Both models load with CoreML delegate        | Passed                                                   |
+| Metal delegate                               | Not available: fast-tflite 3.0.1 reports "not supported" |
+| Face detected and landmarks run on device    | Passed (bundled test portrait)                           |
+| Landmarks on device match the desktop result | Passed: 478 points, median 0.5 px, max 1.5 px            |
+| Preprocessing time (Skia, CPU, one run)      | Detector input 15 / 118 ms, landmark crop 9.6 / 9.6 ms   |
+
+Preprocessing here draws a still image with Skia on the CPU and is timed once per launch; the
+two launches gave very different detector numbers, so treat them as unreliable. The camera path
+will resize frames natively and needs its own measurement.
 
 ## Decision and possible fallback
 
-No recommendation yet. If the CoreML delegate fails to load or is slower, use CPU (or try
-the Metal delegate, which the app also times). If fast-tflite does not build with the current
-Expo / React Native, try fast-tflite 2.x on an SDK it supports, or MediaPipe's native iOS
-Face Landmarker through an Expo module.
+Use the CPU delegate for both MediaPipe models. On this phone CoreML is about 2.3× slower for the
+detector and about 4.6× slower for the landmark model, probably because not all operations run
+on the Neural Engine and the rest falls back with extra copies; this was not profiled. CPU
+inference for detector plus landmarks is about 9 ms per frame, which leaves room for our eye
+keypoint model. Measure CoreML again for our own model (#18) instead of assuming the same
+result. If fast-tflite fails in the production app, the fallback is MediaPipe's native iOS Face
+Landmarker through an Expo module.
 
 ## Sources
 
