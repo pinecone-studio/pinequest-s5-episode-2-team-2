@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import type * as SQLite from "node:sqlite";
-import { migrateDatabase } from "./migrations";
+import { migrateDatabase, migrations } from "./migrations";
 
 // Use Node's real SQLite engine without loading Expo's native bridge in Jest.
 const { DatabaseSync } = createRequire(__filename)("node:sqlite") as typeof SQLite;
@@ -35,9 +35,11 @@ const db = {
   },
 };
 
+const latest = migrations.length;
+
 test("first launch initializes the schema; reopening preserves existing data", async () => {
   await migrateDatabase(db);
-  expect(sqlite.prepare("PRAGMA user_version").get()).toEqual({ user_version: 1 });
+  expect(sqlite.prepare("PRAGMA user_version").get()).toEqual({ user_version: latest });
   expect(sqlite.prepare("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: 1 });
   sqlite.exec("INSERT INTO app_metadata VALUES ('keep', 'value')");
   await migrateDatabase(db);
@@ -76,7 +78,7 @@ test("an upgrade runs pending migrations in order without rerunning earlier ones
 test("a failed upgrade rolls back schema, writes and version; retry succeeds", async () => {
   await migrateDatabase(db);
   const failing = {
-    version: 2,
+    version: latest + 1,
     up: async () => {
       sqlite.exec(
         "CREATE TABLE partial (id INTEGER); INSERT INTO app_metadata VALUES ('partial', '1')",
@@ -84,9 +86,8 @@ test("a failed upgrade rolls back schema, writes and version; retry succeeds", a
       throw new Error("interrupted");
     },
   };
-  const { migrations } = await import("./migrations");
   await expect(migrateDatabase(db, [...migrations, failing])).rejects.toThrow("interrupted");
-  expect(sqlite.prepare("PRAGMA user_version").get()).toEqual({ user_version: 1 });
+  expect(sqlite.prepare("PRAGMA user_version").get()).toEqual({ user_version: latest });
   expect(
     sqlite.prepare("SELECT name FROM sqlite_master WHERE name = 'partial'").get(),
   ).toBeUndefined();
@@ -96,13 +97,13 @@ test("a failed upgrade rolls back schema, writes and version; retry succeeds", a
   await migrateDatabase(db, [
     ...migrations,
     {
-      version: 2,
+      version: latest + 1,
       up: async () => {
         sqlite.exec("CREATE TABLE partial (id INTEGER)");
       },
     },
   ]);
-  expect(sqlite.prepare("PRAGMA user_version").get()).toEqual({ user_version: 2 });
+  expect(sqlite.prepare("PRAGMA user_version").get()).toEqual({ user_version: latest + 1 });
 });
 
 test("rejects a database from a newer app and leaves its version intact", async () => {

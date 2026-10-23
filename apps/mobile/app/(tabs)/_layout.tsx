@@ -1,7 +1,13 @@
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
+import { useConsentStatus } from "../../src/features/onboarding/useConsentStatus";
 import { theme } from "../../src/theme";
 
 export default function TabLayout() {
+  // No tab (including Scan) is reachable until the current consent is stored (#30).
+  const consent = useConsentStatus();
+  if (consent === "loading") return null;
+  if (consent === "missing") return <Redirect href="/onboarding" />;
+
   return (
     <Tabs
       screenOptions={{
