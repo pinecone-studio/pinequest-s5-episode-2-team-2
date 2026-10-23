@@ -77,6 +77,24 @@ function optotypePx(logMar: number, pxPerMm: number): number {
   return TEST_DISTANCE_MM * Math.tan((arcmin / 60) * (Math.PI / 180)) * pxPerMm;
 }
 
+// TODO(verify): rough estimate, no cited source. Myopic (minus) range per passed level,
+// assuming poor distance vision comes from myopia alone. Not a prescription.
+const MINUS_RANGE: Record<string, string> = {
+  "0.1": "−0.25 … −0.5",
+  "0.2": "−0.5 … −0.75",
+  "0.3": "−0.5 … −1.0",
+  "0.4": "−0.75 … −1.25",
+  "0.5": "−1.0 … −1.5",
+  "0.7": "−1.5 … −2.0",
+  "1": "−2.0 … −3.0",
+};
+
+/** Rough minus range for a passed level; null at full acuity, "below" when no level passed. */
+function minusRange(logMar: number | null | undefined): string | null {
+  if (logMar === null || logMar === undefined) return t.acuity.minusBelow;
+  return MINUS_RANGE[String(Number(logMar.toFixed(1)))] ?? null;
+}
+
 function decimal(logMar: number): string {
   return (10 ** -logMar).toFixed(logMar >= 0.95 ? 1 : 2).replace(/0$/, "");
 }
@@ -1049,7 +1067,8 @@ export function acuityFlow(s: Screens) {
     const row = (eye: Eye) => {
       const v = results[eye];
       const value = v === null || v === undefined ? t.acuity.belowChart : decimal(v);
-      return `<div><span>${eye === "right" ? t.acuity.rightEye : t.acuity.leftEye}</span><strong>${value}</strong></div>`;
+      const minus = minusRange(v);
+      return `<div><span>${eye === "right" ? t.acuity.rightEye : t.acuity.leftEye}</span><strong>${value}</strong>${minus ? `<small class="minus">${t.acuity.minusPrefix} ${minus}</small>` : ""}</div>`;
     };
     const copy = refer ? t.acuity.refer : t.acuity.noSign;
     app.innerHTML = `
@@ -1062,6 +1081,7 @@ export function acuityFlow(s: Screens) {
         <section class="card">
           <div class="stats">${row("right")}${row("left")}</div>
           <p class="hint">${t.acuity.scaleHint}</p>
+          ${eyes.some((eye) => minusRange(results[eye])) ? `<p class="hint">${t.acuity.minusNote}</p>` : ""}
         </section>
         <section class="card plain-text">
           <h3>${t.whatNext}</h3>

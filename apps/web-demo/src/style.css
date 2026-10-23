@@ -362,6 +362,13 @@ button {
   font-size: 18px;
   font-weight: 900;
 }
+.stats .minus {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+}
 .legend {
   display: flex;
   flex-wrap: wrap;
