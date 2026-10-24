@@ -75,8 +75,10 @@ def test_dataset_shapes(manifest):
 
 def test_train_and_evaluate_from_config(manifest, tmp_path, capsys):
     config = tmp_path / "config.toml"
+    # POSIX paths: Windows backslashes are escape sequences in TOML strings.
+    runs = (tmp_path / "runs").as_posix()
     config.write_text(
-        f'manifest = "{manifest}"\nruns_dir = "{tmp_path / "runs"}"\nrun_name = "t"\nseed = 0\n'
+        f'manifest = "{manifest.as_posix()}"\nruns_dir = "{runs}"\nrun_name = "t"\nseed = 0\n'
         "image_size = 64\nepochs = 1\nbatch_size = 8\nlr = 1e-3\nweight_decay = 0\n"
         "pretrained = false\n"
     )
