@@ -14,11 +14,14 @@ export function ScanCamera({
   torchOn,
   onReady,
   onFailure,
+  onFrame,
 }: {
   device: CameraDevice;
   torchOn: boolean;
   onReady: () => void;
   onFailure: () => void;
+  /** Every analysed frame, with quality, for recording the scan. */
+  onFrame?: ((frame: LandmarkFrame) => void) | undefined;
 }) {
   const live = useRef(true);
   const [frame, setFrame] = useState<LandmarkFrame | null>(null);
@@ -34,9 +37,15 @@ export function ScanCamera({
   const fail = useCallback(() => {
     if (live.current) onFailure();
   }, [onFailure]);
+  // A ref keeps `report` stable, so a new callback does not restart frame processing.
+  const frameListener = useRef(onFrame);
+  useLayoutEffect(() => {
+    frameListener.current = onFrame;
+  }, [onFrame]);
   const report = useCallback((result: LandmarkFrame) => {
     if (!live.current) return;
     setFrame(result);
+    frameListener.current?.(result);
     if (__DEV__ && process.env.EXPO_PUBLIC_LANDMARK_DEBUG === "1") {
       console.info("face-frame", {
         timestampMs: result.timestampMs,
