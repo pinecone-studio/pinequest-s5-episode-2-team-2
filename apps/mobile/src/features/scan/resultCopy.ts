@@ -12,6 +12,10 @@ export const resultCopy = {
   retry: "Дахин шалгах",
   back: "Буцах",
   save: "Үр дүнг хадгалах",
+  saving: "Хадгалж байна…",
+  saved: "Үр дүн хадгалагдлаа",
+  failed: "Хадгалж чадсангүй. Дахин оролдоно уу.",
+  unassigned: "Хүүхэд сонгоогүй тул нэргүй үр дүнгээр хадгалагдана.",
 };
 export const outcomeCopy = {
   REFER: {
