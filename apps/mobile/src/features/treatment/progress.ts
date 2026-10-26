@@ -36,3 +36,46 @@ export function goalProgress(minutes: number, goalMinutes: number | null): numbe
   if (goalMinutes === null || goalMinutes <= 0) return null;
   return Math.min(1, minutes / goalMinutes);
 }
+
+export type DaySummary = {
+  /** Local midnight of the day. */
+  day: Date;
+  minutes: number;
+  /** Null when no goal is set. */
+  metGoal: boolean | null;
+};
+
+/** The last `days` local days ending today, oldest first, with minutes and goal status. */
+export function weekSummary(
+  periods: TreatmentPeriod[],
+  goalMinutes: number | null,
+  now: Date,
+  days = 7,
+): DaySummary[] {
+  return Array.from({ length: days }, (_, i) => {
+    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1 - i));
+    const minutes = minutesOnDay(periods, day, now);
+    const progress = goalProgress(minutes, goalMinutes);
+    return { day, minutes, metGoal: progress === null ? null : progress >= 1 };
+  });
+}
+
+/**
+ * Consecutive days the goal was met, counting back from today. Today only breaks the streak
+ * once it is over, so an unfinished day does not reset it in the morning.
+ */
+export function goalStreak(summary: DaySummary[]): number {
+  let streak = 0;
+  for (let i = summary.length - 1; i >= 0; i--) {
+    const { metGoal } = summary[i]!;
+    if (metGoal) streak++;
+    else if (i === summary.length - 1 && metGoal === false) continue;
+    else break;
+  }
+  return streak;
+}
+
+/** First instant of the oldest day in a `days`-day summary ending today. */
+export function summaryStart(now: Date, days = 7): Date {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1));
+}

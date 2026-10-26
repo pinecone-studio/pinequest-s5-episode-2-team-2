@@ -3,7 +3,15 @@ import type * as SQLite from "node:sqlite";
 import { createChild, deleteChild } from "./children";
 import { deleteAllData } from "./deleteAllData";
 import { migrateDatabase } from "./migrations";
-import { getGoal, getRunning, logsForDay, setGoal, startTimer, stopTimer } from "./treatment";
+import {
+  getGoal,
+  getRunning,
+  logsBetween,
+  logsForDay,
+  setGoal,
+  startTimer,
+  stopTimer,
+} from "./treatment";
 
 process.env.TZ = "Asia/Ulaanbaatar";
 const { DatabaseSync } = createRequire(__filename)("node:sqlite") as typeof SQLite;
@@ -90,6 +98,26 @@ test("a day's logs include overnight and running periods, not other days or chil
 
   const logs = await logsForDay(db, "c1", "patch", at("2026-10-26T12:00:00"));
   expect(logs.map((log) => log.id)).toEqual(["night", "now"]);
+});
+
+test("a range includes periods overlapping its ends and a running one", async () => {
+  await startTimer(db, "before", "c1", "patch", at("2026-10-19T08:00:00"));
+  await stopTimer(db, "c1", "patch", at("2026-10-19T09:00:00"));
+  await startTimer(db, "edge", "c1", "patch", at("2026-10-19T23:30:00"));
+  await stopTimer(db, "c1", "patch", at("2026-10-20T00:30:00"));
+  await startTimer(db, "mid", "c1", "patch", at("2026-10-23T10:00:00"));
+  await stopTimer(db, "c1", "patch", at("2026-10-23T11:00:00"));
+  await startTimer(db, "glasses", "c1", "glasses", at("2026-10-23T10:00:00"));
+  await startTimer(db, "now", "c1", "patch", at("2026-10-26T20:00:00"));
+
+  const logs = await logsBetween(
+    db,
+    "c1",
+    "patch",
+    at("2026-10-20T00:00:00"),
+    at("2026-10-27T00:00:00"),
+  );
+  expect(logs.map((log) => log.id)).toEqual(["edge", "mid", "now"]);
 });
 
 test("deleting a child or all data removes their goals and logs", async () => {
