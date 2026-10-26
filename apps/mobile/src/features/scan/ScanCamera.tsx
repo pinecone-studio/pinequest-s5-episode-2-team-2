@@ -4,6 +4,8 @@ import { Camera } from "react-native-vision-camera";
 import type { CameraDevice } from "react-native-vision-camera";
 import { useLandmarks } from "../vision/useLandmarks";
 import { LandmarkOverlay } from "../vision/LandmarkOverlay";
+import { MeasurementOverlay } from "../measurement/MeasurementOverlay";
+import { measurementDebugEnabled, measurementOverlayProps } from "../measurement/debug";
 import type { LandmarkFrame } from "../vision/facePipeline";
 import { LiveGuidance } from "./LiveGuidance";
 
@@ -66,6 +68,9 @@ export function ScanCamera({
       <LiveGuidance frame={frame} />
       {__DEV__ && process.env.EXPO_PUBLIC_LANDMARK_DEBUG === "1" && (
         <LandmarkOverlay frame={frame} />
+      )}
+      {measurementDebugEnabled() && frame && (
+        <MeasurementOverlay {...measurementOverlayProps(frame)} />
       )}
     </>
   );
