@@ -99,6 +99,27 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
+function abortable<T>(task: Promise<T>, signal: AbortSignal): Promise<T | undefined> {
+  return new Promise((resolve, reject) => {
+    const stop = () => {
+      signal.removeEventListener("abort", stop);
+      resolve(undefined);
+    };
+    signal.addEventListener("abort", stop, { once: true });
+    if (signal.aborted) stop();
+    task.then(
+      (value) => {
+        signal.removeEventListener("abort", stop);
+        resolve(value);
+      },
+      (error) => {
+        signal.removeEventListener("abort", stop);
+        reject(error);
+      },
+    );
+  });
+}
+
 export async function replayRecording(
   recording: Recording,
   load: (file: string) => Promise<PixelSource>,
@@ -111,12 +132,12 @@ export async function replayRecording(
     const entry = recording.frames[i]!;
     await wait(entry.timestampMs - (performance.now() - started), signal);
     if (signal.aborted) return;
-    const pixels = await load(entry.file);
-    if (signal.aborted) return;
+    const pixels = await abortable(load(entry.file), signal);
+    if (!pixels || signal.aborted) return;
     if (pixels.width !== recording.width || pixels.height !== recording.height)
       throw new Error("Recorded frame size mismatch");
-    const result = await analyze(pixels, entry.timestampMs);
-    if (signal.aborted) return;
+    const result = await abortable(analyze(pixels, entry.timestampMs), signal);
+    if (!result || signal.aborted) return;
     report(result, i + 1);
   }
 }

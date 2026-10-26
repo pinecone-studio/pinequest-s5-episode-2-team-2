@@ -102,7 +102,32 @@ test("cancellation suppresses results arriving from pending analysis", async () 
   );
   await ready;
   controller.abort();
-  finish(result);
   await task;
+  finish(result);
   expect(report).not.toHaveBeenCalled();
+});
+
+test("cancellation clears a pending replay timer", async () => {
+  jest.useFakeTimers();
+  try {
+    const controller = new AbortController();
+    let reported!: () => void;
+    const first = new Promise<void>((resolve) => {
+      reported = resolve;
+    });
+    const recording = parseRecording({
+      ...input,
+      frames: [...input.frames, { file: "frame0002.rgb", timestampMs: 1000 }],
+    });
+    const load = jest.fn(async () => source);
+    const task = replayRecording(recording, load, async () => result, reported, controller.signal);
+    await first;
+    expect(jest.getTimerCount()).toBe(1);
+    controller.abort();
+    await task;
+    expect(jest.getTimerCount()).toBe(0);
+    expect(load).toHaveBeenCalledTimes(1);
+  } finally {
+    jest.useRealTimers();
+  }
 });

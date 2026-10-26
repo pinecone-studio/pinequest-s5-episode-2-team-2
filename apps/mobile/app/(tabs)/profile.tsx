@@ -14,6 +14,15 @@ export default function ProfileScreen() {
       {/* Entry point for #31 until child profiles (#23) link each child to its treatment. */}
       <Button label="TODO(copy): Treatment" onPress={() => router.push("/treatment")} />
       <Button label="TODO(copy): Settings" onPress={() => router.push("/settings")} />
+      {__DEV__ && (
+        <Card>
+          <Text>TODO(copy): Хөгжүүлэгчийн тохиргоо</Text>
+          <Button
+            label="TODO(copy): Бичлэг дахин тоглуулах"
+            onPress={() => router.push("/scan/replay")}
+          />
+        </Card>
+      )}
     </Screen>
   );
 }

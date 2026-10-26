@@ -50,6 +50,8 @@ ml/runs/
 *.heic
 *.mp4
 *.mov
+*.rgb
+*.nv12
 !docs/**/*.png
 !docs/**/*.jpg
 !apps/mobile/assets/**/*.png
