@@ -35,6 +35,7 @@ Z95 = 1.96
 class Capture:
     name: str
     person: str
+    device: str
     deviated: bool
     score: float | None
     frames_used: int
@@ -69,6 +70,7 @@ def captures_from(lines: list[dict], min_frames: int) -> tuple[list[Capture], in
             Capture(
                 name=name,
                 person=meta["person_id"],
+                device=meta["device"],
                 deviated=meta["scan_type"] == "D",
                 score=summary.asymmetry_score,
                 frames_used=summary.frames_used,
@@ -139,6 +141,19 @@ def bootstrap(captures: Sequence[Capture], stat, rounds: int = BOOTSTRAP_ROUNDS,
     return float(lo), float(hi)
 
 
+def device_table(captures: Sequence[Capture]) -> list[str]:
+    """AUC per phone model, to spot a device where the measurement works worse."""
+    devices = sorted({c.device for c in captures})
+    if len(devices) < 2:
+        return []
+    rows = ["", "| Device | Captures | People | AUC |", "| --- | --- | --- | --- |"]
+    for device in devices:
+        own = [c for c in captures if c.device == device]
+        people = len({c.person for c in own})
+        rows.append(f"| {device} | {len(own)} | {people} | {_fmt(auc(own))} |")
+    return rows
+
+
 def _fmt(value: float | None, digits: int = 3) -> str:
     return "n/a" if value is None or math.isnan(value) else f"{value:.{digits}f}"
 
@@ -171,6 +186,7 @@ def report(captures: Sequence[Capture], too_poor: int) -> str:
             f"Highest Youden index at threshold {t:.3f}: sensitivity {_fmt(best.sensitivity)} "
             f"(95% CI {_ci(sens)}), specificity {_fmt(best.specificity)} (95% CI {_ci(spec)}).",
         ]
+    lines += device_table(captures)
     lines += [
         "",
         "| Threshold | Sensitivity | Specificity | TP | FN | TN | FP |",

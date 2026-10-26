@@ -10,15 +10,16 @@ from hirschberg.evaluate import (
     bootstrap,
     candidate_thresholds,
     captures_from,
+    device_table,
     main,
     operating_point,
     report,
 )
 
 
-def capture(person: str, deviated: bool, score: float) -> Capture:
+def capture(person: str, deviated: bool, score: float, device: str = "ip13") -> Capture:
     kind = "D" if deviated else "N"
-    return Capture(f"{person}_{kind}_r1_ip13_20261024", person, deviated, score, 10)
+    return Capture(f"{person}_{kind}_r1_{device}_20261024", person, device, deviated, score, 10)
 
 
 def separable() -> list[Capture]:
@@ -104,3 +105,12 @@ def test_missing_class_gives_nan_rates():
     only_normal = [capture("P1", False, 0.1)]
     assert math.isnan(operating_point(only_normal, 0.1).sensitivity)
     assert best_threshold(only_normal) is None
+
+
+def test_device_table_only_with_several_devices():
+    assert device_table(separable()) == []
+    mixed = separable() + [capture("P9", True, 0.01, "ip15"), capture("P9", False, 0.2, "ip15")]
+    rows = device_table(mixed)
+    assert "| ip13 | 8 | 4 | 1.000 |" in rows
+    assert "| ip15 | 2 | 1 | 0.000 |" in rows
+    assert "| Device | Captures | People | AUC |" in report(mixed, too_poor=0)
