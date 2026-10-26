@@ -1,0 +1,81 @@
+import type { ScanResult } from "@app/core";
+import { useState } from "react";
+import { StyleSheet, View } from "react-native";
+import type { LayoutChangeEvent } from "react-native";
+import { Text } from "../../components/ui";
+import { theme } from "../../theme";
+import { outcomeCopy } from "../scan/resultCopy";
+import { progressCopy as copy } from "./copy";
+import { segments } from "./segments";
+import { chartPoints, progressSeries } from "./series";
+
+const HEIGHT = 160;
+const DOT = 12;
+
+/** Asymmetry score over time with outcome-coloured markers; plain views, no chart library. */
+export function ProgressChart({ sessions }: { sessions: readonly ScanResult[] }) {
+  const [width, setWidth] = useState(0);
+  const series = progressSeries(sessions);
+  const inner = Math.max(0, width - DOT);
+  const { points, top } = chartPoints(series, inner, HEIGHT - DOT);
+  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.heading}>{copy.title}</Text>
+      {series.length < 2 ? (
+        <Text variant="caption" style={styles.muted}>
+          {copy.notEnough}
+        </Text>
+      ) : (
+        <View
+          onLayout={onLayout}
+          style={styles.plot}
+          accessible
+          accessibilityLabel={copy.summary(series.length, top)}
+        >
+          {segments(points).map((s, i) => (
+            <View
+              key={i}
+              style={[
+                styles.line,
+                {
+                  width: s.length,
+                  left: s.cx - s.length / 2 + DOT / 2,
+                  top: s.cy + DOT / 2 - 1,
+                  transform: [{ rotate: `${s.angleDeg}deg` }],
+                },
+              ]}
+            />
+          ))}
+          {points.map((p) => (
+            <View
+              key={p.id}
+              style={[
+                styles.dot,
+                { left: p.x, top: p.y, backgroundColor: outcomeCopy[p.outcome].color },
+              ]}
+            />
+          ))}
+        </View>
+      )}
+      <Text variant="caption" style={styles.muted}>
+        {copy.notice}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { gap: theme.spacing.sm },
+  heading: { fontWeight: "600" },
+  muted: { color: theme.colors.muted },
+  plot: {
+    height: HEIGHT,
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  line: { position: "absolute", height: 2, backgroundColor: theme.colors.border },
+  dot: { position: "absolute", width: DOT, height: DOT, borderRadius: DOT / 2 },
+});
