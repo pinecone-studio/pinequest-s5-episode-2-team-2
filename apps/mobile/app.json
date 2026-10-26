@@ -8,7 +8,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "studio.pinecone.pinequest.team2"
+      "bundleIdentifier": "studio.pinecone.pinequest.team2",
+      "infoPlist": {
+        "NSCameraUsageDescription": "TODO(copy): Нүдний шалгалтын туршилтад камер ашиглах зөвшөөрөл өгнө үү. Зураг хадгалахгүй."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +21,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "studio.pinecone.pinequest.team2"
+      "package": "studio.pinecone.pinequest.team2",
+      "permissions": ["android.permission.CAMERA"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
