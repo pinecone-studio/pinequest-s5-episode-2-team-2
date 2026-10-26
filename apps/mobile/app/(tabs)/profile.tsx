@@ -11,6 +11,8 @@ export default function ProfileScreen() {
         <Text>TODO(copy): Profile placeholder</Text>
       </Card>
       {/* Entry point for #33; keep it when child profiles (#23) replace this placeholder. */}
+      {/* Entry point for #31 until child profiles (#23) link each child to its treatment. */}
+      <Button label="TODO(copy): Treatment" onPress={() => router.push("/treatment")} />
       <Button label="TODO(copy): Settings" onPress={() => router.push("/settings")} />
     </Screen>
   );
