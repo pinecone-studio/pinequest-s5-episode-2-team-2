@@ -65,9 +65,16 @@ def capture_key(file_name: str) -> dict | None:
 
 
 def frame_values(line: dict) -> tuple[float, float] | None:
-    """(shift, asymmetry magnitude) of one frame, or None when it was not measured."""
+    """(shift, asymmetry magnitude) of one frame, or None when it was not measured.
+
+    Frames the CLI's quality check rejected (blur, closed eyes, turned head, ...) count as not
+    measured, the same frames the app would drop.
+    """
     eyes = line.get("eyes")
     if line.get("error") or not eyes or any(e.get("reflex_offset") is None for e in eyes):
+        return None
+    quality = line.get("quality")
+    if quality is not None and not quality.get("ok", False):
         return None
     shift = sum(e["reflex_offset"]["x"] for e in eyes) / len(eyes)
     a = line.get("asymmetry")

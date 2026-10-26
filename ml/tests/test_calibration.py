@@ -6,6 +6,7 @@ import pytest
 from hirschberg.calibration import (
     capture_key,
     fit_slope,
+    frame_values,
     group_captures,
     main,
     repeatability_sd,
@@ -100,3 +101,13 @@ def test_report_and_cli(tmp_path, capsys):
     empty = tmp_path / "empty.jsonl"
     empty.write_text(json.dumps(line("other.jpg", 0.1)) + "\n", "utf8")
     assert main([str(empty)]) == 1
+
+
+def test_frames_rejected_by_quality_are_not_measured():
+    good = line("P001_C00_r1_ip13_20261024_f0.jpg", 0.1)
+    assert frame_values(good) == pytest.approx((0.1, 0.01))
+    assert frame_values({**good, "quality": {"ok": True, "reasons": []}}) is not None
+    assert frame_values({**good, "quality": {"ok": False, "reasons": ["BLUR"]}}) is None
+    blurred = [{**good, "quality": {"ok": False, "reasons": ["BLUR"]}}, good]
+    [capture] = group_captures(blurred)
+    assert (capture.frames, capture.failed) == (2, 1)
