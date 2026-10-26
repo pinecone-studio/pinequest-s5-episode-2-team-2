@@ -4,7 +4,16 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["**/node_modules/", "**/dist/", "**/.expo/", "apps/*/ios/", "apps/*/android/", "ml/"],
+    ignores: [
+      "**/node_modules/",
+      "**/dist/",
+      "**/.expo/",
+      "**/.venv/",
+      "**/venv/",
+      "apps/*/ios/",
+      "apps/*/android/",
+      "ml/",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
