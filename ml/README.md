@@ -44,6 +44,37 @@ Prints one JSON line per `.jpg`, `.jpeg` or `.png` image: per-eye `iris_center`,
 (`NO_FACE`, `MULTIPLE_FACES`, `UNREADABLE`). Images are only read, never written or uploaded.
 Keep image folders outside the repo.
 
+## keypoints
+
+Eye keypoint model (#17): an ImageNet MobileNetV3-Small from `timm` with a small regression
+head. Input is one eye crop resized to 128 × 128; outputs are iris centre, iris radius, reflex
+position and a reflex-visible score. It needs the extra `train` dependency group:
+
+```bash
+uv sync --group train
+uv run python -m keypoints.train configs/keypoints-baseline.toml
+```
+
+The command trains on the `train` split, evaluates on `test`, writes `runs/<run_name>/model.pt`
+and `metrics.json`, and prints a model vs heuristic table. Errors are normalized by the
+labelled iris radius. `runs/` and `data/` are git-ignored; share weights through the Drive.
+
+The dataset builder writes `data/keypoints/manifest.jsonl`, one line per eye crop. Coordinates
+are crop pixels, paths are relative to the manifest, and the split must keep each `person_id`
+in a single split. `reflex` is `null` when no reflex is visible; `heuristic` is the
+`hirschberg` result for the same crop and may be left out.
+
+```json
+{
+  "crop": "S03/P007_N_r1_L.png",
+  "split": "train",
+  "iris_center": [48.2, 51.0],
+  "iris_radius": 17.5,
+  "reflex": [50.1, 49.3],
+  "heuristic": { "iris_center": [47.9, 51.4], "iris_radius": 18.1, "reflex": [50.0, 49.5] }
+}
+```
+
 ## Checks
 
 GitHub Actions is not available for this repo, so run these before every push:

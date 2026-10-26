@@ -1,0 +1,10 @@
+# Eye keypoint model baseline (#17). Paths are relative to ml/.
+manifest = "data/keypoints/manifest.jsonl"
+run_name = "keypoints-baseline"
+seed = 0
+image_size = 128
+epochs = 60
+batch_size = 64
+lr = 1e-3
+weight_decay = 1e-4
+pretrained = true
