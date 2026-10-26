@@ -1,18 +1,21 @@
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
-import { mockScanResult, type Outcome, type ScanResult } from "@app/core";
+import { mockEyeMeasure, mockScanResult, type Outcome, type ScanResult } from "@app/core";
+import type { ResultEyes } from "./ScanResultContext";
 import ResultScreen from "./ResultScreen";
 import { outcomeCopy, reasonCopy, resultCopy as copy } from "./resultCopy";
 
 let mockResult: ScanResult | null;
+let mockEyes: ResultEyes = null;
 const mockSetResult = jest.fn();
 const mockDismiss = jest.fn();
 jest.mock("./ScanResultContext", () => ({
-  useScanResult: () => ({ result: mockResult, setResult: mockSetResult }),
+  useScanResult: () => ({ result: mockResult, setResult: mockSetResult, eyes: mockEyes }),
 }));
 jest.mock("expo-router", () => ({
   router: { dismissTo: (...args: unknown[]) => mockDismiss(...args) },
 }));
+jest.mock("../eyeView/EyeDiagramView", () => ({ EyeDiagramView: "EyeDiagramView" }));
 jest.mock("../../components/ui", () => ({ Button: "Button", Text: "Text" }));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 jest.mock("react-native", () => ({
@@ -28,6 +31,7 @@ beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   jest.resetAllMocks();
   mockResult = mockScanResult("RETAKE");
+  mockEyes = null;
 });
 afterEach(async () => {
   await act(async () => renderer?.unmount());
@@ -67,4 +71,12 @@ test("missing results still show the notice and let the parent return to Scan", 
   await act(async () => nodes("Button")[0]!.props.onPress());
   expect(mockSetResult).toHaveBeenCalledWith(null);
   expect(mockDismiss).toHaveBeenCalledWith("/scan");
+});
+
+test("draws the measured eyes instead of the illustration when they are known", async () => {
+  mockEyes = [mockEyeMeasure("imageLeft"), mockEyeMeasure("imageRight")];
+  await render();
+  expect(nodes("EyeDiagramView")).toHaveLength(1);
+  expect(nodes("EyeDiagramView")[0]!.props.eyes).toBe(mockEyes);
+  expect(text()).not.toContain(copy.illustration);
 });
