@@ -1,0 +1,145 @@
+{
+  "config": {
+    "referAsymmetry": 0.2,
+    "minFramesUsed": 5,
+    "maxSpread": 0.1,
+    "validated": false
+  },
+  "cases": [
+    {
+      "name": "model unavailable",
+      "summary": {
+        "framesTotal": 0,
+        "framesUsed": 0,
+        "asymmetryScore": null,
+        "spread": null
+      },
+      "qualityReasons": [],
+      "failure": "MODEL_UNAVAILABLE",
+      "expected": {
+        "outcome": "NOT_ASSESSED",
+        "reasons": ["MODEL_UNAVAILABLE"]
+      }
+    },
+    {
+      "name": "timeout wins over good frames",
+      "summary": {
+        "framesTotal": 30,
+        "framesUsed": 30,
+        "asymmetryScore": 0.5,
+        "spread": 0.01
+      },
+      "qualityReasons": [],
+      "failure": "TIMEOUT",
+      "expected": {
+        "outcome": "NOT_ASSESSED",
+        "reasons": ["TIMEOUT"]
+      }
+    },
+    {
+      "name": "too few frames keeps reasons",
+      "summary": {
+        "framesTotal": 30,
+        "framesUsed": 4,
+        "asymmetryScore": 0.05,
+        "spread": 0.01
+      },
+      "qualityReasons": ["BLUR", "TOO_FAR", "BLUR"],
+      "failure": null,
+      "expected": {
+        "outcome": "RETAKE",
+        "reasons": ["BLUR", "TOO_FAR", "TOO_FEW_FRAMES"]
+      }
+    },
+    {
+      "name": "no usable frames",
+      "summary": {
+        "framesTotal": 30,
+        "framesUsed": 0,
+        "asymmetryScore": null,
+        "spread": null
+      },
+      "qualityReasons": ["NO_FACE"],
+      "failure": null,
+      "expected": {
+        "outcome": "RETAKE",
+        "reasons": ["NO_FACE", "TOO_FEW_FRAMES"]
+      }
+    },
+    {
+      "name": "enough frames but no score",
+      "summary": {
+        "framesTotal": 30,
+        "framesUsed": 10,
+        "asymmetryScore": null,
+        "spread": null
+      },
+      "qualityReasons": [],
+      "failure": null,
+      "expected": {
+        "outcome": "NOT_ASSESSED",
+        "reasons": ["MODEL_ERROR"]
+      }
+    },
+    {
+      "name": "inconsistent frames",
+      "summary": {
+        "framesTotal": 30,
+        "framesUsed": 20,
+        "asymmetryScore": 0.5,
+        "spread": 0.2
+      },
+      "qualityReasons": [],
+      "failure": null,
+      "expected": {
+        "outcome": "RETAKE",
+        "reasons": ["LOW_CONSISTENCY"]
+      }
+    },
+    {
+      "name": "spread at the limit is consistent",
+      "summary": {
+        "framesTotal": 30,
+        "framesUsed": 20,
+        "asymmetryScore": 0.05,
+        "spread": 0.1
+      },
+      "qualityReasons": [],
+      "failure": null,
+      "expected": {
+        "outcome": "NO_VISIBLE_SIGN",
+        "reasons": []
+      }
+    },
+    {
+      "name": "score at the threshold refers",
+      "summary": {
+        "framesTotal": 30,
+        "framesUsed": 20,
+        "asymmetryScore": 0.2,
+        "spread": 0.02
+      },
+      "qualityReasons": ["BLUR"],
+      "failure": null,
+      "expected": {
+        "outcome": "REFER",
+        "reasons": ["ASYMMETRY_ABOVE_THRESHOLD"]
+      }
+    },
+    {
+      "name": "score below the threshold",
+      "summary": {
+        "framesTotal": 30,
+        "framesUsed": 5,
+        "asymmetryScore": 0.19,
+        "spread": 0.02
+      },
+      "qualityReasons": [],
+      "failure": null,
+      "expected": {
+        "outcome": "NO_VISIBLE_SIGN",
+        "reasons": []
+      }
+    }
+  ]
+}
