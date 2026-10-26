@@ -1,17 +1,40 @@
+import { useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { useSQLiteContext } from "expo-sqlite";
 import { Button, Text } from "../../components/ui";
+import { saveSession } from "../../storage/sessions";
 import { useScanResult } from "./ScanResultContext";
 import { outcomeCopy, reasonCopy, resultCopy as copy } from "./resultCopy";
 
 export default function ResultScreen() {
   const { result, setResult } = useScanResult();
+  const db = useSQLiteContext();
+  const pending = useRef<string | null>(null);
+  const [save, setSave] = useState<{ id: string; status: "saving" | "saved" | "failed" } | null>(
+    null,
+  );
+  const status = save?.id === result?.id ? save?.status : undefined;
   const outcome = result ? outcomeCopy[result.outcome] : null;
   const retry = () => {
     setResult(null);
     router.dismissTo("/scan");
   };
+  async function persist() {
+    if (!result || pending.current === result.id || status === "saved") return;
+    const id = result.id;
+    pending.current = id;
+    setSave({ id, status: "saving" });
+    try {
+      await saveSession(db, result);
+      setSave((previous) => (previous?.id === id ? { id, status: "saved" } : previous));
+    } catch {
+      setSave((previous) => (previous?.id === id ? { id, status: "failed" } : previous));
+    } finally {
+      if (pending.current === id) pending.current = null;
+    }
+  }
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -73,15 +96,30 @@ export default function ResultScreen() {
         <Text style={[styles.body, styles.notice]}>{copy.notice}</Text>
         <Button label={copy.retry} onPress={retry} style={styles.primary} />
         {result && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={copy.save}
-            disabled
-            accessibilityState={{ disabled: true }}
-            style={styles.secondary}
-          >
-            <Text style={styles.heading}>{copy.save}</Text>
-          </Pressable>
+          <>
+            {result.childId === null && (
+              <Text variant="caption" style={styles.muted}>
+                {copy.unassigned}
+              </Text>
+            )}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={copy.save}
+              accessibilityState={{ disabled: status === "saving" || status === "saved" }}
+              disabled={status === "saving" || status === "saved"}
+              onPress={() => void persist()}
+              style={styles.secondary}
+            >
+              <Text style={styles.heading} accessibilityLiveRegion="polite">
+                {status === "saving" ? copy.saving : status === "saved" ? copy.saved : copy.save}
+              </Text>
+            </Pressable>
+            {status === "failed" && (
+              <Text accessibilityRole="alert" style={styles.body}>
+                {copy.failed}
+              </Text>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
