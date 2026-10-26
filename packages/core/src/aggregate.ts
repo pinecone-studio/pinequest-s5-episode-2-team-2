@@ -16,18 +16,22 @@ function usableAsymmetry(frame: FrameAnalysis): number | null {
 /**
  * Summarizes the frames of one scan for the decision policy. The score is the median
  * asymmetry magnitude of the usable frames; the spread is their median absolute deviation.
+ * Rejection reasons come most frequent first, so guidance can lead with the main problem.
  */
 export function summarizeFrames(frames: FrameAnalysis[]): Omit<PolicyInput, "failure"> {
   const used: number[] = [];
-  const reasons = new Set<QualityReason>();
+  // Map keeps first-appearance order, which breaks ties between equally frequent reasons.
+  const counts = new Map<QualityReason, number>();
   for (const frame of frames) {
     const value = usableAsymmetry(frame);
     if (value !== null) {
       used.push(value);
       continue;
     }
-    if (frame.quality.reasons.length) frame.quality.reasons.forEach((r) => reasons.add(r));
-    else reasons.add(frame.eyes === null ? "EYE_NOT_FOUND" : "REFLEX_NOT_FOUND");
+    const reasons: QualityReason[] = frame.quality.reasons.length
+      ? [...new Set(frame.quality.reasons)]
+      : [frame.eyes === null ? "EYE_NOT_FOUND" : "REFLEX_NOT_FOUND"];
+    for (const r of reasons) counts.set(r, (counts.get(r) ?? 0) + 1);
   }
   const score = used.length ? median(used) : null;
   return {
@@ -37,6 +41,6 @@ export function summarizeFrames(frames: FrameAnalysis[]): Omit<PolicyInput, "fai
       asymmetryScore: score,
       spread: score === null ? null : median(used.map((v) => Math.abs(v - score))),
     },
-    qualityReasons: [...reasons],
+    qualityReasons: [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([reason]) => reason),
   };
 }
