@@ -1,0 +1,189 @@
+{
+  "cases": [
+    {
+      "name": "no frames",
+      "frames": [],
+      "expected": {
+        "framesTotal": 0,
+        "framesUsed": 0,
+        "asymmetryScore": null,
+        "spread": null,
+        "qualityReasons": []
+      }
+    },
+    {
+      "name": "all good, odd count",
+      "frames": [
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.1, 0]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.3, 0.4]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0, 0.2]
+        }
+      ],
+      "expected": {
+        "framesTotal": 3,
+        "framesUsed": 3,
+        "asymmetryScore": 0.2,
+        "spread": 0.1,
+        "qualityReasons": []
+      }
+    },
+    {
+      "name": "all good, even count",
+      "frames": [
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.1, 0]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.3, 0]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.6, 0.8]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.2, 0]
+        }
+      ],
+      "expected": {
+        "framesTotal": 4,
+        "framesUsed": 4,
+        "asymmetryScore": 0.25,
+        "spread": 0.1,
+        "qualityReasons": []
+      }
+    },
+    {
+      "name": "rejected frames keep reasons in order",
+      "frames": [
+        {
+          "ok": false,
+          "reasons": ["BLUR", "TOO_FAR"],
+          "eyesFound": true,
+          "asymmetry": [0.1, 0]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.2, 0]
+        },
+        {
+          "ok": false,
+          "reasons": ["EYES_CLOSED", "BLUR"],
+          "eyesFound": true,
+          "asymmetry": null
+        },
+        {
+          "ok": false,
+          "reasons": ["NO_FACE"],
+          "eyesFound": false,
+          "asymmetry": null
+        }
+      ],
+      "expected": {
+        "framesTotal": 4,
+        "framesUsed": 1,
+        "asymmetryScore": 0.2,
+        "spread": 0,
+        "qualityReasons": ["BLUR", "TOO_FAR", "EYES_CLOSED", "NO_FACE"]
+      }
+    },
+    {
+      "name": "ok frame without measurements",
+      "frames": [
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": false,
+          "asymmetry": null
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": null
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [null, 0]
+        }
+      ],
+      "expected": {
+        "framesTotal": 3,
+        "framesUsed": 0,
+        "asymmetryScore": null,
+        "spread": null,
+        "qualityReasons": ["EYE_NOT_FOUND", "REFLEX_NOT_FOUND"]
+      }
+    },
+    {
+      "name": "one outlier",
+      "frames": [
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.05, 0]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.06, 0]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.04, 0]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.9, 0]
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.05, 0.01]
+        }
+      ],
+      "expected": {
+        "framesTotal": 5,
+        "framesUsed": 5,
+        "asymmetryScore": 0.05099,
+        "spread": 0.00901,
+        "qualityReasons": []
+      }
+    }
+  ]
+}
