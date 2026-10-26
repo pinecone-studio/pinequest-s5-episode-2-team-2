@@ -3,6 +3,7 @@ import type { Frame, FramePlane } from "react-native-vision-camera";
 import { inferEyes } from "./eyeCrops";
 import type { EyePrediction } from "./eyeCrops";
 import type { InferenceModel } from "./facePipeline";
+import type { PixelSource } from "./pixels";
 
 export interface EyeFrameResult {
   eyes: [EyePrediction, EyePrediction] | null;
@@ -11,6 +12,22 @@ export interface EyeFrameResult {
 type PixelFrame = Pick<Frame, "width" | "height" | "pixelFormat"> & {
   getPlanes(): Pick<FramePlane, "width" | "height" | "bytesPerRow" | "getPixelBuffer">[];
 };
+
+export function analyzeEyePixels(
+  source: PixelSource,
+  landmarks: Point[],
+  model: InferenceModel | undefined,
+): EyeFrameResult {
+  "worklet";
+  if (!landmarks.length) return { eyes: null, eyeFailure: "EYE_NOT_FOUND" };
+  if (!model) return { eyes: null, eyeFailure: "MODEL_UNAVAILABLE" };
+  try {
+    const eyes = inferEyes(source, landmarks, model);
+    return { eyes, eyeFailure: eyes ? null : "EYE_NOT_FOUND" };
+  } catch {
+    return { eyes: null, eyeFailure: "MODEL_ERROR" };
+  }
+}
 
 export function analyzeEyes(
   frame: PixelFrame,
@@ -34,7 +51,7 @@ export function analyzeEyes(
       uv.height !== frame.height / 2
     )
       throw new Error("Unsupported plane layout");
-    const eyes = inferEyes(
+    return analyzeEyePixels(
       {
         format: "nv12",
         width: frame.width,
@@ -47,7 +64,6 @@ export function analyzeEyes(
       landmarks,
       model,
     );
-    return { eyes, eyeFailure: eyes ? null : "EYE_NOT_FOUND" };
   } catch {
     return { eyes: null, eyeFailure: "MODEL_ERROR" };
   }
