@@ -39,7 +39,9 @@ are also required, with stale native callbacks ignored after teardown.
   380 × 320. These facts do not establish a usable preview.
 - A temporary scalar-only resized-pixel probe found near-zero input values; no
   images were saved and the probe was removed. The black-feed cause remains under
-  investigation. Native Camera comparison is pending.
+  investigation. The owner also confirmed a black rear 1× preview in Apple's
+  Camera app with lenses uncovered and pointed at a lit object. Device restart
+  and retest are pending; a hardware fault has not been established.
 
 One 60.026-second log sample contained 359 callbacks, all `faceCount=0`. Worker
 latency median was **77.503 ms**, nearest-rank p95 **78.586 ms**. Timestamp span was
