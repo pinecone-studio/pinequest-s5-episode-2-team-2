@@ -1,9 +1,8 @@
-import { useLocalSearchParams } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Button, Card, Screen, Text } from "../../components/ui";
-import { listChildren } from "../../storage/children";
+import { useActiveChildId } from "../children/useActiveChildId";
 import {
   getGoal,
   logsForDay,
@@ -21,20 +20,13 @@ const KINDS: TreatmentKind[] = ["patch", "glasses"];
 
 export default function TreatmentScreen() {
   const db = useSQLiteContext();
-  const params = useLocalSearchParams<{ childId?: string }>();
-  const [childId, setChildId] = useState<string | null | undefined>(undefined);
+  const childId = useActiveChildId();
   const [kind, setKind] = useState<TreatmentKind>("patch");
   const [goal, setGoalState] = useState<number | null>(null);
   const [goalInput, setGoalInput] = useState("");
   const [logs, setLogs] = useState<TreatmentLog[]>([]);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
-
-  // Use the child passed in, otherwise the first profile, until #23 adds child selection.
-  useEffect(() => {
-    if (params.childId) setChildId(params.childId);
-    else listChildren(db).then((children) => setChildId(children[0]?.id ?? null));
-  }, [db, params.childId]);
 
   const reload = useCallback(async () => {
     if (!childId) return;
