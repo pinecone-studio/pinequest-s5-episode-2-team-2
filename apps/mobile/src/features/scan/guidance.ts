@@ -22,11 +22,15 @@ export function guidanceForFrame(frame: LandmarkFrame | null): string {
   if (!frame) return "TODO(copy): Камер бэлдэж байна.";
   if (frame.faceCount === 0) return GUIDANCE.NO_FACE;
   if (frame.faceCount > 1) return GUIDANCE.MULTIPLE_FACES;
+  const modelUnavailable =
+    frame.eyeFailure === "MODEL_ERROR" || frame.eyeFailure === "MODEL_UNAVAILABLE";
   const reasons = frame.quality?.reasons ?? [];
-  const reason = (Object.keys(GUIDANCE) as QualityReason[]).find((code) => reasons.includes(code));
+  const reason = (Object.keys(GUIDANCE) as QualityReason[]).find(
+    (code) => reasons.includes(code) && !(modelUnavailable && code === "EYE_NOT_FOUND"),
+  );
   if (reason) return GUIDANCE[reason];
   if (frame.eyeFailure === "EYE_NOT_FOUND") return GUIDANCE.EYE_NOT_FOUND;
-  if (frame.eyeFailure === "MODEL_ERROR" || frame.eyeFailure === "MODEL_UNAVAILABLE") {
+  if (modelUnavailable) {
     return "TODO(copy): Туршилтын хэмжилт бэлэн биш байна.";
   }
   return "TODO(copy): Камераа хөдөлгөөнгүй барина уу.";

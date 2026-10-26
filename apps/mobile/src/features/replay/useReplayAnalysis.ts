@@ -7,6 +7,7 @@ import { useEyeModel } from "../vision/useEyeModel";
 import type { PixelSource } from "../vision/pixels";
 import type { LandmarkFrame } from "../vision/facePipeline";
 import { analyzeRecordedPixels } from "./replay";
+import { withFrameQuality } from "../vision/frameQuality";
 
 export function useReplayAnalysis() {
   const detector = useTensorflowModel(detectorAsset, []);
@@ -18,7 +19,7 @@ export function useReplayAnalysis() {
   const detectorModel = detector.model,
     meshModel = mesh.model;
   function analyze(source: PixelSource, timestampMs: number): Promise<LandmarkFrame> {
-    return new Promise((resolve, reject) => {
+    return new Promise<LandmarkFrame>((resolve, reject) => {
       if (!detectorModel || !meshModel) {
         reject(new Error("Models not ready"));
         return;
@@ -44,7 +45,7 @@ export function useReplayAnalysis() {
       } catch {
         reject(new Error("Analysis scheduling failed"));
       }
-    });
+    }).then(withFrameQuality);
   }
   return {
     analyze,

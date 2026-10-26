@@ -62,7 +62,16 @@ test("returns the shared pipeline result from the worker", async () => {
   };
   mockAnalyze.mockReturnValue(result);
   expect(latest.ready).toBe(true);
-  await expect(latest.analyze(source, 0)).resolves.toEqual(result);
+  await expect(latest.analyze(source, 0)).resolves.toEqual({
+    ...result,
+    quality: {
+      ok: false,
+      reasons: ["NO_FACE"],
+      sharpness: null,
+      exposure: null,
+      headPose: null,
+    },
+  });
   expect(mockAnalyze).toHaveBeenCalledTimes(1);
 });
 
