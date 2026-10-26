@@ -1,0 +1,828 @@
+{
+  "cases": [
+    {
+      "name": "frontal",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": [],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "no face",
+      "faceCount": 0,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["NO_FACE"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": null
+      }
+    },
+    {
+      "name": "two faces",
+      "faceCount": 2,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["MULTIPLE_FACES"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": null
+      }
+    },
+    {
+      "name": "tilted",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 572.7940468532405],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["HEAD_TURNED"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 0,
+          "pitch": -7.027497,
+          "roll": 20
+        }
+      }
+    },
+    {
+      "name": "turned",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [600, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["HEAD_TURNED"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 41.810315,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "nodding",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 660],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["HEAD_TURNED"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 51.057559,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "slight movement",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [510, 595],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": [],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 3.822554,
+          "pitch": 3.184739,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "blink",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 502],
+        "152": [500, 700],
+        "159": [430, 498],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["EYES_CLOSED"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "too far",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 20,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 20,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["TOO_FAR"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "too close",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 100,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 100,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["TOO_CLOSE"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "eyes not measured",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": null,
+      "crops": null,
+      "expected": {
+        "reasons": ["EYE_NOT_FOUND"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "no reflex",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": null
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["REFLEX_NOT_FOUND"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "several reasons",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [600, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 502],
+        "152": [500, 700],
+        "159": [430, 498],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 20,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 20,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": null,
+      "expected": {
+        "reasons": ["HEAD_TURNED", "EYES_CLOSED", "TOO_FAR"],
+        "sharpness": null,
+        "exposure": null,
+        "headPose": {
+          "yaw": 41.810315,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "sharp and lit",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": [
+        {
+          "sharpness": 0.02,
+          "exposure": 0.4,
+          "clipped": 0.02
+        },
+        {
+          "sharpness": 0.01,
+          "exposure": 0.6,
+          "clipped": 0.02
+        }
+      ],
+      "expected": {
+        "reasons": [],
+        "sharpness": 0.01,
+        "exposure": 0.5,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "blurred",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": [
+        {
+          "sharpness": 0.0001,
+          "exposure": 0.4,
+          "clipped": 0.02
+        },
+        {
+          "sharpness": 0.01,
+          "exposure": 0.4,
+          "clipped": 0.02
+        }
+      ],
+      "expected": {
+        "reasons": ["BLUR"],
+        "sharpness": 0.0001,
+        "exposure": 0.4,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "dark",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": [
+        {
+          "sharpness": 0.01,
+          "exposure": 0.05,
+          "clipped": 0.02
+        },
+        {
+          "sharpness": 0.01,
+          "exposure": 0.4,
+          "clipped": 0.02
+        }
+      ],
+      "expected": {
+        "reasons": ["TOO_DARK"],
+        "sharpness": 0.01,
+        "exposure": 0.225,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "bright",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": [
+        {
+          "sharpness": 0.01,
+          "exposure": 0.4,
+          "clipped": 0.02
+        },
+        {
+          "sharpness": 0.01,
+          "exposure": 0.95,
+          "clipped": 0.02
+        }
+      ],
+      "expected": {
+        "reasons": ["OVEREXPOSED"],
+        "sharpness": 0.01,
+        "exposure": 0.675,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    },
+    {
+      "name": "clipped",
+      "faceCount": 1,
+      "frameSize": [3840, 2160],
+      "points": {
+        "1": [500, 590],
+        "33": [400, 500],
+        "133": [460, 500],
+        "145": [430, 512],
+        "152": [500, 700],
+        "159": [430, 488],
+        "234": [350, 560],
+        "263": [600, 500],
+        "362": [540, 500],
+        "374": [570, 512],
+        "386": [570, 488],
+        "454": [650, 560]
+      },
+      "eyes": [
+        {
+          "irisRadius": 48,
+          "reflexOffset": [0.05, 0]
+        },
+        {
+          "irisRadius": 48,
+          "reflexOffset": [-0.05, 0]
+        }
+      ],
+      "crops": [
+        {
+          "sharpness": 0.01,
+          "exposure": 0.4,
+          "clipped": 0.3
+        },
+        {
+          "sharpness": 0.01,
+          "exposure": 0.4,
+          "clipped": 0.02
+        }
+      ],
+      "expected": {
+        "reasons": ["OVEREXPOSED"],
+        "sharpness": 0.01,
+        "exposure": 0.4,
+        "headPose": {
+          "yaw": 0,
+          "pitch": 0,
+          "roll": 0
+        }
+      }
+    }
+  ],
+  "crops": [
+    {
+      "name": "flat",
+      "width": 5,
+      "height": 4,
+      "luma": [
+        0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+        0.4, 0.4
+      ],
+      "expected": {
+        "sharpness": 0,
+        "exposure": 0.4,
+        "clipped": 0
+      }
+    },
+    {
+      "name": "stripes",
+      "width": 6,
+      "height": 6,
+      "luma": [
+        0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
+        0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6
+      ],
+      "expected": {
+        "sharpness": 0.64,
+        "exposure": 0.4,
+        "clipped": 0
+      }
+    },
+    {
+      "name": "ramp with clip",
+      "width": 4,
+      "height": 4,
+      "luma": [
+        0, 0.08333333333333333, 0.16666666666666666, 0.25, 0.3333333333333333, 0.4166666666666667,
+        0.5, 0.5833333333333334, 0.6666666666666666, 0.75, 0.8333333333333334, 0.9166666666666666,
+        1, 1, 1, 1
+      ],
+      "expected": {
+        "sharpness": 0.004774,
+        "exposure": 0.59375,
+        "clipped": 0.25
+      }
+    },
+    {
+      "name": "checker",
+      "width": 5,
+      "height": 5,
+      "luma": [
+        0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9,
+        0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1
+      ],
+      "expected": {
+        "sharpness": 10.11358,
+        "exposure": 0.484,
+        "clipped": 0
+      }
+    },
+    {
+      "name": "too small",
+      "width": 2,
+      "height": 2,
+      "luma": [0, 1, 1, 0],
+      "expected": null
+    }
+  ]
+}
