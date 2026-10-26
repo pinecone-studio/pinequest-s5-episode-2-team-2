@@ -36,3 +36,13 @@ export function childFormFields(child: { name: string; birthYear: number | null 
 export function newChildId(now: number = Date.now(), random: () => number = Math.random): string {
   return `child-${now.toString(36)}-${Math.floor(random() * 36 ** 8).toString(36)}`;
 }
+
+/**
+ * Age in years this calendar year, from the birth year only (the app never stores a birth
+ * date). Null without a birth year or for a year in the future.
+ */
+export function ageThisYear(birthYear: number | null, now: Date = new Date()): number | null {
+  if (birthYear === null) return null;
+  const age = now.getFullYear() - birthYear;
+  return age >= 0 ? age : null;
+}

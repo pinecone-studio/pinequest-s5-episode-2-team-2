@@ -7,6 +7,7 @@ import { getActiveChildId, setActiveChildId } from "../../storage/activeChild";
 import { listChildren, type Child } from "../../storage/children";
 import { theme } from "../../theme";
 import { childrenCopy as copy } from "./copy";
+import { ageThisYear } from "./form";
 
 /** Profiles on the Profile tab: tap to select, edit, or add a new one. */
 export function ChildrenList() {
@@ -55,7 +56,9 @@ export function ChildrenList() {
             >
               <Text style={selected ? styles.bold : undefined}>{child.name}</Text>
               <Text variant="caption" style={styles.muted}>
-                {selected ? copy.active : (child.birthYear ?? "")}
+                {[selected ? copy.active : null, ageLabel(child.birthYear)]
+                  .filter(Boolean)
+                  .join(" · ")}
               </Text>
             </Pressable>
             <Pressable
@@ -75,6 +78,11 @@ export function ChildrenList() {
       />
     </Card>
   );
+}
+
+function ageLabel(birthYear: number | null): string | null {
+  const age = ageThisYear(birthYear);
+  return age === null ? null : copy.age(age);
 }
 
 const styles = StyleSheet.create({
