@@ -75,6 +75,24 @@ in a single split. `reflex` is `null` when no reflex is visible; `heuristic` is 
 }
 ```
 
+### Export to TFLite (#18)
+
+`keypoints.export` converts `runs/<run_name>/model.pt` to `runs/<run_name>/keypoints.tflite`
+with [litert-torch](https://github.com/google-ai-edge/litert-torch) (the new name of
+ai-edge-torch). It then runs both models on 16 synthetic eye crops drawn in code and fails if
+any output differs by more than `--atol` (default 1e-4). The input/output contract is in
+`docs/model-card.md`.
+
+litert-torch officially supports Linux only, and its converter has no Windows wheel. Run the
+export in Colab or on Linux; macOS arm64 wheels exist but are not officially supported. The
+export packages are passed with `--with` instead of a dependency group, so `uv sync` keeps
+working on every OS:
+
+```bash
+uv run --group train --with litert-torch==0.10.0 --with ai-edge-litert==2.3.0 \
+  python -m keypoints.export configs/keypoints-baseline.toml
+```
+
 ## Checks
 
 GitHub Actions is not available for this repo, so run these before every push:
