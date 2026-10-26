@@ -79,6 +79,15 @@ uv run python -m dataset.prelabel /path/to/session /path/to/batch --sheet sheet.
 ```
 
 The output folder (`crops/` and `tasks.json`) belongs on the private Drive, never in the repo.
+
+Before pre-labeling a session, check the data sheet exported as CSV (#29). It lists file
+names that break the naming scheme or disagree with their row, rows without consent, `D` scans
+of children, duplicates, and the scans each person still needs from the capture protocol. It
+prints person ids only:
+
+```bash
+uv run python -m dataset.sheet_check sheet.csv
+```
 The labeling config is `dataset/labelstudio.xml`; setup and labeling rules are in
 `docs/annotation-guide.md`.
 
