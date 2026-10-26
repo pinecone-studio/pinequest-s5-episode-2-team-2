@@ -140,7 +140,7 @@
         "framesUsed": 0,
         "asymmetryScore": null,
         "spread": null,
-        "qualityReasons": ["EYE_NOT_FOUND", "REFLEX_NOT_FOUND"]
+        "qualityReasons": ["REFLEX_NOT_FOUND", "EYE_NOT_FOUND"]
       }
     },
     {
@@ -183,6 +183,48 @@
         "asymmetryScore": 0.05099,
         "spread": 0.00901,
         "qualityReasons": []
+      }
+    },
+    {
+      "name": "most frequent reason first",
+      "frames": [
+        {
+          "ok": false,
+          "reasons": ["TOO_FAR"],
+          "eyesFound": true,
+          "asymmetry": null
+        },
+        {
+          "ok": false,
+          "reasons": ["BLUR"],
+          "eyesFound": true,
+          "asymmetry": null
+        },
+        {
+          "ok": false,
+          "reasons": ["BLUR", "BLUR"],
+          "eyesFound": true,
+          "asymmetry": null
+        },
+        {
+          "ok": false,
+          "reasons": ["BLUR", "HEAD_TURNED"],
+          "eyesFound": true,
+          "asymmetry": null
+        },
+        {
+          "ok": true,
+          "reasons": [],
+          "eyesFound": true,
+          "asymmetry": [0.1, 0]
+        }
+      ],
+      "expected": {
+        "framesTotal": 5,
+        "framesUsed": 1,
+        "asymmetryScore": 0.1,
+        "spread": 0,
+        "qualityReasons": ["BLUR", "TOO_FAR", "HEAD_TURNED"]
       }
     }
   ]

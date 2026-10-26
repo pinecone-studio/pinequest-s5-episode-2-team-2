@@ -109,7 +109,7 @@ export type ScanFailure = "MODEL_UNAVAILABLE" | "MODEL_ERROR" | "TIMEOUT";
 
 export interface PolicyInput {
   summary: ScanSummary;
-  /** Reasons the rejected frames were rejected, in order of first appearance. */
+  /** Reasons the rejected frames were rejected: most frequent first, ties by first appearance. */
   qualityReasons: QualityReason[];
   /** Set when the scan could not be measured at all. */
   failure: ScanFailure | null;
