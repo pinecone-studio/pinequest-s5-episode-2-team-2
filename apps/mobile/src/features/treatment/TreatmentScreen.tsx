@@ -5,6 +5,7 @@ import { Button, Card, Screen, Text } from "../../components/ui";
 import { useActiveChildId } from "../children/useActiveChildId";
 import {
   getGoal,
+  logsBetween,
   logsForDay,
   setGoal,
   startTimer,
@@ -14,7 +15,14 @@ import {
 import { theme } from "../../theme";
 import { treatmentCopy as copy } from "./copy";
 import { formatElapsed, newLogId, parseGoalMinutes } from "./format";
-import { goalProgress, minutesOnDay, type TreatmentKind } from "./progress";
+import {
+  goalProgress,
+  minutesOnDay,
+  summaryStart,
+  weekSummary,
+  type TreatmentKind,
+} from "./progress";
+import { WeekBars } from "./WeekBars";
 
 const KINDS: TreatmentKind[] = ["patch", "glasses"];
 
@@ -25,18 +33,22 @@ export default function TreatmentScreen() {
   const [goal, setGoalState] = useState<number | null>(null);
   const [goalInput, setGoalInput] = useState("");
   const [logs, setLogs] = useState<TreatmentLog[]>([]);
+  const [weekLogs, setWeekLogs] = useState<TreatmentLog[]>([]);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     if (!childId) return;
-    const [savedGoal, todayLogs] = await Promise.all([
+    const today = new Date();
+    const [savedGoal, todayLogs, lastWeek] = await Promise.all([
       getGoal(db, childId, kind),
-      logsForDay(db, childId, kind, new Date()),
+      logsForDay(db, childId, kind, today),
+      logsBetween(db, childId, kind, summaryStart(today), today),
     ]);
     setGoalState(savedGoal);
     setGoalInput(savedGoal ? String(savedGoal) : "");
     setLogs(todayLogs);
+    setWeekLogs(lastWeek);
     setNow(new Date());
   }, [db, childId, kind]);
 
@@ -130,6 +142,10 @@ export default function TreatmentScreen() {
             )
           }
         />
+      </Card>
+
+      <Card>
+        <WeekBars week={weekSummary(weekLogs, goal, now)} goal={goal} />
       </Card>
 
       <Card>
