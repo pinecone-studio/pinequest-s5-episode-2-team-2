@@ -15,6 +15,7 @@ jest.mock("./ScanResultContext", () => ({
 jest.mock("expo-router", () => ({
   router: { dismissTo: (...args: unknown[]) => mockDismiss(...args) },
 }));
+jest.mock("./SaveResultButton", () => ({ SaveResultButton: "SaveResultButton" }));
 jest.mock("../eyeView/EyeDiagramView", () => ({ EyeDiagramView: "EyeDiagramView" }));
 jest.mock("../../components/ui", () => ({ Button: "Button", Text: "Text" }));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
@@ -65,9 +66,7 @@ test("missing results still show the notice and let the parent return to Scan", 
   await render();
   expect(text()).toContain(copy.empty);
   expect(text()).toContain(copy.notice);
-  expect(renderer.root.findAll((node) => node.props.accessibilityLabel === copy.save)).toHaveLength(
-    0,
-  );
+  expect(nodes("SaveResultButton")).toHaveLength(0);
   await act(async () => nodes("Button")[0]!.props.onPress());
   expect(mockSetResult).toHaveBeenCalledWith(null);
   expect(mockDismiss).toHaveBeenCalledWith("/scan");

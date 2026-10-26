@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Button, Text } from "../../components/ui";
 import { EyeDiagramView } from "../eyeView/EyeDiagramView";
+import { SaveResultButton } from "./SaveResultButton";
 import { useScanResult } from "./ScanResultContext";
 import { outcomeCopy, reasonCopy, resultCopy as copy } from "./resultCopy";
 
@@ -79,17 +80,7 @@ export default function ResultScreen() {
         )}
         <Text style={[styles.body, styles.notice]}>{copy.notice}</Text>
         <Button label={copy.retry} onPress={retry} style={styles.primary} />
-        {result && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={copy.save}
-            disabled
-            accessibilityState={{ disabled: true }}
-            style={styles.secondary}
-          >
-            <Text style={styles.heading}>{copy.save}</Text>
-          </Pressable>
-        )}
+        {result && <SaveResultButton result={result} />}
       </ScrollView>
     </SafeAreaView>
   );
@@ -161,13 +152,4 @@ const styles = StyleSheet.create({
   muted: { fontSize: 12, lineHeight: 18, color: "#536C8B" },
   notice: { padding: 12, borderRadius: 12, backgroundColor: "#EDF3FF" },
   primary: { backgroundColor: "#137BFA", borderRadius: 24, minHeight: 48 },
-  secondary: {
-    borderColor: "#137BFA",
-    borderWidth: 1,
-    borderRadius: 24,
-    minHeight: 48,
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });
