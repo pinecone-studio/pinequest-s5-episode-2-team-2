@@ -10,6 +10,14 @@ const mockResult = jest.fn(),
 const mockResize = jest.fn();
 const mockRun = jest.fn();
 const mockInfer = jest.fn();
+let mockPlatform = "ios";
+jest.mock("react-native", () => ({
+  Platform: {
+    get OS() {
+      return mockPlatform;
+    },
+  },
+}));
 let handle!: (input: ReturnType<typeof frame>) => void;
 jest.mock("../../../assets/models/face_detector.tflite", () => 1, { virtual: true });
 jest.mock("../../../assets/models/face_landmarks_detector.tflite", () => 2, { virtual: true });
@@ -57,6 +65,7 @@ function Harness() {
 let renderer: ReactTestRenderer;
 beforeEach(async () => {
   jest.resetAllMocks();
+  mockPlatform = "ios";
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   mockResize.mockReturnValue({
     getPixelBuffer: () => new Float32Array(512 * 512 * 3).buffer,
@@ -92,6 +101,13 @@ test("converts seconds to milliseconds, releases buffers and throttles subsequen
     "latencyMs",
     "timestampMs",
   ]);
+});
+
+test("converts Android nanoseconds to milliseconds", async () => {
+  mockPlatform = "android";
+  await act(async () => renderer.update(<Harness />));
+  handle(frame(1_000_000_000));
+  expect(mockResult.mock.calls[0]![0].timestampMs).toBe(1000);
 });
 
 test("busy or failed scheduling releases the frame without blocking capture", () => {
