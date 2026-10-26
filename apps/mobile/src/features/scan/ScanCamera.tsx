@@ -5,6 +5,7 @@ import type { CameraDevice } from "react-native-vision-camera";
 import { useLandmarks } from "../vision/useLandmarks";
 import { LandmarkOverlay } from "../vision/LandmarkOverlay";
 import type { LandmarkFrame } from "../vision/facePipeline";
+import { LiveGuidance } from "./LiveGuidance";
 
 export function ScanCamera({
   device,
@@ -62,6 +63,7 @@ export function ScanCamera({
         onError={fail}
         onInterruptionStarted={fail}
       />
+      <LiveGuidance frame={frame} />
       {__DEV__ && process.env.EXPO_PUBLIC_LANDMARK_DEBUG === "1" && (
         <LandmarkOverlay frame={frame} />
       )}

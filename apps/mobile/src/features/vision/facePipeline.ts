@@ -1,4 +1,4 @@
-import type { Point } from "@app/core";
+import type { FrameQuality, Point } from "@app/core";
 import type { EyeFrameResult } from "./eyeFrame";
 import {
   cropPoint,
@@ -13,6 +13,7 @@ export interface InferenceModel {
   runSync(input: ArrayBuffer[]): ArrayBuffer[];
 }
 export interface LandmarkFrame extends Partial<EyeFrameResult> {
+  quality?: FrameQuality;
   timestampMs: number;
   frameSize: { width: number; height: number };
   faceCount: number;
