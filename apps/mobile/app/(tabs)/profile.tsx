@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { Button, Card, Screen, Text } from "../../src/components/ui";
+import { ChildrenList } from "../../src/features/children/ChildrenList";
 
 export default function ProfileScreen() {
   return (
@@ -7,13 +8,10 @@ export default function ProfileScreen() {
       <Text variant="title" accessibilityRole="header">
         TODO(copy): Profile
       </Text>
-      <Card>
-        <Text>TODO(copy): Profile placeholder</Text>
-      </Card>
-      {/* #31 and #32 entry points until child profiles (#23) link each child to them. */}
+      <ChildrenList />
+      {/* Treatment and habits work on the selected child. */}
       <Button label="TODO(copy): Treatment" onPress={() => router.push("/treatment")} />
       <Button label="TODO(copy): Habits" onPress={() => router.push("/habits")} />
-      {/* #33 entry point; keep it when child profiles (#23) replace this placeholder. */}
       <Button label="TODO(copy): Settings" onPress={() => router.push("/settings")} />
       {__DEV__ && (
         <Card>
