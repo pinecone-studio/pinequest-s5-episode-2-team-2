@@ -88,6 +88,29 @@ export const migrations: readonly Migration[] = [
         CREATE INDEX sessions_by_child ON sessions (child_id, created_at DESC, id DESC);
       `),
   },
+  {
+    // #32: daily habit totals and reminder settings per child.
+    version: 6,
+    up: (db) =>
+      db.execAsync(`
+        CREATE TABLE habit_days (
+          child_id TEXT NOT NULL REFERENCES children (id) ON DELETE CASCADE,
+          day TEXT NOT NULL CHECK (day GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+          kind TEXT NOT NULL CHECK (kind IN ('outdoor', 'screen_break')),
+          amount INTEGER NOT NULL CHECK (amount >= 0),
+          PRIMARY KEY (child_id, day, kind)
+        );
+        CREATE TABLE reminders (
+          child_id TEXT NOT NULL REFERENCES children (id) ON DELETE CASCADE,
+          kind TEXT NOT NULL CHECK (kind IN ('outdoor', 'screen_break', 'rescan')),
+          enabled INTEGER NOT NULL CHECK (enabled IN (0, 1)),
+          time_of_day TEXT CHECK (time_of_day IS NULL OR time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'),
+          interval_days INTEGER CHECK (interval_days IS NULL OR interval_days BETWEEN 1 AND 365),
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (child_id, kind)
+        );
+      `),
+  },
 ];
 
 type MigrationDatabase = {
