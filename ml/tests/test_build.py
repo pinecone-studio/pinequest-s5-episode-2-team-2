@@ -79,3 +79,12 @@ def test_one_command_writes_manifest_and_copies_crops(tmp_path):
     rows = [json.loads(line) for line in (out / "manifest.jsonl").read_text().splitlines()]
     assert len(rows) == 6
     assert all((out / r["crop"]).is_file() for r in rows)
+
+
+def test_reads_heuristic_from_a_real_label_studio_export():
+    # The JSON export lists predictions as ids and nests the prediction in the annotation.
+    exported = task("P001", 0, good())
+    exported["annotations"][0]["prediction"] = exported.pop("predictions")[0]
+    exported["predictions"] = [1]
+    rows, _ = build([exported], seed=0)
+    assert rows[0]["heuristic"]["iris_radius"] == pytest.approx(8)

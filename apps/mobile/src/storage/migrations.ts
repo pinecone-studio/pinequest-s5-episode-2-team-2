@@ -67,8 +67,30 @@ export const migrations: readonly Migration[] = [
       `),
   },
   {
-    // #32: daily habit totals and reminder settings per child.
     version: 5,
+    up: (db) =>
+      db.execAsync(`
+        CREATE TABLE sessions (
+          id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+          child_id TEXT REFERENCES children (id) ON DELETE CASCADE,
+          created_at TEXT NOT NULL,
+          outcome TEXT NOT NULL CHECK (outcome IN
+            ('REFER', 'RETAKE', 'NOT_ASSESSED', 'NO_VISIBLE_SIGN')),
+          reason_codes TEXT NOT NULL CHECK (json_valid(reason_codes) AND json_type(reason_codes) = 'array'),
+          frames_total INTEGER NOT NULL CHECK (typeof(frames_total) = 'integer' AND frames_total >= 0),
+          frames_used INTEGER NOT NULL CHECK (typeof(frames_used) = 'integer' AND frames_used BETWEEN 0 AND frames_total),
+          asymmetry_score REAL CHECK (asymmetry_score IS NULL OR asymmetry_score >= 0),
+          spread REAL CHECK (spread IS NULL OR spread >= 0),
+          model_version TEXT NOT NULL CHECK (length(trim(model_version)) > 0),
+          policy_version TEXT NOT NULL CHECK (length(trim(policy_version)) > 0),
+          duration_ms REAL NOT NULL CHECK (duration_ms >= 0)
+        );
+        CREATE INDEX sessions_by_child ON sessions (child_id, created_at DESC, id DESC);
+      `),
+  },
+  {
+    // #32: daily habit totals and reminder settings per child.
+    version: 6,
     up: (db) =>
       db.execAsync(`
         CREATE TABLE habit_days (

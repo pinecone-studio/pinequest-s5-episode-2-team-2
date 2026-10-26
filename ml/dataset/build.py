@@ -53,6 +53,21 @@ def latest_annotation(task: dict) -> dict | None:
     return max(done, key=lambda a: a.get("updated_at", ""), default=None)
 
 
+def heuristic_result(task: dict, annotation: dict) -> list[dict] | None:
+    """The pre-label the annotation started from.
+
+    A Label Studio JSON export lists task predictions as ids and nests the prediction under
+    the annotation; the import file (tasks.json) has full prediction objects on the task.
+    """
+    prediction = annotation.get("prediction")
+    if isinstance(prediction, dict) and "result" in prediction:
+        return prediction["result"]
+    for prediction in task.get("predictions", []):
+        if isinstance(prediction, dict) and "result" in prediction:
+            return prediction["result"]
+    return None
+
+
 def split_people(people: set[str], seed: int) -> dict[str, str]:
     """Shuffles people with a fixed seed and assigns whole people to splits by SPLITS."""
     order = sorted(people)
@@ -81,8 +96,9 @@ def build(tasks: list[dict], seed: int) -> tuple[list[dict], dict[str, int]]:
             continue
         data = task["data"]
         row = {"crop": data["crop"], **label, **{k: data.get(k) for k in META}}
-        if task.get("predictions"):
-            row["heuristic"] = to_label(read_points(task["predictions"][0]["result"])[0])
+        prediction = heuristic_result(task, annotation)
+        if prediction is not None:
+            row["heuristic"] = to_label(read_points(prediction)[0])
         # A double-annotated crop keeps the last export's label.
         rows[data["crop"]] = row
     assignment = split_people({r["person_id"] for r in rows.values()}, seed)
