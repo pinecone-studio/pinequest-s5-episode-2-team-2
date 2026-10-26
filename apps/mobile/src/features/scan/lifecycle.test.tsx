@@ -13,6 +13,10 @@ const mockSettings = jest.fn();
 const mockRequestPermission = jest.fn();
 const mockAnalyze = jest.fn<ScanResult | Promise<ScanResult>, unknown[]>();
 let mockFocused = true;
+let mockModelsReady = true;
+jest.mock("../vision/useLandmarks", () => ({
+  useLandmarks: () => ({ output: {}, ready: mockModelsReady }),
+}));
 const mockPermission = {
   hasPermission: true,
   canRequestPermission: false,
@@ -96,6 +100,7 @@ beforeEach(async () => {
   jest.useFakeTimers({ doNotFake: ["nextTick", "setImmediate", "queueMicrotask"] });
   jest.resetAllMocks();
   mockFocused = true;
+  mockModelsReady = true;
   mockPermission.hasPermission = true;
   mockPermission.canRequestPermission = false;
   mockAnalyze.mockImplementation(jest.requireActual("@app/core").mockScanResult);
@@ -288,4 +293,14 @@ test("a delayed JS tick completes once using elapsed time", async () => {
   clock.mockRestore();
   expect(mockAnalyze).toHaveBeenCalledTimes(1);
   expect(mockPush).toHaveBeenCalledTimes(1);
+});
+
+test("a started preview waits until the landmark models are ready", async () => {
+  mockModelsReady = false;
+  await act(async () => renderer.update(screen()));
+  await act(async () => camera().props.onStarted());
+  expect(button("Бэлтгэх").props.disabled).toBe(true);
+  mockModelsReady = true;
+  await act(async () => renderer.update(screen()));
+  expect(button("Бэлтгэх").props.disabled).toBe(false);
 });
