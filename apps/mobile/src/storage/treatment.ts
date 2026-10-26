@@ -110,3 +110,22 @@ export function logsForDay(
     start.toISOString(),
   );
 }
+
+/** Periods overlapping [from, to) (including a running one), oldest first. */
+export function logsBetween(
+  db: TreatmentDb,
+  childId: string,
+  kind: TreatmentKind,
+  from: Date,
+  to: Date,
+): Promise<TreatmentLog[]> {
+  return db.getAllAsync<TreatmentLog>(
+    `SELECT ${logColumns} FROM treatment_logs
+     WHERE child_id = ? AND kind = ? AND started_at < ? AND (ended_at IS NULL OR ended_at > ?)
+     ORDER BY started_at`,
+    childId,
+    kind,
+    to.toISOString(),
+    from.toISOString(),
+  );
+}
