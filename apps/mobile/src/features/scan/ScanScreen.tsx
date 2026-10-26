@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { ActivityIndicator, AppState, Linking, StyleSheet, View } from "react-native";
 import { router, useFocusEffect, useIsFocused } from "expo-router";
 import { useCameraDevice, useCameraPermission } from "react-native-vision-camera";
-import { mockScanResult } from "@app/core";
+import { useSQLiteContext } from "expo-sqlite";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { theme } from "../../theme";
-import type { LandmarkFrame } from "../vision/facePipeline";
-import { emptyRecording, finishScan, recordFrame } from "./recorder";
 import { useScanResult } from "./ScanResultContext";
 import { ScanCamera } from "./ScanCamera";
-import { SCAN_POLICY, SCAN_POLICY_VERSION } from "./scanPolicy";
 import { initialScanState, SCAN_DURATION_MS, scanReducer, torchEnabled } from "./state";
+import { useActiveChildId } from "../children/useActiveChildId";
+import type { LandmarkFrame } from "../vision/facePipeline";
+import { saveSession } from "../../storage/sessions";
+import { emptyRecording, finishScan, recordFrame } from "./recorder";
+import type { ScanMeta, ScanRecording } from "./recorder";
+import { SCAN_POLICY, SCAN_POLICY_VERSION } from "./scanPolicy";
+import { resultCopy } from "./resultCopy";
 
 export default function ScanScreen() {
   const [state, dispatch] = useReducer(scanReducer, initialScanState);
@@ -23,16 +27,58 @@ export default function ScanScreen() {
   const { hasPermission, canRequestPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice("back");
   const { setResult, setEyes } = useScanResult();
-  // Frames of the running scan; a ref so recording does not re-render the screen.
-  const recording = useRef(emptyRecording());
-  const scanning = useRef(false);
-  scanning.current = state.status === "scanning";
-  const onFrame = useCallback((frame: LandmarkFrame) => {
-    if (scanning.current) recording.current = recordFrame(recording.current, frame);
-  }, []);
+  const db = useSQLiteContext();
+  const childId = useActiveChildId();
+  const scan = useRef<{
+    recording: ScanRecording;
+    meta: ScanMeta;
+    endsAtMs: number;
+  } | null>(null);
   const active = focused && appState === "active";
   const showCamera =
     active && hasPermission && !!device && ["idle", "aligning", "scanning"].includes(state.status);
+
+  useLayoutEffect(() => {
+    if (
+      !active ||
+      !hasPermission ||
+      !device ||
+      !["scanning", "processing"].includes(state.status)
+    ) {
+      scan.current = null;
+    }
+  }, [active, hasPermission, device?.id, state.status]);
+  useLayoutEffect(
+    () => () => {
+      scan.current = null;
+    },
+    [],
+  );
+
+  const record = useCallback((frame: LandmarkFrame) => {
+    const current = scan.current;
+    if (current && performance.now() < current.endsAtMs) {
+      current.recording = recordFrame(current.recording, frame);
+    }
+  }, []);
+
+  function beginScan() {
+    if (scan.current || childId === undefined || !active || !ready) return;
+    const nowMs = performance.now();
+    scan.current = {
+      recording: emptyRecording(),
+      endsAtMs: nowMs + SCAN_DURATION_MS,
+      meta: {
+        id: `scan-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+        createdAt: new Date().toISOString(),
+        childId,
+        durationMs: SCAN_DURATION_MS,
+        modelVersion: "keypoints-local-unversioned",
+        policyVersion: SCAN_POLICY_VERSION,
+      },
+    };
+    dispatch({ type: "START", nowMs });
+  }
 
   useFocusEffect(
     useCallback(
@@ -67,47 +113,26 @@ export default function ScanScreen() {
   }, [state.status]);
 
   useEffect(() => {
-    if (state.status !== "processing" || !active) return;
+    const current = scan.current;
+    if (state.status !== "processing" || !active || !current) return;
     let cancelled = false;
-    const frames = recording.current;
     Promise.resolve()
       .then(async () => {
-        if (!SCAN_POLICY) {
-          return {
-            result: await mockScanResult("RETAKE", {
-              id: `mock-${Date.now()}`,
-              createdAt: new Date().toISOString(),
-              childId: null,
-              durationMs: SCAN_DURATION_MS,
-            }),
-            eyes: null,
-          };
+        if (cancelled || scan.current !== current) return;
+        const { result, eyes } = finishScan(current.recording, current.meta, SCAN_POLICY);
+        await saveSession(db, result);
+        if (!cancelled && scan.current === current) {
+          setEyes(eyes);
+          dispatch({ type: "RESOLVE", result });
         }
-        return finishScan(
-          frames,
-          {
-            id: `scan-${Date.now()}`,
-            createdAt: new Date(Date.now() - SCAN_DURATION_MS).toISOString(),
-            childId: null,
-            durationMs: SCAN_DURATION_MS,
-            modelVersion: "keypoints",
-            policyVersion: SCAN_POLICY_VERSION,
-          },
-          SCAN_POLICY,
-        );
-      })
-      .then(({ result, eyes }) => {
-        if (cancelled) return;
-        setEyes(eyes);
-        dispatch({ type: "RESOLVE", result });
       })
       .catch(() => {
-        if (!cancelled) dispatch({ type: "FAIL" });
+        if (!cancelled && scan.current === current) dispatch({ type: "FAIL" });
       });
     return () => {
       cancelled = true;
     };
-  }, [state.status, active, setEyes]);
+  }, [state.status, active, db, setEyes]);
 
   useEffect(() => {
     if (state.status !== "done" || !active) return;
@@ -139,9 +164,7 @@ export default function ScanScreen() {
       <Text variant="title" accessibilityRole="header">
         TODO(copy): Нүдний шалгалт
       </Text>
-      <Text>
-        TODO(copy): Туршилтын горим. Нүүрний байрлал илрүүлнэ. Үр дүн нь жишээ. Зураг хадгалахгүй.
-      </Text>
+      <Text>{resultCopy.demo}</Text>
       {!hasPermission ? (
         <Card>
           <Text>TODO(copy): Камер ашиглах зөвшөөрөл шаардлагатай.</Text>
@@ -169,8 +192,8 @@ export default function ScanScreen() {
               <ScanCamera
                 key={device.id}
                 device={device}
+                onFrame={record}
                 torchOn={torchEnabled(state, active, device.hasTorch)}
-                onFrame={onFrame}
                 onReady={() => setReady(true)}
                 onFailure={() => {
                   setReady(false);
@@ -203,11 +226,8 @@ export default function ScanScreen() {
               <Text>TODO(copy): Нүүрээ хүрээнд байрлуулаад камераа хөдөлгөөнгүй барина уу.</Text>
               <Button
                 label="TODO(copy): 3 секунд шалгах"
-                disabled={!active || !ready || !device.hasTorch}
-                onPress={() => {
-                  recording.current = emptyRecording();
-                  dispatch({ type: "START", nowMs: performance.now() });
-                }}
+                disabled={!active || !ready || !device.hasTorch || childId === undefined}
+                onPress={beginScan}
               />
             </>
           )}
@@ -226,7 +246,9 @@ export default function ScanScreen() {
           {state.status === "processing" && (
             <>
               <ActivityIndicator />
-              <Text accessibilityLiveRegion="polite">TODO(copy): Жишээ үр дүн бэлтгэж байна.</Text>
+              <Text accessibilityLiveRegion="polite">
+                TODO(copy): Үр дүнг боловсруулж, хадгалж байна.
+              </Text>
             </>
           )}
           {state.status === "failed" && (

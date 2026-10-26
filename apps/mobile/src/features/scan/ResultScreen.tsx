@@ -6,6 +6,7 @@ import { EyeDiagramView } from "../eyeView/EyeDiagramView";
 import { SaveResultButton } from "./SaveResultButton";
 import { useScanResult } from "./ScanResultContext";
 import { outcomeCopy, reasonCopy, resultCopy as copy } from "./resultCopy";
+import { SCAN_POLICY_VERSION } from "./scanPolicy";
 
 export default function ResultScreen() {
   const { result, setResult, eyes } = useScanResult();
@@ -28,6 +29,9 @@ export default function ResultScreen() {
         <Text accessibilityRole="header" style={styles.title}>
           {copy.title}
         </Text>
+        {result?.policyVersion === SCAN_POLICY_VERSION && (
+          <Text accessibilityRole="alert">{copy.demo}</Text>
+        )}
         {result && outcome ? (
           <>
             {eyes ? (
@@ -80,7 +84,12 @@ export default function ResultScreen() {
         )}
         <Text style={[styles.body, styles.notice]}>{copy.notice}</Text>
         <Button label={copy.retry} onPress={retry} style={styles.primary} />
-        {result && <SaveResultButton result={result} />}
+        {result &&
+          (result.policyVersion === SCAN_POLICY_VERSION ? (
+            <Text accessibilityLiveRegion="polite">{copy.saved}</Text>
+          ) : (
+            <SaveResultButton result={result} />
+          ))}
       </ScrollView>
     </SafeAreaView>
   );

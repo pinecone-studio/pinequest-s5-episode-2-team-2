@@ -16,7 +16,7 @@ The producer covers face count, landmark eye opening/head pose, measured iris si
 availability. Its existing limits remain `TODO(tune)`; no thresholds are added or changed here.
 Pixel blur/exposure checks and Python parity are not implemented by this adapter; sharpness
 and exposure stay null. `quality.ok` is not a validated screening acceptance result. The scan
-result remains explicitly mock/RETAKE.
+result uses an [explicitly unvalidated demo policy](real-scan-results.md).
 
 Without eye weights, the producer reports `EYE_NOT_FOUND` because measurements are absent.
 Guidance preserves the separate `MODEL_UNAVAILABLE`/`MODEL_ERROR` notice instead of telling

@@ -2,6 +2,8 @@ import type { Outcome, ReasonCode } from "@app/core";
 
 // TODO(copy): Mongolian placeholders; the team must approve the final wording.
 export const resultCopy = {
+  demo: "TODO(copy): Туршилтын үр дүн. Шийдвэрийн босгууд баталгаажаагүй. Эмчийн үзлэгийг орлохгүй. Зураг хадгалахгүй.",
+  saved: "TODO(copy): Үр дүн төхөөрөмжид хадгалагдсан.",
   title: "Шинжилгээний үр дүн",
   empty: "Үр дүн алга. Шалгалт эхлүүлнэ үү.",
   mock: "Жишээ үр дүн. Камерын зурагт шинжилгээ хийгээгүй.",
