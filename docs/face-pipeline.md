@@ -63,8 +63,17 @@ The app was signed with the existing Apple Development identity and matching tea
 provisioning profile. `codesign --verify --strict` passed for the built app. This
 command-line build does not establish a successful Xcode Run on a physical iPhone.
 
-The iPhone later became unavailable. No app installation or successful Xcode Run
-on the device, model loading, live face tracking, 4K still mapping, portrait/preview
+The first session ended after the iPhone became unavailable. After reconnecting,
+Signing & Capabilities was checked in Xcode: automatic signing enabled, the existing
+Personal Team and managed profile selected, and the original bundle identifier.
+The Xcode Run button was clicked with `Uuganaa` selected. After the owner unlocked
+the phone, Xcode reported “Running mobile on Uuganaa”; the installed app connected
+to Metro and loaded onboarding on the physical device. The camera permission
+prompt also appeared. This establishes native build, installation and initial JS
+startup, not the face pipeline acceptance criteria.
+
+Runtime model loading, live face tracking, 4K still mapping, portrait/preview
 alignment, permission recovery, cancel, interruption, background/tab transitions,
-torch behaviour or retry has been verified in this session. Full-pipeline median,
-p95 and sustained analysis rate remain **not measured**. Keep #11 open.
+torch behaviour and retry remain pending. Full-pipeline median, p95 and sustained
+analysis rate remain **not measured**. #11 still requires this evidence even if its
+GitHub state has been closed based on merged implementation PRs.
