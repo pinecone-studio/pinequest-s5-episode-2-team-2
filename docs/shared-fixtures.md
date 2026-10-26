@@ -6,12 +6,12 @@ measured offline would not match what the phone shows. The JSON files in
 `packages/core/fixtures/` hold inputs with the expected outputs, and both test suites read
 them.
 
-| Fixture          | TypeScript                                     | Python                                   | Covers                                               |
-| ---------------- | ---------------------------------------------- | ---------------------------------------- | ---------------------------------------------------- |
-| `geometry.json`  | `geometry.ts` (`geometryFixtures.test.ts`)     | `measure.py` (`test_geometry_parity.py`) | Reflex offset, mirrored asymmetry and its magnitude  |
-| `quality.json`   | `quality.ts`, `pixels.ts` (`fixtures.test.ts`) | `quality.py` (`test_quality.py`)         | Reason codes, head pose, crop sharpness and exposure |
-| `aggregate.json` | `aggregate.ts` (`aggregateFixtures.test.ts`)   | `aggregate.py` (`test_aggregate.py`)     | Median score, spread, rejected-frame reasons         |
-| `policy.json`    | `policy.ts` (`policyFixtures.test.ts`)         | `policy.py` (`test_policy.py`)           | Outcome and reasons, values exactly at the limits    |
+| Fixture          | TypeScript                                            | Python                                   | Covers                                               |
+| ---------------- | ----------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------- |
+| `geometry.json`  | `geometry.ts` (`geometryFixtures.test.ts`)            | `measure.py` (`test_geometry_parity.py`) | Reflex offset, mirrored asymmetry and its magnitude  |
+| `quality.json`   | `quality.ts`, `pixels.ts` (`qualityFixtures.test.ts`) | `quality.py` (`test_quality.py`)         | Reason codes, head pose, crop sharpness and exposure |
+| `aggregate.json` | `aggregate.ts` (`aggregateFixtures.test.ts`)          | `aggregate.py` (`test_aggregate.py`)     | Median score, spread, rejected-frame reasons         |
+| `policy.json`    | `policy.ts` (`policyFixtures.test.ts`)                | `policy.py` (`test_policy.py`)           | Outcome and reasons, values exactly at the limits    |
 
 Tolerances: 1e-9 for geometry, 1e-6 for the other values (the expectations are rounded to six
 decimals). Reason codes and outcomes must match exactly, including order.
