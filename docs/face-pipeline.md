@@ -20,6 +20,10 @@ AsyncRunner; busy frames are dropped, and the interval grows with measured proce
 cost. Start waits for both the preview and the models. The scan result is still explicitly
 a mock; live landmarks alone do not produce an assessment.
 
+Set `EXPO_PUBLIC_MEASUREMENT_DEBUG=1` to draw the keypoint model's iris circle, iris centre and
+reflex for each eye, with per-frame values (centre, radius, reflex offset, confidence, latency
+and the reason when no eyes were measured). Both flags only work in development builds.
+
 | Device          | Full pipeline median / p95 | Sustained rate | 4K point mapping |
 | --------------- | -------------------------- | -------------- | ---------------- |
 | Physical iPhone | Not measured               | Not measured   | Not checked      |
