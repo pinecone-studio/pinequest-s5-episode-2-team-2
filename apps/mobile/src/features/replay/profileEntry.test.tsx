@@ -5,6 +5,7 @@ import ProfileScreen from "../../../app/(tabs)/profile";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
+jest.mock("../children/ChildrenList", () => ({ ChildrenList: "ChildrenList" }));
 jest.mock("../../components/ui", () => ({
   Button: "Button",
   Card: "Card",
