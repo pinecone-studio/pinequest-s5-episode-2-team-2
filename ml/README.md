@@ -45,6 +45,16 @@ same checks and reasons as the app, `docs/quality-checks.md`), or an `error` (`N
 `MULTIPLE_FACES`, `UNREADABLE`). Images are only read, never written or uploaded.
 Keep image folders outside the repo.
 
+### Frames from videos
+
+The tools below read single frames named `<capture>_f<frame>.jpg`. Extract them from the
+capture videos into a folder on the private Drive (writing inside the repo is refused):
+
+```bash
+uv run python -m dataset.frames /path/to/session /drive/frames --step 3 --sheet sheet.csv
+uv run python -m hirschberg.cli /drive/frames > results.jsonl
+```
+
 ### Per-capture summary
 
 `uv run python -m hirschberg.summarize results.jsonl` groups CLI results by capture (frames
