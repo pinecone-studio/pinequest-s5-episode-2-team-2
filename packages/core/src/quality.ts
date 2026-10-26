@@ -1,4 +1,5 @@
 import { mirroredAsymmetry } from "./geometry";
+import type { CropStats } from "./pixels";
 import type {
   EyeMeasure,
   FrameAnalysis,
@@ -17,6 +18,8 @@ export interface QualityInput {
   landmarks: Point[];
   /** [imageLeft, imageRight]; null when the eyes were not measured. */
   eyes: [EyeMeasure, EyeMeasure] | null;
+  /** `cropStats` of the [imageLeft, imageRight] eye crops; omit to skip the pixel checks. */
+  crops?: [CropStats, CropStats] | null;
 }
 
 export interface QualityConfig {
@@ -28,10 +31,18 @@ export interface QualityConfig {
   /** Iris radius as a fraction of the longer frame side: below is too far, above too close. */
   minIrisFraction: number;
   maxIrisFraction: number;
+  /** Laplacian variance of an eye crop below which it counts as blurred. */
+  minSharpness: number;
+  /** Mean eye crop luminance (0..1) below which the frame is too dark. */
+  minExposure: number;
+  /** Mean eye crop luminance above which, or clipped fraction above which, it is overexposed. */
+  maxExposure: number;
+  maxClipped: number;
 }
 
 // TODO(tune): first guesses, to be set from recorded scans. The iris limits correspond to
 // roughly 50 cm and 20 cm on an iPhone main camera; the pose limits allow small head movement.
+// The pixel limits assume 128 px crops in 0..1; the reflex itself clips only a few percent.
 export const DEFAULT_QUALITY_CONFIG: QualityConfig = {
   minEyeOpen: 0.15,
   maxRollDeg: 10,
@@ -39,6 +50,10 @@ export const DEFAULT_QUALITY_CONFIG: QualityConfig = {
   maxPitchDeg: 20,
   minIrisFraction: 0.008,
   maxIrisFraction: 0.02,
+  minSharpness: 0.0005,
+  minExposure: 0.15,
+  maxExposure: 0.85,
+  maxClipped: 0.1,
 };
 
 // Face Landmarker indices: eye corners and lids for both eyes, cheek edges, nose tip, chin.
@@ -88,16 +103,17 @@ export function headPose(lm: Point[]): HeadPose {
   return { yaw, pitch, roll };
 }
 
-/** Quality reasons for one frame. Pixel checks (blur, exposure) are not part of this yet. */
+/** Quality reasons for one frame. The pixel checks run only when `crops` is given. */
 export function assessQuality(
   input: QualityInput,
   config: QualityConfig = DEFAULT_QUALITY_CONFIG,
 ): FrameQuality {
+  const crops = input.crops ?? null;
   const result = (reasons: QualityReason[], pose: HeadPose | null): FrameQuality => ({
     ok: reasons.length === 0,
     reasons,
-    sharpness: null,
-    exposure: null,
+    sharpness: crops && pose ? Math.min(crops[0].sharpness, crops[1].sharpness) : null,
+    exposure: crops && pose ? (crops[0].exposure + crops[1].exposure) / 2 : null,
     headPose: pose,
   });
   if (input.faceCount === 0) return result(["NO_FACE"], null);
@@ -126,6 +142,13 @@ export function assessQuality(
   const iris = (input.eyes[0].irisRadius + input.eyes[1].irisRadius) / 2 / side;
   if (iris < config.minIrisFraction) reasons.push("TOO_FAR");
   if (iris > config.maxIrisFraction) reasons.push("TOO_CLOSE");
+  if (crops) {
+    if (crops.some((c) => c.sharpness < config.minSharpness)) reasons.push("BLUR");
+    if (crops.some((c) => c.exposure < config.minExposure)) reasons.push("TOO_DARK");
+    else if (crops.some((c) => c.exposure > config.maxExposure || c.clipped > config.maxClipped)) {
+      reasons.push("OVEREXPOSED");
+    }
+  }
   if (input.eyes.some((e) => e.reflexOffset === null)) reasons.push("REFLEX_NOT_FOUND");
   return result(reasons, pose);
 }

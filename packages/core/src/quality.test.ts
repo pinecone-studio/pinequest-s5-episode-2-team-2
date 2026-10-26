@@ -1,6 +1,7 @@
 import { mockEyeMeasure } from "./mocks";
 import { analyzeFrame, assessQuality, eyeOpenness, headPose } from "./quality";
 import type { QualityInput } from "./quality";
+import type { CropStats } from "./pixels";
 import type { EyeMeasure, Point } from "./types";
 
 /** A level, frontal face: open eyes, nose centred between the cheeks. */
@@ -111,6 +112,41 @@ describe("assessQuality", () => {
     expect(assessQuality(input({ landmarks: lm, eyes: eyes({ irisRadius: 20 }) })).reasons).toEqual(
       ["HEAD_TURNED", "EYES_CLOSED", "TOO_FAR"],
     );
+  });
+});
+
+describe("assessQuality pixel checks", () => {
+  const crop = (overrides: Partial<CropStats> = {}): CropStats => ({
+    sharpness: 0.01,
+    exposure: 0.4,
+    clipped: 0.02,
+    ...overrides,
+  });
+  const withCrops = (a: CropStats, b: CropStats = crop()) => input({ crops: [a, b] });
+
+  it("passes sharp, well-lit crops and reports their statistics", () => {
+    const q = assessQuality(withCrops(crop({ sharpness: 0.02 }), crop({ exposure: 0.6 })));
+    expect(q).toMatchObject({ ok: true, reasons: [], sharpness: 0.01 });
+    expect(q.exposure).toBeCloseTo(0.5);
+  });
+
+  it("flags a blurred crop", () => {
+    expect(assessQuality(withCrops(crop({ sharpness: 0.0001 }))).reasons).toEqual(["BLUR"]);
+  });
+
+  it("flags a dark or overexposed crop", () => {
+    expect(assessQuality(withCrops(crop({ exposure: 0.05 }))).reasons).toEqual(["TOO_DARK"]);
+    expect(assessQuality(withCrops(crop({ exposure: 0.95 }))).reasons).toEqual(["OVEREXPOSED"]);
+    expect(assessQuality(withCrops(crop({ clipped: 0.3 }))).reasons).toEqual(["OVEREXPOSED"]);
+  });
+
+  it("skips the pixel checks without crops or without a face", () => {
+    expect(assessQuality(input({ crops: null }))).toMatchObject({
+      sharpness: null,
+      exposure: null,
+    });
+    const q = assessQuality(input({ faceCount: 0, landmarks: [], crops: [crop(), crop()] }));
+    expect(q).toMatchObject({ reasons: ["NO_FACE"], sharpness: null, exposure: null });
   });
 });
 
