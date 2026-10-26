@@ -36,6 +36,7 @@ export function ScanCamera({
     setFrame(result);
     if (__DEV__ && process.env.EXPO_PUBLIC_LANDMARK_DEBUG === "1") {
       console.info("face-frame", {
+        timestampMs: result.timestampMs,
         latencyMs: result.latencyMs,
         width: result.frameSize.width,
         height: result.frameSize.height,

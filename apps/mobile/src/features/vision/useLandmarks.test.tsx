@@ -10,6 +10,7 @@ const mockResult = jest.fn(),
 const mockResize = jest.fn();
 const mockRun = jest.fn();
 const mockInfer = jest.fn();
+const mockSchedule = jest.fn();
 let mockPlatform = "ios";
 jest.mock("react-native", () => ({
   Platform: {
@@ -45,7 +46,8 @@ jest.mock("react-native-worklets", () => ({
       },
     };
   },
-  scheduleOnRN: (callback: (...args: unknown[]) => void, ...args: unknown[]) => callback(...args),
+  scheduleOnRN: (callback: (...args: unknown[]) => void, ...args: unknown[]) =>
+    mockSchedule(callback, ...args),
 }));
 
 function frame(timestamp = 1) {
@@ -65,6 +67,9 @@ function Harness() {
 let renderer: ReactTestRenderer;
 beforeEach(async () => {
   jest.resetAllMocks();
+  mockSchedule.mockImplementation((callback: (...args: unknown[]) => void, ...args: unknown[]) =>
+    callback(...args),
+  );
   mockPlatform = "ios";
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   mockResize.mockReturnValue({
@@ -151,4 +156,57 @@ test("a queued frame is disposed without analysis or a stale result after unmoun
   expect(queued.dispose).toHaveBeenCalledTimes(1);
   expect(mockInfer).not.toHaveBeenCalled();
   expect(mockResult).not.toHaveBeenCalled();
+});
+
+test("RN dispatch bounds the handoff queue before starting a worker", () => {
+  const queued: (() => void)[] = [];
+  mockSchedule.mockImplementation((callback: (...args: unknown[]) => void, ...args: unknown[]) =>
+    queued.push(() => callback(...args)),
+  );
+  const accepted = frame(1),
+    dropped = frame(2);
+  handle(accepted);
+  handle(dropped);
+  expect(mockRun).not.toHaveBeenCalled();
+  expect(queued).toHaveLength(1);
+  expect(accepted.dispose).not.toHaveBeenCalled();
+  expect(dropped.dispose).toHaveBeenCalledTimes(1);
+  queued.shift()!();
+  expect(mockRun).toHaveBeenCalledTimes(1);
+  expect(accepted.dispose).toHaveBeenCalledTimes(1);
+  queued.shift()!();
+  expect(mockResult).toHaveBeenCalledTimes(1);
+  handle(frame(3));
+  expect(queued).toHaveLength(1);
+  queued.shift()!();
+  queued.shift()!();
+  expect(mockRun).toHaveBeenCalledTimes(2);
+});
+
+test("unmount before RN dispatch releases the native frame without starting inference", async () => {
+  let dispatch!: () => void;
+  mockSchedule.mockImplementationOnce(
+    (callback: (...args: unknown[]) => void, ...args: unknown[]) => {
+      dispatch = () => callback(...args);
+    },
+  );
+  const queued = frame();
+  handle(queued);
+  await act(async () => renderer.unmount());
+  dispatch();
+  expect(queued.dispose).toHaveBeenCalledTimes(1);
+  expect(mockRun).not.toHaveBeenCalled();
+  expect(mockResult).not.toHaveBeenCalled();
+});
+
+test("failed RN dispatch releases the frame and allows another attempt", () => {
+  mockSchedule.mockImplementationOnce(() => {
+    throw new Error("RN dispatch failed");
+  });
+  const rejected = frame(1);
+  handle(rejected);
+  expect(rejected.dispose).toHaveBeenCalledTimes(1);
+  expect(mockError).toHaveBeenCalledTimes(1);
+  handle(frame(2));
+  expect(mockRun).toHaveBeenCalledTimes(1);
 });
