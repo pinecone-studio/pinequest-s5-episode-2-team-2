@@ -45,9 +45,12 @@ export interface HeadPose {
 export interface FrameQuality {
   ok: boolean;
   reasons: QualityReason[];
-  sharpness: number;
-  exposure: number;
-  headPose: HeadPose;
+  /** Null until measured from the eye crop pixels. */
+  sharpness: number | null;
+  /** Null until measured from the eye crop pixels. */
+  exposure: number | null;
+  /** Null without a face. */
+  headPose: HeadPose | null;
 }
 
 export interface FrameAnalysis {
