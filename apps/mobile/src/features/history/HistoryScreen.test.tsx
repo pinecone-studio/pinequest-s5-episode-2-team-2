@@ -76,10 +76,25 @@ test("lists sessions by day and opens one", async () => {
   expect(text()).toContain("2026.10.25");
   expect(text()).toContain(outcomeCopy.REFER.title);
   expect(text()).toContain(progressCopy.notice);
-  const rows = nodes("Pressable");
+  const rows = nodes("Pressable").filter((n) => n.props.accessibilityRole === "button");
   expect(rows).toHaveLength(2);
   await act(async () => rows[0]!.props.onPress());
   expect(mockPush).toHaveBeenCalledWith({ pathname: "/session/[id]", params: { id: "b" } });
+});
+
+test("filters the list by outcome", async () => {
+  mockList.mockResolvedValue([
+    mockScanResult("REFER", { id: "b", createdAt: new Date(2026, 9, 26, 14, 5).toISOString() }),
+    mockScanResult("RETAKE", { id: "a", createdAt: new Date(2026, 9, 25, 9, 0).toISOString() }),
+  ]);
+  await render();
+  const tab = nodes("Pressable").find(
+    (n) => n.props.accessibilityLabel === `${outcomeCopy.RETAKE.title}: 1`,
+  );
+  await act(async () => tab!.props.onPress());
+  const rows = nodes("Pressable").filter((n) => n.props.accessibilityRole === "button");
+  expect(rows).toHaveLength(1);
+  expect(text()).not.toContain("2026.10.26");
 });
 
 test("offers a retry when loading fails", async () => {

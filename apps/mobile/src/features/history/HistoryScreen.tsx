@@ -1,4 +1,4 @@
-import type { ScanResult } from "@app/core";
+import type { Outcome, ScanResult } from "@app/core";
 import { router, useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useState } from "react";
@@ -11,11 +11,13 @@ import { ProgressChart } from "../progress/ProgressChart";
 import { outcomeCopy } from "../scan/resultCopy";
 import { historyCopy as copy } from "./copy";
 import { formatScanTime, groupByDay } from "./format";
+import { filterSessions, OutcomeFilter } from "./OutcomeFilter";
 
 export default function HistoryScreen() {
   const db = useSQLiteContext();
   const childId = useActiveChildId();
   const [sessions, setSessions] = useState<ScanResult[] | null>(null);
+  const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(() => {
@@ -57,10 +59,11 @@ export default function HistoryScreen() {
           <Card>
             <ProgressChart sessions={sessions} />
           </Card>
-          <Text variant="caption" style={styles.muted}>
-            {copy.scans(sessions.length)}
-          </Text>
-          {groupByDay(sessions).map((section) => (
+          <OutcomeFilter sessions={sessions} selected={outcome} onSelect={setOutcome} />
+          {filterSessions(sessions, outcome).length === 0 && (
+            <Text style={styles.muted}>{copy.noneWithOutcome}</Text>
+          )}
+          {groupByDay(filterSessions(sessions, outcome)).map((section) => (
             <View key={section.day} style={styles.section}>
               <Text variant="caption" accessibilityRole="header" style={styles.muted}>
                 {section.day.replaceAll("-", ".")}
