@@ -1,0 +1,70 @@
+{
+  "offsets": [
+    {
+      "name": "centred reflex",
+      "irisCenter": [100, 100],
+      "irisRadius": 20,
+      "reflex": [100, 100],
+      "expected": [0, 0]
+    },
+    {
+      "name": "temporal shift",
+      "irisCenter": [100, 100],
+      "irisRadius": 20,
+      "reflex": [110, 95],
+      "expected": [0.5, -0.25]
+    },
+    {
+      "name": "sub-pixel",
+      "irisCenter": [1720.25, 1080.5],
+      "irisRadius": 47.75,
+      "reflex": [1722.1, 1079.9],
+      "expected": [0.038743455, -0.012565445]
+    },
+    {
+      "name": "outside the iris",
+      "irisCenter": [0, 0],
+      "irisRadius": 10,
+      "reflex": [-15, 12],
+      "expected": [-1.5, 1.2]
+    }
+  ],
+  "asymmetry": [
+    {
+      "name": "symmetric nasal",
+      "imageLeft": [0.1, 0],
+      "imageRight": [-0.1, 0],
+      "expected": {
+        "asymmetry": [0, 0],
+        "magnitude": 0
+      }
+    },
+    {
+      "name": "same direction",
+      "imageLeft": [0.1, 0],
+      "imageRight": [0.1, 0],
+      "expected": {
+        "asymmetry": [0.2, 0],
+        "magnitude": 0.2
+      }
+    },
+    {
+      "name": "vertical difference",
+      "imageLeft": [0, 0.1],
+      "imageRight": [0, -0.05],
+      "expected": {
+        "asymmetry": [0, 0.15],
+        "magnitude": 0.15
+      }
+    },
+    {
+      "name": "mixed",
+      "imageLeft": [0.12, -0.03],
+      "imageRight": [0.04, 0.02],
+      "expected": {
+        "asymmetry": [0.16, -0.05],
+        "magnitude": 0.167630546
+      }
+    }
+  ]
+}

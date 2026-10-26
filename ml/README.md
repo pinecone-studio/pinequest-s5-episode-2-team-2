@@ -44,6 +44,12 @@ Prints one JSON line per `.jpg`, `.jpeg` or `.png` image: per-eye `iris_center`,
 (`NO_FACE`, `MULTIPLE_FACES`, `UNREADABLE`). Images are only read, never written or uploaded.
 Keep image folders outside the repo.
 
+### Per-capture summary
+
+`uv run python -m hirschberg.summarize results.jsonl` groups CLI results by capture (frames
+named `<capture>_f<frame>`) and prints the frames used, median asymmetry and spread per
+capture, the same summary the app computes per scan.
+
 ### Calibration analysis
 
 For `C` captures (#8), take frames from each video named `<capture>_f<frame>.jpg`, run the CLI
@@ -73,6 +79,15 @@ uv run python -m dataset.prelabel /path/to/session /path/to/batch --sheet sheet.
 ```
 
 The output folder (`crops/` and `tasks.json`) belongs on the private Drive, never in the repo.
+
+Before pre-labeling a session, check the data sheet exported as CSV (#29). It lists file
+names that break the naming scheme or disagree with their row, rows without consent, `D` scans
+of children, duplicates, and the scans each person still needs from the capture protocol. It
+prints person ids only:
+
+```bash
+uv run python -m dataset.sheet_check sheet.csv
+```
 The labeling config is `dataset/labelstudio.xml`; setup and labeling rules are in
 `docs/annotation-guide.md`.
 
@@ -102,6 +117,14 @@ two splits. Crops flagged `unclear` or missing the iris points are left out:
 
 ```bash
 uv run python -m dataset.build /path/to/batch export_*.json --out data/keypoints
+```
+
+To check the double-annotated crops (#34), pass the same exports to `dataset.agreement`. It
+reports iris centre, radius and reflex differences between two annotators in iris radii, and
+how often they agree on a visible reflex and on the `unclear` flag:
+
+```bash
+uv run python -m dataset.agreement export_*.json
 ```
 
 ```json

@@ -32,3 +32,52 @@ Pending physical-device validation: compare mapped points on an approved 4K stil
 portrait rotation and eye positions, record per-frame latency and sustained rate on a real
 iPhone, and recheck interruption/torch behaviour. Synthetic tests and a JS bundle cannot
 establish those results. Keep #11 open until these checks pass.
+
+## Mac verification — 2026-10-26
+
+Fresh main checkout `77bc97b`, macOS arm64, Node 22.23.4, Python 3.11.17 in a new
+root `.venv`, CocoaPods 1.16.2 and Xcode 27.1 (`27A9275`). The connected device was
+an iPhone 12 Pro Max (`iPhone13,4`), iOS 27.0.1 (`24A446`), paired over USB with
+Developer Mode enabled. These details identify the test environment, not a passed
+physical-device test.
+
+`npm ci`, typecheck, 189 JS tests (145 mobile / 44 core), three Python model-bundle
+tests and the iOS Metro/Hermes export passed. The new `.venv` exposed a lint setup
+bug: ESLint scanned pip's vendored browser worker and reported two `self` errors.
+Ignoring Python environment directories fixes that failure; lint and format checks
+then passed. No installed dependencies or application code were changed for this fix.
+
+`npm run mobile:ios` prepared the MediaPipe models, generated the native project
+and installed the pods. The existing development Team and automatic signing were
+set only in the ignored generated project; the bundle identifier remains
+`studio.pinecone.pinequest.team2`.
+
+Xcode's Run action was invoked with the `mobile` scheme and physical iPhone
+selected. It stopped before compilation with “Download Xcode support for Metal
+Toolchain?”. Installing the official Metal Toolchain (`27A266a`) resolved that
+missing-component error. The subsequent generic iOS arm64 Debug build passed:
+
+```sh
+xcodebuild -workspace apps/mobile/ios/mobile.xcworkspace -scheme mobile \
+  -configuration Debug -destination "generic/platform=iOS" \
+  -allowProvisioningUpdates build
+```
+
+The app was signed with the existing Apple Development identity and matching team
+provisioning profile. `codesign --verify --strict` passed for the built app. This
+command-line build does not establish a successful Xcode Run on a physical iPhone.
+
+The first session ended after the iPhone became unavailable. After reconnecting,
+Signing & Capabilities was checked in Xcode: automatic signing enabled, the existing
+Personal Team and managed profile selected, and the original bundle identifier.
+The Xcode Run button was clicked with `Uuganaa` selected. After the owner unlocked
+the phone, Xcode reported “Running mobile on Uuganaa”; the installed app connected
+to Metro and loaded onboarding on the physical device. The camera permission
+prompt also appeared. This establishes native build, installation and initial JS
+startup, not the face pipeline acceptance criteria.
+
+Runtime model loading, live face tracking, 4K still mapping, portrait/preview
+alignment, permission recovery, cancel, interruption, background/tab transitions,
+torch behaviour and retry remain pending. Full-pipeline median, p95 and sustained
+analysis rate remain **not measured**. #11 still requires this evidence even if its
+GitHub state has been closed based on merged implementation PRs.
