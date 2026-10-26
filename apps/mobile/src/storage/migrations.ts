@@ -16,6 +16,18 @@ export const migrations: readonly Migration[] = [
         INSERT INTO app_metadata (key, value) VALUES ('initialized', '1');
       `),
   },
+  {
+    // #30: one row holding the consent version the parent accepted.
+    version: 2,
+    up: (db) =>
+      db.execAsync(`
+        CREATE TABLE consent (
+          id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
+          version TEXT NOT NULL,
+          accepted_at TEXT NOT NULL
+        );
+      `),
+  },
 ];
 
 type MigrationDatabase = {
