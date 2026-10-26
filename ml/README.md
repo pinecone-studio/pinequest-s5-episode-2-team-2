@@ -51,6 +51,15 @@ Keep image folders outside the repo.
 named `<capture>_f<frame>`) and prints the frames used, median asymmetry and spread per
 capture, the same summary the app computes per scan.
 
+### Detection evaluation
+
+`uv run python -m hirschberg.evaluate results.jsonl` uses the frames of `N` and `D` captures:
+each capture is summarized like a scan, `D` (intentional deviation by adults) counts as
+positive and `N` as negative. It prints the AUC, sensitivity and specificity at every
+candidate threshold and the threshold with the highest Youden index, with 95% intervals that
+resample whole people. Use it to choose `referAsymmetry` with numbers behind it; the results
+describe the measurement on adults, not clinical accuracy.
+
 ### Calibration analysis
 
 For `C` captures (#8), take frames from each video named `<capture>_f<frame>.jpg`, run the CLI
