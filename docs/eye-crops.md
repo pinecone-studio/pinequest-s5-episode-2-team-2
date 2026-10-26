@@ -16,3 +16,9 @@ Reflex visibility is not presented as a calibrated iris confidence.
 The released trained `keypoints.tflite` is not available in this checkout. Model weights,
 real eye data, physical-device colour/coordinate checks and latency measurements remain
 required before this work can be called validated. No weights or images belong in git.
+
+For device testing, copy the released model into the app's private Documents container and
+set `EXPO_PUBLIC_KEYPOINT_MODEL_URI` to its `file://` URI before starting Metro. Remote
+model URLs are not accepted by this developer hook. It validates the tensor contract
+before publishing the model. Without weights, frame metadata reports `MODEL_UNAVAILABLE`;
+the face preview remains usable and the existing scan result stays explicitly a mock.

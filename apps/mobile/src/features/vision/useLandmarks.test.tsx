@@ -95,6 +95,8 @@ test("converts seconds to milliseconds, releases buffers and throttles subsequen
   expect(report.timestampMs).toBe(1000);
   expect(report.frameSize).toEqual({ width: 3840, height: 2160 });
   expect(Object.keys(report).sort()).toEqual([
+    "eyeFailure",
+    "eyes",
     "faceCount",
     "frameSize",
     "landmarks",

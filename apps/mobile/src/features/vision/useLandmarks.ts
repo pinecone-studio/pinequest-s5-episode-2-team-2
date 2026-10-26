@@ -8,11 +8,16 @@ import detectorAsset from "../../../assets/models/face_detector.tflite";
 import meshAsset from "../../../assets/models/face_landmarks_detector.tflite";
 import { inferLandmarks } from "./facePipeline";
 import type { LandmarkFrame } from "./facePipeline";
+import { analyzeEyes } from "./eyeFrame";
+import { useEyeModel } from "./useEyeModel";
 
 const resolution = { width: 3840, height: 2160 };
 
 export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError: () => void) {
   const timestampScale = Platform.OS === "android" ? 1 / 1_000_000 : 1000;
+  const { model: eyeModel, error: eyeModelError } = useEyeModel(
+    process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI,
+  );
   const detector = useTensorflowModel(detectorAsset, []);
   const mesh = useTensorflowModel(meshAsset, []);
   const { resizer, error } = useResizer({
@@ -84,12 +89,16 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
                 frame.width,
                 frame.height,
               );
+              const eyeResult = eyeModelError
+                ? { eyes: null, eyeFailure: "MODEL_ERROR" as const }
+                : analyzeEyes(frame, result.landmarks, eyeModel);
               const latencyMs = performance.now() - started;
               // Back off with measured processing cost rather than building a queue of stale frames.
               const interval = Math.max(100, latencyMs * 2);
               timing.setBlocking({ next: timestampMs + interval, interval });
               scheduleOnRN(report, {
                 ...result,
+                ...eyeResult,
                 timestampMs,
                 latencyMs,
                 frameSize: { width: frame.width, height: frame.height },
