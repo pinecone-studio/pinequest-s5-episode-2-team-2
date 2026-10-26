@@ -44,6 +44,21 @@ Prints one JSON line per `.jpg`, `.jpeg` or `.png` image: per-eye `iris_center`,
 (`NO_FACE`, `MULTIPLE_FACES`, `UNREADABLE`). Images are only read, never written or uploaded.
 Keep image folders outside the repo.
 
+### Calibration analysis
+
+For `C` captures (#8), take frames from each video named `<capture>_f<frame>.jpg`, run the CLI
+on them and pass the output to the analysis:
+
+```bash
+uv run python -m hirschberg.cli path/to/frames > calibration.jsonl
+uv run python -m hirschberg.calibration calibration.jsonl
+```
+
+It prints a Markdown report: reflex shift per degree of gaze with a 95% interval (resampling
+people), repeatability across repeats, the smallest reliable change in degrees and prism
+dioptres, the frame failure rate, and the mirrored asymmetry per angle, which should stay near
+zero because both eyes turn together.
+
 ## dataset
 
 Pre-labeling for Label Studio (#6). `dataset.prelabel` reads captures named as in
