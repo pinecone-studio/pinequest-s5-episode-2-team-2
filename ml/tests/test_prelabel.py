@@ -46,7 +46,10 @@ def test_task_has_keypoints_in_crop_percent():
     assert points["iris_center"]["x"] == pytest.approx(50) and points["iris_center"]["y"] == 50
     assert points["iris_edge"]["x"] == pytest.approx(70)
     assert points["reflex"]["x"] == pytest.approx(56) and points["reflex"]["y"] == 46
-    assert task["data"] == {"image": "/img.png", "person_id": "P007"}
+    assert task["data"]["image"] == "/img.png" and task["data"]["person_id"] == "P007"
+    heuristic = task["data"]["heuristic"]
+    assert heuristic["iris_center"] == [25, 25] and heuristic["iris_radius"] == 10
+    assert heuristic["reflex"] == [28, 23]
 
 
 def test_task_without_reflex_has_no_reflex_point():
@@ -66,3 +69,12 @@ def test_read_frames_samples_the_middle_of_a_video(tmp_path):
     writer.release()
     frames = read_frames(path, 3)
     assert [i for i, _ in frames] == [6, 15, 24]
+
+
+def test_crop_rounds_like_the_app():
+    # eyeRegions in the app: size = roundEven(5r), x = roundEven(cx) - floor(size / 2).
+    # roundEven(12.5) = 12, roundEven(10.5) = 10, roundEven(11.5) = 12.
+    image = np.zeros((40, 40, 3), np.uint8)
+    crop, x0, y0 = crop_eye(image, 10.5, 11.5, 2.5)
+    assert crop.shape[0] == 12
+    assert (x0, y0) == (10 - 6, 12 - 6)

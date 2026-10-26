@@ -19,7 +19,18 @@ import sys
 from pathlib import Path
 
 SPLITS = (("train", 0.7), ("val", 0.15), ("test", 0.15))
-META = ("person_id", "device", "distance_cm", "condition", "side", "source", "frame")
+META = (
+    "person_id",
+    "device",
+    "distance_cm",
+    "condition",
+    "side",
+    "source",
+    "frame",
+    "crop_x",
+    "crop_y",
+    "crop_size",
+)
 
 
 def read_points(result: list[dict]) -> tuple[dict[str, list[float]], set[str]]:
@@ -97,7 +108,9 @@ def build(tasks: list[dict], seed: int) -> tuple[list[dict], dict[str, int]]:
         data = task["data"]
         row = {"crop": data["crop"], **label, **{k: data.get(k) for k in META}}
         prediction = heuristic_result(task, annotation)
-        if prediction is not None:
+        if isinstance(data.get("heuristic"), dict):
+            row["heuristic"] = data["heuristic"]
+        elif prediction is not None:
             row["heuristic"] = to_label(read_points(prediction)[0])
         # A double-annotated crop keeps the last export's label.
         rows[data["crop"]] = row

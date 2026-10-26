@@ -94,16 +94,22 @@ def keypoint(label: str, x: float, y: float, width: int, height: int) -> dict:
 
 
 def make_task(image_url: str, size: int, eye: EyeMeasure, x0: int, y0: int, data: dict) -> dict:
-    """One Label Studio task; heuristic points are moved from frame to crop coordinates."""
+    """One Label Studio task; heuristic points are moved from frame to crop coordinates.
+
+    The heuristic is also kept in the task data (crop pixels), because Label Studio exports
+    do not always carry the prediction an annotation started from.
+    """
     cx, cy = eye.iris_center.x - x0, eye.iris_center.y - y0
+    reflex = None if eye.reflex is None else [eye.reflex.x - x0, eye.reflex.y - y0]
     result = [
         keypoint("iris_center", cx, cy, size, size),
         keypoint("iris_edge", cx + eye.iris_radius, cy, size, size),
     ]
-    if eye.reflex is not None:
-        result.append(keypoint("reflex", eye.reflex.x - x0, eye.reflex.y - y0, size, size))
+    if reflex is not None:
+        result.append(keypoint("reflex", *reflex, size, size))
+    heuristic = {"iris_center": [cx, cy], "iris_radius": eye.iris_radius, "reflex": reflex}
     return {
-        "data": {"image": image_url, **data},
+        "data": {"image": image_url, **data, "heuristic": heuristic},
         "predictions": [{"model_version": "hirschberg", "result": result}],
     }
 
@@ -159,9 +165,10 @@ def main(argv: list[str] | None = None) -> int:
                 irises = iris_estimates(faces.face_landmarks[0], width, height)
                 for side, (center, radius) in zip(sides, irises, strict=True):
                     eye = measure_eye(gray, side, center, radius)
-                    crop, x0, y0 = crop_eye(
-                        bgr, eye.iris_center.x, eye.iris_center.y, eye.iris_radius
-                    )
+                    # Crop on the raw Face Landmarker iris, as the app does (eyeRegions in
+                    # apps/mobile/src/features/vision/eyeCrops.ts); it cannot refine the iris
+                    # first, so training crops must not either. Only the pre-label is refined.
+                    crop, x0, y0 = crop_eye(bgr, center.x, center.y, radius)
                     name = f"{path.stem}_f{frame_index:03d}_{side}.png"
                     cv2.imwrite(str(args.out / "crops" / name), crop)
                     data = {
@@ -169,6 +176,9 @@ def main(argv: list[str] | None = None) -> int:
                         "source": path.name,
                         "frame": frame_index,
                         "side": side,
+                        "crop_x": x0,
+                        "crop_y": y0,
+                        "crop_size": crop.shape[0],
                         "distance_cm": row.get("distance_cm") or None,
                         **meta,
                     }

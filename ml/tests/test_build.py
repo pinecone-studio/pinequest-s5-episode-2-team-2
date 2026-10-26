@@ -88,3 +88,12 @@ def test_reads_heuristic_from_a_real_label_studio_export():
     exported["predictions"] = [1]
     rows, _ = build([exported], seed=0)
     assert rows[0]["heuristic"]["iris_radius"] == pytest.approx(8)
+
+
+def test_prefers_the_heuristic_stored_in_task_data():
+    # Imported annotations carry no prediction in the export; the task data still has it.
+    t = task("P001", 0, good())
+    t["predictions"] = [1]
+    t["data"]["heuristic"] = {"iris_center": [19, 21], "iris_radius": 7.5, "reflex": None}
+    rows, _ = build([t], seed=0)
+    assert rows[0]["heuristic"] == {"iris_center": [19, 21], "iris_radius": 7.5, "reflex": None}
