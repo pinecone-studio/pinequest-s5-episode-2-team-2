@@ -104,6 +104,14 @@ two splits. Crops flagged `unclear` or missing the iris points are left out:
 uv run python -m dataset.build /path/to/batch export_*.json --out data/keypoints
 ```
 
+To check the double-annotated crops (#34), pass the same exports to `dataset.agreement`. It
+reports iris centre, radius and reflex differences between two annotators in iris radii, and
+how often they agree on a visible reflex and on the `unclear` flag:
+
+```bash
+uv run python -m dataset.agreement export_*.json
+```
+
 ```json
 {
   "crop": "S03/P007_N_r1_L.png",
