@@ -2,11 +2,12 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Button, Text } from "../../components/ui";
+import { EyeDiagramView } from "../eyeView/EyeDiagramView";
 import { useScanResult } from "./ScanResultContext";
 import { outcomeCopy, reasonCopy, resultCopy as copy } from "./resultCopy";
 
 export default function ResultScreen() {
-  const { result, setResult } = useScanResult();
+  const { result, setResult, eyes } = useScanResult();
   const outcome = result ? outcomeCopy[result.outcome] : null;
   const retry = () => {
     setResult(null);
@@ -28,19 +29,25 @@ export default function ResultScreen() {
         </Text>
         {result && outcome ? (
           <>
-            <View style={styles.preview} accessible accessibilityLabel={copy.illustration}>
-              {[0, 1].map((eye) => (
-                <View key={eye} style={styles.eye}>
-                  <View style={styles.iris}>
-                    <View style={styles.glint} />
-                  </View>
+            {eyes ? (
+              <EyeDiagramView eyes={eyes} />
+            ) : (
+              <>
+                <View style={styles.preview} accessible accessibilityLabel={copy.illustration}>
+                  {[0, 1].map((eye) => (
+                    <View key={eye} style={styles.eye}>
+                      <View style={styles.iris}>
+                        <View style={styles.glint} />
+                      </View>
+                    </View>
+                  ))}
+                  <View style={styles.guide} />
                 </View>
-              ))}
-              <View style={styles.guide} />
-            </View>
-            <Text variant="caption" style={styles.muted}>
-              {result.modelVersion === "mock" ? copy.mock : copy.illustration}
-            </Text>
+                <Text variant="caption" style={styles.muted}>
+                  {result.modelVersion === "mock" ? copy.mock : copy.illustration}
+                </Text>
+              </>
+            )}
             <View style={[styles.card, { backgroundColor: outcome.background }]}>
               <View style={styles.row}>
                 <Text accessible={false} style={[styles.icon, { color: outcome.color }]}>
