@@ -7,7 +7,7 @@ import { mockScanResult } from "@app/core";
 import type { Outcome } from "@app/core";
 import { createChild, deleteChild } from "./children";
 import { migrateDatabase, migrations } from "./migrations";
-import { getSession, listSessions, saveSession } from "./sessions";
+import { deleteSession, getSession, listSessions, saveSession } from "./sessions";
 
 const { DatabaseSync } = createRequire(__filename)("node:sqlite") as typeof SQLite;
 let sqlite: SQLite.DatabaseSync;
@@ -105,6 +105,18 @@ test("deleting a child cascades only their sessions, including after reopening",
   await migrateDatabase(db);
   expect(await getSession(db, own.id)).toBeNull();
   expect(await getSession(db, sibling.id)).toEqual(sibling);
+});
+
+test("deletes one session and leaves the others, including after reopening", async () => {
+  const kept = mockScanResult("REFER", { id: "kept" });
+  await saveSession(db, kept);
+  await saveSession(db, mockScanResult("RETAKE", { id: "removed" }));
+  expect(await deleteSession(db, "removed")).toBe(true);
+  expect(await deleteSession(db, "removed")).toBe(false);
+  sqlite.close();
+  sqlite = new DatabaseSync(filename);
+  await migrateDatabase(db);
+  expect(await listSessions(db, "child-1")).toEqual([kept]);
 });
 
 test("rejects missing children, unsupported outcomes and invalid measurements without saving", async () => {
