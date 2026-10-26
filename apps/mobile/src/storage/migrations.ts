@@ -41,6 +41,31 @@ export const migrations: readonly Migration[] = [
         );
       `),
   },
+  {
+    // #31: the parent's daily goal per treatment, and one row per timed wear/patch period.
+    version: 4,
+    up: (db) =>
+      db.execAsync(`
+        CREATE TABLE treatment_goals (
+          child_id TEXT NOT NULL REFERENCES children (id) ON DELETE CASCADE,
+          kind TEXT NOT NULL CHECK (kind IN ('patch', 'glasses')),
+          daily_minutes INTEGER NOT NULL CHECK (daily_minutes BETWEEN 1 AND 1440),
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (child_id, kind)
+        );
+        CREATE TABLE treatment_logs (
+          id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+          child_id TEXT NOT NULL REFERENCES children (id) ON DELETE CASCADE,
+          kind TEXT NOT NULL CHECK (kind IN ('patch', 'glasses')),
+          started_at TEXT NOT NULL,
+          ended_at TEXT CHECK (ended_at IS NULL OR ended_at >= started_at)
+        );
+        CREATE INDEX treatment_logs_by_child ON treatment_logs (child_id, started_at);
+        -- At most one running timer per child and treatment.
+        CREATE UNIQUE INDEX treatment_logs_one_running
+          ON treatment_logs (child_id, kind) WHERE ended_at IS NULL;
+      `),
+  },
 ];
 
 type MigrationDatabase = {

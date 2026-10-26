@@ -52,7 +52,9 @@ afterEach(() => {
 
 test("deletes all user rows, including tables added by later features", async () => {
   const cleared = await deleteAllData(db);
-  expect(cleared).toEqual(["children", "consent", "sessions"]);
+  // Every user table is cleared (more appear as features add migrations); metadata is kept.
+  expect(cleared).toEqual(expect.arrayContaining(["children", "consent", "sessions"]));
+  expect(cleared).not.toContain("app_metadata");
   expect(count("consent")).toBe(0);
   expect(count("children")).toBe(0);
   expect(count("sessions")).toBe(0);
