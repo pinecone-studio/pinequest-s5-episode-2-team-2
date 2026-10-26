@@ -10,6 +10,7 @@ import { inferLandmarks } from "./facePipeline";
 import type { LandmarkFrame } from "./facePipeline";
 import { analyzeEyes } from "./eyeFrame";
 import { useEyeModel } from "./useEyeModel";
+import { withFrameQuality } from "./frameQuality";
 
 const resolution = { width: 3840, height: 2160 };
 
@@ -39,7 +40,7 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
   }, [live]);
   const report = useCallback(
     (result: LandmarkFrame) => {
-      if (live.getBlocking()) onResult(result);
+      if (live.getBlocking()) onResult(withFrameQuality(result));
     },
     [live, onResult],
   );

@@ -36,3 +36,21 @@ test("missing quality or models never implies that the eyes are healthy", () => 
   expect(guidanceForFrame({ ...frame, eyeFailure: "MODEL_UNAVAILABLE" })).toContain("бэлэн биш");
   expect(guidanceForFrame({ ...frame, eyeFailure: "EYE_NOT_FOUND" })).toBe(GUIDANCE.EYE_NOT_FOUND);
 });
+
+test.each(["MODEL_UNAVAILABLE", "MODEL_ERROR"] as const)(
+  "%s is not described as a missing eye by the quality producer",
+  (eyeFailure) => {
+    const unavailable = {
+      ...frame,
+      eyeFailure,
+      quality: mockFrameQuality({ ok: false, reasons: ["EYE_NOT_FOUND"] }),
+    };
+    expect(guidanceForFrame(unavailable)).toContain("бэлэн биш");
+    expect(
+      guidanceForFrame({
+        ...unavailable,
+        quality: mockFrameQuality({ ok: false, reasons: ["EYE_NOT_FOUND", "EYES_CLOSED"] }),
+      }),
+    ).toBe(GUIDANCE.EYES_CLOSED);
+  },
+);
