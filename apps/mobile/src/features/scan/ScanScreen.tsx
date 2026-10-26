@@ -109,7 +109,9 @@ export default function ScanScreen() {
       <Text variant="title" accessibilityRole="header">
         TODO(copy): Нүдний шалгалт
       </Text>
-      <Text>TODO(copy): Туршилтын горим. Камерын зурагт шинжилгээ хийхгүй, зураг хадгалахгүй.</Text>
+      <Text>
+        TODO(copy): Туршилтын горим. Нүүрний байрлал илрүүлнэ. Үр дүн нь жишээ. Зураг хадгалахгүй.
+      </Text>
       {!hasPermission ? (
         <Card>
           <Text>TODO(copy): Камер ашиглах зөвшөөрөл шаардлагатай.</Text>
