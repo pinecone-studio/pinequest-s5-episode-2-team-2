@@ -91,6 +91,7 @@ const advance = async (ms: number) => {
 const start = async () => {
   await act(async () => {
     camera().props.onStarted();
+    camera().props.onPreviewStarted();
   });
   await press("Бэлтгэх");
   await press("3 секунд");
@@ -122,6 +123,7 @@ afterEach(async () => {
 test("double start taps keep one timer and produce only one result after three seconds", async () => {
   await act(async () => {
     camera().props.onStarted();
+    camera().props.onPreviewStarted();
   });
   await press("Бэлтгэх");
   const begin = button("3 секунд").props.onPress;
@@ -160,12 +162,14 @@ test("native callbacks from a closed preview cannot mark its replacement ready",
   await background();
   await act(async () => {
     oldCamera.onStarted();
+    oldCamera.onPreviewStarted();
     oldCamera.onError(new Error("late"));
   });
   await background("active");
   expect(button("Бэлтгэх").props.disabled).toBe(true);
   await act(async () => {
     camera().props.onStarted();
+    camera().props.onPreviewStarted();
   });
   expect(button("Бэлтгэх").props.disabled).toBe(false);
 });
@@ -183,6 +187,7 @@ test.each([
   expect(button("3 секунд").props.disabled).toBe(true);
   await act(async () => {
     camera().props.onStarted();
+    camera().props.onPreviewStarted();
   });
   await press("3 секунд");
   await advance(3100);
@@ -298,9 +303,19 @@ test("a delayed JS tick completes once using elapsed time", async () => {
 test("a started preview waits until the landmark models are ready", async () => {
   mockModelsReady = false;
   await act(async () => renderer.update(screen()));
-  await act(async () => camera().props.onStarted());
+  await act(async () => {
+    camera().props.onStarted();
+    camera().props.onPreviewStarted();
+  });
   expect(button("Бэлтгэх").props.disabled).toBe(true);
   mockModelsReady = true;
   await act(async () => renderer.update(screen()));
+  expect(button("Бэлтгэх").props.disabled).toBe(false);
+});
+
+test("session start alone cannot enable scanning before the preview starts", async () => {
+  await act(async () => camera().props.onStarted());
+  expect(button("Бэлтгэх").props.disabled).toBe(true);
+  await act(async () => camera().props.onPreviewStarted());
   expect(button("Бэлтгэх").props.disabled).toBe(false);
 });

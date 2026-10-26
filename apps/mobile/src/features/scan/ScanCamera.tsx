@@ -21,6 +21,7 @@ export function ScanCamera({
   const live = useRef(true);
   const [frame, setFrame] = useState<LandmarkFrame | null>(null);
   const [started, setStarted] = useState(false);
+  const [previewStarted, setPreviewStarted] = useState(false);
   useLayoutEffect(() => {
     live.current = true;
     return () => {
@@ -46,8 +47,8 @@ export function ScanCamera({
   }, []);
   const { output, ready } = useLandmarks(report, fail);
   useEffect(() => {
-    if (started && ready && live.current) onReady();
-  }, [started, ready, onReady]);
+    if (started && previewStarted && ready && live.current) onReady();
+  }, [started, previewStarted, ready, onReady]);
   return (
     <>
       <Camera
@@ -55,6 +56,9 @@ export function ScanCamera({
         device={device}
         isActive
         outputs={[output]}
+        onPreviewStarted={() => {
+          if (live.current) setPreviewStarted(true);
+        }}
         torchMode={torchOn ? "on" : "off"}
         onStarted={() => {
           if (live.current) setStarted(true);
