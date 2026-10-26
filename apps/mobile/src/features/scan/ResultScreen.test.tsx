@@ -4,6 +4,7 @@ import { mockEyeMeasure, mockScanResult, type Outcome, type ScanResult } from "@
 import type { ResultEyes } from "./ScanResultContext";
 import ResultScreen from "./ResultScreen";
 import { outcomeCopy, reasonCopy, resultCopy as copy } from "./resultCopy";
+import { SCAN_POLICY_VERSION } from "./scanPolicy";
 
 let mockResult: ScanResult | null;
 let mockEyes: ResultEyes = null;
@@ -78,4 +79,17 @@ test("draws the measured eyes instead of the illustration when they are known", 
   expect(nodes("EyeDiagramView")).toHaveLength(1);
   expect(nodes("EyeDiagramView")[0]!.props.eyes).toBe(mockEyes);
   expect(text()).not.toContain(copy.illustration);
+});
+
+test("measured demo results retain the unvalidated-policy warning and saved status", async () => {
+  mockResult = mockScanResult("NO_VISIBLE_SIGN", {
+    modelVersion: "keypoints-local-unversioned",
+    policyVersion: SCAN_POLICY_VERSION,
+  });
+  mockEyes = [mockEyeMeasure("imageLeft"), mockEyeMeasure("imageRight")];
+  await render();
+  expect(text()).toContain(copy.demo);
+  expect(text()).toContain(copy.saved);
+  expect(text()).toContain(copy.notice);
+  expect(text()).not.toContain(copy.mock);
 });

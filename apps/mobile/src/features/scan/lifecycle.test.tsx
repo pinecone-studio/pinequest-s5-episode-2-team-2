@@ -1,45 +1,36 @@
-import { act } from "react";
+import { act, createElement } from "react";
 import type * as ReactModule from "react";
 import { create } from "react-test-renderer";
 import type { ReactTestRenderer } from "react-test-renderer";
-import type { PolicyConfig, ScanResult } from "@app/core";
-import type { LandmarkFrame } from "../vision/facePipeline";
-import type * as Recorder from "./recorder";
+import type { ScanResult } from "@app/core";
 import ScanScreen from "./ScanScreen";
-import { ScanResultProvider } from "./ScanResultContext";
+import { ScanResultProvider, useScanResult } from "./ScanResultContext";
+import { mockFrameQuality } from "@app/core";
+import type { LandmarkFrame } from "../vision/facePipeline";
+import type { EyePrediction } from "../vision/eyeCrops";
+import { SCAN_POLICY_VERSION } from "./scanPolicy";
 
 const mockListeners = new Set<(state: string) => void>();
 const mockPush = jest.fn();
 const mockCloseCamera = jest.fn();
 const mockSettings = jest.fn();
 const mockRequestPermission = jest.fn();
-const mockAnalyze = jest.fn<ScanResult | Promise<ScanResult>, unknown[]>();
+const mockSave = jest.fn<Promise<void>, [unknown, ScanResult]>();
+const mockDb = {};
+let mockChildId: string | null | undefined;
+let mockReport: (frame: LandmarkFrame) => void;
 let mockFocused = true;
-let mockPolicy: PolicyConfig | null = null;
-jest.mock("./scanPolicy", () => ({
-  get SCAN_POLICY() {
-    return mockPolicy;
-  },
-  SCAN_POLICY_VERSION: "policy-test",
-}));
-const mockFinish = jest.fn();
-jest.mock("./recorder", () => {
-  const actual = jest.requireActual<typeof Recorder>("./recorder");
-  return {
-    ...actual,
-    finishScan: (...args: Parameters<typeof actual.finishScan>) => {
-      mockFinish(...args);
-      return actual.finishScan(...args);
-    },
-  };
-});
 let mockModelsReady = true;
-let mockReport: (frame: LandmarkFrame) => void = () => {};
 jest.mock("../vision/useLandmarks", () => ({
   useLandmarks: (report: (frame: LandmarkFrame) => void) => {
     mockReport = report;
     return { output: {}, ready: mockModelsReady };
   },
+}));
+jest.mock("expo-sqlite", () => ({ useSQLiteContext: () => mockDb }));
+jest.mock("../children/useActiveChildId", () => ({ useActiveChildId: () => mockChildId }));
+jest.mock("../../storage/sessions", () => ({
+  saveSession: (db: unknown, result: ScanResult) => mockSave(db, result),
 }));
 const mockPermission = {
   hasPermission: true,
@@ -83,15 +74,14 @@ jest.mock("react-native-vision-camera", () => ({
     return React.createElement("Camera", props);
   },
 }));
-jest.mock("@app/core", () => ({
-  ...jest.requireActual("@app/core"),
-  mockScanResult: (...args: unknown[]) => mockAnalyze(...args),
-}));
-
 let renderer: ReactTestRenderer;
+function ResultProbe() {
+  return createElement("ResultProbe", useScanResult());
+}
 const screen = () => (
   <ScanResultProvider>
     <ScanScreen />
+    <ResultProbe />
   </ScanResultProvider>
 );
 const nodes = (type: string) => renderer.root.findAll((node) => node.type === type);
@@ -121,15 +111,40 @@ const start = async () => {
   await press("3 секунд");
 };
 
+function measuredFrame(asymmetry = 0, overrides: Partial<LandmarkFrame> = {}): LandmarkFrame {
+  const eye = (side: EyePrediction["side"], x: number): EyePrediction => ({
+    side,
+    irisCenter: { x, y: 500 },
+    irisRadius: 40,
+    reflex: { x: x + asymmetry * 20, y: 500 },
+    reflexVisibleProbability: 0.9,
+    crop: { side, x: x - 100, y: 400, size: 200 },
+  });
+  return {
+    timestampMs: 0,
+    latencyMs: 10,
+    frameSize: { width: 3840, height: 2160 },
+    faceCount: 1,
+    landmarks: [],
+    quality: mockFrameQuality(),
+    eyes: [eye("imageLeft", 430), eye("imageRight", 570)],
+    eyeFailure: null,
+    ...overrides,
+  };
+}
+async function frames(...values: LandmarkFrame[]) {
+  await act(async () => values.forEach((frame) => mockReport(frame)));
+}
+
 beforeEach(async () => {
   jest.useFakeTimers({ doNotFake: ["nextTick", "setImmediate", "queueMicrotask"] });
   jest.resetAllMocks();
   mockFocused = true;
-  mockPolicy = null;
   mockModelsReady = true;
   mockPermission.hasPermission = true;
   mockPermission.canRequestPermission = false;
-  mockAnalyze.mockImplementation(jest.requireActual("@app/core").mockScanResult);
+  mockChildId = "child-1";
+  mockSave.mockResolvedValue(undefined);
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   await act(async () => {
     renderer = create(screen());
@@ -158,9 +173,9 @@ test("double start taps keep one timer and produce only one result after three s
   });
   expect(camera().props.torchMode).toBe("on");
   await advance(2999);
-  expect(mockAnalyze).not.toHaveBeenCalled();
+  expect(mockSave).not.toHaveBeenCalled();
   await advance(101);
-  expect(mockAnalyze).toHaveBeenCalledTimes(1);
+  expect(mockSave).toHaveBeenCalledTimes(1);
   expect(mockPush).toHaveBeenCalledTimes(1);
   expect(nodes("Camera")).toHaveLength(0);
   expect(mockCloseCamera).toHaveBeenCalledTimes(1);
@@ -263,11 +278,11 @@ test("permission denial offers Settings; duplicate permission taps issue one req
   });
 });
 
-test("leaving the tab cancels a delayed analysis result", async () => {
-  let complete!: (result: ScanResult) => void;
-  mockAnalyze.mockImplementation(
+test("leaving the tab suppresses navigation after a pending save completes", async () => {
+  let complete!: () => void;
+  mockSave.mockImplementation(
     () =>
-      new Promise<ScanResult>((resolve) => {
+      new Promise<void>((resolve) => {
         complete = resolve;
       }),
   );
@@ -279,7 +294,7 @@ test("leaving the tab cancels a delayed analysis result", async () => {
     renderer.update(screen());
   });
   await act(async () => {
-    complete(jest.requireActual("@app/core").mockScanResult("RETAKE"));
+    complete();
   });
   expect(mockPush).not.toHaveBeenCalled();
 });
@@ -292,7 +307,7 @@ test("revoked permission cancels capture and requires a fresh preview after rest
   });
   expect(nodes("Camera")).toHaveLength(0);
   await advance(5000);
-  expect(mockAnalyze).not.toHaveBeenCalled();
+  expect(mockSave).not.toHaveBeenCalled();
   mockPermission.hasPermission = true;
   await act(async () => {
     renderer.update(screen());
@@ -319,9 +334,11 @@ test("failed permission requests release the tap guard so the user can retry", a
 test("a delayed JS tick completes once using elapsed time", async () => {
   await start();
   const clock = jest.spyOn(performance, "now").mockReturnValue(performance.now() + 10000);
+  await frames(...Array.from({ length: 5 }, () => measuredFrame()));
   await advance(100);
   clock.mockRestore();
-  expect(mockAnalyze).toHaveBeenCalledTimes(1);
+  expect(mockSave).toHaveBeenCalledTimes(1);
+  expect(mockSave.mock.calls[0]![1].summary.framesTotal).toBe(0);
   expect(mockPush).toHaveBeenCalledTimes(1);
 });
 
@@ -345,30 +362,134 @@ test("session start alone cannot enable scanning before the preview starts", asy
   expect(button("Бэлтгэх").props.disabled).toBe(false);
 });
 
-test("with a policy set, only frames recorded during the scan decide the result", async () => {
-  mockPolicy = { referAsymmetry: 0.2, minFramesUsed: 1, maxSpread: 0.1, validated: false };
-  const noFace: LandmarkFrame = {
-    faceCount: 0,
-    landmarks: [],
-    frameSize: { width: 3840, height: 2160 },
-    timestampMs: 0,
-    latencyMs: 10,
-  };
-  const failing = { ...noFace, eyeFailure: "MODEL_UNAVAILABLE" as const };
+test.each([
+  ["NO_VISIBLE_SIGN", 0],
+  ["REFER", 0.3],
+] as const)(
+  "measured frames produce and save %s with the child selected at start",
+  async (outcome, asymmetry) => {
+    await frames(measuredFrame()); // Preview/aligning frames do not belong to a scan.
+    await start();
+    await frames(...Array.from({ length: 5 }, () => measuredFrame(asymmetry)));
+    mockChildId = "child-2";
+    await act(async () => renderer.update(screen()));
+    await advance(3100);
+    const [db, result] = mockSave.mock.calls[0]!;
+    expect(db).toBe(mockDb);
+    expect(result).toMatchObject({
+      outcome,
+      childId: "child-1",
+      policyVersion: SCAN_POLICY_VERSION,
+      summary: { framesTotal: 5, framesUsed: 5 },
+    });
+    expect(result.id).not.toContain("mock");
+    expect(nodes("ResultProbe")[0]!.props.result).toBe(result);
+    expect(nodes("ResultProbe")[0]!.props.eyes).toHaveLength(2);
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledTimes(1);
+  },
+);
+
+test("too few usable frames saves RETAKE rather than a successful assessment", async () => {
+  await start();
+  await frames(
+    measuredFrame(),
+    measuredFrame(0, {
+      quality: mockFrameQuality({ ok: false, reasons: ["BLUR"] }),
+    }),
+  );
+  await advance(3100);
+  expect(mockSave.mock.calls[0]![1]).toMatchObject({
+    outcome: "RETAKE",
+    reasons: ["BLUR", "TOO_FEW_FRAMES"],
+    summary: { framesTotal: 2, framesUsed: 1 },
+  });
+});
+
+test("an aligning model failure does not contaminate the following scan", async () => {
   await act(async () => {
     camera().props.onStarted();
     camera().props.onPreviewStarted();
   });
   await press("Бэлтгэх");
-  // Before the scan starts: ignored.
-  await act(async () => mockReport(failing));
+  await frames(measuredFrame(0, { eyes: null, eyeFailure: "MODEL_UNAVAILABLE" }));
   await press("3 секунд");
-  await act(async () => mockReport(noFace));
+  await frames(
+    measuredFrame(0, {
+      eyes: null,
+      eyeFailure: "EYE_NOT_FOUND",
+      quality: mockFrameQuality({ ok: false, reasons: ["NO_FACE"] }),
+    }),
+  );
   await advance(3100);
-  expect(mockPush).toHaveBeenLastCalledWith("/scan/result");
-  expect(mockAnalyze).not.toHaveBeenCalled();
-  const [recording, meta] = mockFinish.mock.calls[0]!;
-  expect(recording.frames).toHaveLength(1);
-  expect(recording.failure).toBeNull();
-  expect(meta.policyVersion).toBe("policy-test");
+  expect(mockSave.mock.calls[0]![1]).toMatchObject({
+    outcome: "RETAKE",
+    reasons: ["NO_FACE", "TOO_FEW_FRAMES"],
+    summary: { framesTotal: 1 },
+    policyVersion: SCAN_POLICY_VERSION,
+  });
+});
+
+test.each(["MODEL_UNAVAILABLE", "MODEL_ERROR"] as const)(
+  "%s overrides good frames and hides measured eyes",
+  async (eyeFailure) => {
+    await start();
+    await frames(
+      measuredFrame(0, { eyeFailure, eyes: null }),
+      ...Array.from({ length: 5 }, () => measuredFrame()),
+    );
+    await advance(3100);
+    expect(mockSave.mock.calls[0]![1]).toMatchObject({
+      outcome: "NOT_ASSESSED",
+      reasons: [eyeFailure],
+    });
+    expect(nodes("ResultProbe")[0]!.props.eyes).toBeNull();
+  },
+);
+
+test("cancelling discards frames and late callbacks before another scan", async () => {
+  await start();
+  await frames(...Array.from({ length: 5 }, () => measuredFrame()));
+  const oldReport = mockReport;
+  await background();
+  await background("active");
+  await start();
+  await act(async () => oldReport(measuredFrame()));
+  await advance(3100);
+  expect(mockSave.mock.calls[0]![1]).toMatchObject({
+    outcome: "RETAKE",
+    summary: { framesTotal: 0 },
+  });
+});
+
+test("waits for the selected child to load but permits unassigned scans", async () => {
+  mockChildId = undefined;
+  await act(async () => renderer.update(screen()));
+  await start();
+  expect(button("3 секунд").props.disabled).toBe(true);
+  await advance(3100);
+  expect(mockSave).not.toHaveBeenCalled();
+  mockChildId = null;
+  await act(async () => renderer.update(screen()));
+  await press("3 секунд");
+  await advance(3100);
+  expect(mockSave.mock.calls[0]![1].childId).toBeNull();
+});
+
+test("a failed save keeps the result screen closed and lets the user retry", async () => {
+  mockSave.mockRejectedValueOnce(new Error("disk full"));
+  await start();
+  await advance(3100);
+  expect(mockPush).not.toHaveBeenCalled();
+  expect(nodes("ResultProbe")[0]!.props.result).toBeNull();
+  await press("Дахин оролдох");
+  await act(async () => {
+    camera().props.onStarted();
+    camera().props.onPreviewStarted();
+  });
+  await press("3 секунд");
+  await advance(3100);
+  expect(mockSave).toHaveBeenCalledTimes(2);
+  expect(mockSave.mock.calls[0]![1].id).not.toBe(mockSave.mock.calls[1]![1].id);
+  expect(mockPush).toHaveBeenCalledTimes(1);
 });

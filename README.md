@@ -61,9 +61,10 @@ run `npm run mobile:android` with Android Studio and its SDK installed.
 
 - `apps/mobile/app/(tabs)/`: Home, Scan, History and Profile routes.
   The Scan stack uses `src/features/scan/`: a back-camera preview, alignment guide and tested
-  `idle → aligning → scanning (3 s) → processing → done | failed` reducer. It produces an explicitly
-  labelled `@app/core` mock RETAKE result; it does not capture, store or analyse camera images.
-  Other placeholders live in `src/features/scaffold/`; live analysis remains a separate task.
+  `idle → aligning → scanning (3 s) → processing → done | failed` reducer. It collects measured
+  frames, applies an explicitly unvalidated demo policy, and stores completed session metadata;
+  images are never stored. See [measured scan integration](docs/real-scan-results.md) for limits.
+  Other placeholders live in `src/features/scaffold/`.
   All pending app copy is marked `TODO(copy)` for the team to write in Mongolian before release.
 - `apps/mobile/src/theme.ts`: colours, four outcome colours typed against `@app/core`, spacing,
   typography and radii. `src/components/ui.tsx` exports `Screen`, `Button`, `Card`, `Text`.
@@ -85,12 +86,12 @@ Expo/RN versions; the standalone camera spike's V4 API is not copied into the pr
 
 On a real iPhone, using an object rather than a participant, check permission allow/deny and
 the Settings recovery button. Prepare → Start should show three seconds of progress, turn the
-torch off during processing and open the labelled mock result. Cancel while aligning/scanning,
+torch off during processing and open the labelled unvalidated demo result. Cancel while aligning/scanning,
 switch tabs, background the app and interrupt the camera: the torch must turn off, no late result
 may open, and retry must work. Also check the result return button, device Back, a direct
-`/scan/result` link with no result and large accessibility text. Results stay only in the Scan
-stack's memory; they are not added to History. Native build, screenshots and these device checks
-remain pending; JavaScript export and reducer tests do not verify camera hardware.
+`/scan/result` link with no result and large accessibility text. Completed session metadata is
+saved for History; representative eyes stay only in the Scan stack's memory. The #78 device
+checks remain pending; JavaScript export and reducer tests do not verify camera hardware.
 
 ### iPhone acceptance check
 

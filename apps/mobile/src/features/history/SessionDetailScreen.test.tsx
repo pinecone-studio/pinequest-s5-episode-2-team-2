@@ -3,7 +3,8 @@ import { create, type ReactTestRenderer } from "react-test-renderer";
 import { mockScanResult, type ScanResult } from "@app/core";
 import SessionDetailScreen from "./SessionDetailScreen";
 import { historyCopy } from "./copy";
-import { outcomeCopy, reasonCopy } from "../scan/resultCopy";
+import { outcomeCopy, reasonCopy, resultCopy } from "../scan/resultCopy";
+import { SCAN_POLICY_VERSION } from "../scan/scanPolicy";
 
 const copy = historyCopy.detail;
 const mockDb = {};
@@ -70,6 +71,15 @@ test("says when the scan no longer exists", async () => {
   await render();
   expect(text()).toContain(copy.missing);
   expect(button(copy.delete)).toBeUndefined();
+});
+
+test("a saved demo scan keeps the unvalidated-policy notice when reopened", async () => {
+  mockGet.mockResolvedValue(
+    mockScanResult("NO_VISIBLE_SIGN", { policyVersion: SCAN_POLICY_VERSION }),
+  );
+  await render();
+  expect(text()).toContain(resultCopy.demo);
+  expect(text()).toContain(resultCopy.notice);
 });
 
 test("deletes only after confirmation, then goes back", async () => {
