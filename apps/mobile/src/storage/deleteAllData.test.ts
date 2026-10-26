@@ -39,11 +39,11 @@ beforeEach(async () => {
   sqlite = new DatabaseSync(":memory:");
   await migrateDatabase(db);
   sqlite.exec("INSERT INTO consent (id, version, accepted_at) VALUES (1, '1', '2026-10-26')");
-  // A stand-in for the sessions table a later feature adds.
   sqlite.exec(`
-    CREATE TABLE sessions (id TEXT PRIMARY KEY, child_id TEXT REFERENCES children (id));
     INSERT INTO children (id, name, created_at) VALUES ('c1', 'Child', '2026-10-26');
-    INSERT INTO sessions VALUES ('s1', 'c1');
+    INSERT INTO sessions (id, child_id, created_at, outcome, reason_codes, frames_total,
+      frames_used, model_version, policy_version, duration_ms)
+    VALUES ('s1', 'c1', '2026-10-26', 'NOT_ASSESSED', '["MODEL_UNAVAILABLE"]', 0, 0, 'mock', 'mock', 0);
   `);
 });
 afterEach(() => {
