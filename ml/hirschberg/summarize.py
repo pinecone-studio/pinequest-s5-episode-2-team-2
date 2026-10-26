@@ -4,8 +4,8 @@ Usage: python -m hirschberg.summarize results.jsonl [results2.jsonl ...]
 
 Frames named `<capture>_f<frame>.<ext>` are grouped by `<capture>`; other images are their
 own capture. Prints one Markdown row per capture with the frames used, the median asymmetry
-and the spread. Frame quality checks need landmarks the CLI does not print, so here a frame
-counts as usable when both eyes have a reflex.
+and the spread. Frames rejected by the CLI's `quality` are dropped with their reasons; older
+output without `quality` counts a frame as usable when both eyes have a reflex.
 """
 
 from __future__ import annotations
@@ -43,9 +43,19 @@ def to_frame(line: dict) -> Frame:
     if len(eyes) != 2:
         return Frame(ok=False, reasons=["EYE_NOT_FOUND"], eyes_found=False, asymmetry=None)
     a = line.get("asymmetry")
-    if a is None or any(e.get("reflex_offset") is None for e in eyes):
+    asymmetry = Point(a["x"], a["y"]) if a else None
+    quality = line.get("quality")
+    if quality is not None:
+        # Output with quality: use the app's checks as they are.
+        return Frame(
+            ok=bool(quality["ok"]),
+            reasons=list(quality["reasons"]),
+            eyes_found=True,
+            asymmetry=asymmetry,
+        )
+    if asymmetry is None or any(e.get("reflex_offset") is None for e in eyes):
         return Frame(ok=False, reasons=["REFLEX_NOT_FOUND"], eyes_found=True, asymmetry=None)
-    return Frame(ok=True, reasons=[], eyes_found=True, asymmetry=Point(a["x"], a["y"]))
+    return Frame(ok=True, reasons=[], eyes_found=True, asymmetry=asymmetry)
 
 
 def summarize_captures(lines: Iterable[dict]) -> dict[str, ScanSummary]:

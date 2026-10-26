@@ -62,3 +62,16 @@ def test_cli(tmp_path, capsys):
     empty = tmp_path / "empty.jsonl"
     empty.write_text("", "utf8")
     assert main([str(empty)]) == 1
+
+
+def test_uses_cli_quality_when_present():
+    blurred = {**measured("A_f0.jpg", 0.4), "quality": {"ok": False, "reasons": ["BLUR"]}}
+    good = {**measured("A_f1.jpg", 0.1), "quality": {"ok": True, "reasons": []}}
+    frame = to_frame(blurred)
+    assert not frame.ok and frame.reasons == ["BLUR"] and frame.asymmetry is not None
+    s = summarize_captures([blurred, good])["A"]
+    assert (s.frames_used, s.asymmetry_score, s.quality_reasons) == (
+        1,
+        pytest.approx(0.1),
+        ["BLUR"],
+    )
