@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
 import { Platform } from "react-native";
 import { useTensorflowModel } from "react-native-fast-tflite";
 import { useAsyncRunner, useFrameOutput } from "react-native-vision-camera";
+import type { Frame } from "react-native-vision-camera";
 import { useResizer } from "react-native-vision-camera-resizer";
 import { createSynchronizable, scheduleOnRN } from "react-native-worklets";
 import detectorAsset from "../../../assets/models/face_detector.tflite";
@@ -31,6 +32,7 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
   });
   const runner = useAsyncRunner();
   const live = useMemo(() => createSynchronizable(true), []);
+  const pending = useMemo(() => createSynchronizable(false), []);
   const timing = useMemo(() => createSynchronizable({ next: 0, interval: 100 }), []);
   const detectorModel = detector.model,
     meshModel = mesh.model;
@@ -51,27 +53,15 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
     if (error || detector.state === "error" || mesh.state === "error") fail();
   }, [error, detector.state, mesh.state, fail]);
 
-  const output = useFrameOutput({
-    targetResolution: resolution,
-    pixelFormat: "yuv",
-    enablePhysicalBufferRotation: true,
-    dropFramesWhileBusy: true,
-    onFrame(frame) {
-      "worklet";
-      // V5.2.3 native timestamps are seconds on iOS and nanoseconds on Android.
-      const timestampMs = frame.timestamp * timestampScale;
-      const previous = timing.getBlocking();
-      if (
-        !live.getBlocking() ||
-        !resizer ||
-        !detectorModel ||
-        !meshModel ||
-        timestampMs < previous.next
-      ) {
+  // Create the worker closure on RN. Re-capturing imported worklets in a camera
+  // worklet and then a second runtime turns them into remote function objects.
+  const processFrame = useCallback(
+    (frame: Frame, timestampMs: number) => {
+      if (!live.getBlocking() || !resizer || !detectorModel || !meshModel) {
         frame.dispose();
+        pending.setBlocking(false);
         return;
       }
-      timing.setBlocking({ next: timestampMs + previous.interval, interval: previous.interval });
       try {
         const handled = runner.runAsync(() => {
           "worklet";
@@ -94,7 +84,6 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
                 ? { eyes: null, eyeFailure: "MODEL_ERROR" as const }
                 : analyzeEyes(frame, result.landmarks, eyeModel);
               const latencyMs = performance.now() - started;
-              // Back off with measured processing cost rather than building a queue of stale frames.
               const interval = Math.max(100, latencyMs * 2);
               timing.setBlocking({ next: timestampMs + interval, interval });
               scheduleOnRN(report, {
@@ -111,11 +100,63 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
             scheduleOnRN(fail);
           } finally {
             frame.dispose();
+            pending.setBlocking(false);
           }
         });
-        if (!handled) frame.dispose();
+        if (!handled) {
+          frame.dispose();
+          pending.setBlocking(false);
+        }
       } catch {
         frame.dispose();
+        pending.setBlocking(false);
+        fail();
+      }
+    },
+    [
+      live,
+      resizer,
+      detectorModel,
+      meshModel,
+      runner,
+      eyeModelError,
+      eyeModel,
+      timing,
+      report,
+      fail,
+      pending,
+    ],
+  );
+
+  const output = useFrameOutput({
+    targetResolution: resolution,
+    pixelFormat: "yuv",
+    enablePhysicalBufferRotation: true,
+    dropFramesWhileBusy: true,
+    onFrame(frame) {
+      "worklet";
+      // V5.2.3 native timestamps are seconds on iOS and nanoseconds on Android.
+      const timestampMs = frame.timestamp * timestampScale;
+      const previous = timing.getBlocking();
+      if (
+        !live.getBlocking() ||
+        !resizer ||
+        !detectorModel ||
+        !meshModel ||
+        pending.getBlocking() ||
+        timestampMs < previous.next
+      ) {
+        frame.dispose();
+        return;
+      }
+      pending.setBlocking(true);
+      timing.setBlocking({ next: timestampMs + previous.interval, interval: previous.interval });
+      try {
+        // Only one native Frame can wait for RN; busy camera frames are disposed.
+        scheduleOnRN(processFrame, frame, timestampMs);
+      } catch {
+        frame.dispose();
+        pending.setBlocking(false);
         scheduleOnRN(fail);
       }
     },
