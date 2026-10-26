@@ -15,13 +15,18 @@ from pathlib import Path
 
 import cv2
 import mediapipe as mp
+import numpy as np
 from mediapipe.tasks.python import BaseOptions, vision
 
-from hirschberg.measure import EyeSide, Point, measure_eye, mirrored_asymmetry
+from hirschberg.measure import EyeMeasure, EyeSide, Point, measure_eye, mirrored_asymmetry
+from hirschberg.quality import CropStats, FrameQuality, assess_quality, crop_stats
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
 # Face Landmarker iris landmarks: centre followed by four boundary points.
 IRIS_LANDMARKS = ((468, 469, 470, 471, 472), (473, 474, 475, 476, 477))
+# The app's eye crop: a square of 5 iris radii, resized to the model input (eyeRegions).
+CROP_RADII = 5.0
+CROP_SIZE = 128
 
 
 def iris_estimates(landmarks, width: int, height: int) -> list[tuple[Point, float]]:
@@ -35,6 +40,32 @@ def iris_estimates(landmarks, width: int, height: int) -> list[tuple[Point, floa
         ) / len(edge_idx)
         irises.append((center, radius))
     return sorted(irises, key=lambda iris: iris[0].x)
+
+
+def eye_crop_stats(gray: np.ndarray, center: Point, radius: float) -> CropStats | None:
+    """Sharpness and exposure of the crop the app takes around one iris."""
+    side = int(round(CROP_RADII * radius))
+    if side < 3:
+        return None
+    x0, y0 = int(round(center.x)) - side // 2, int(round(center.y)) - side // 2
+    padded = cv2.copyMakeBorder(gray, side, side, side, side, cv2.BORDER_REPLICATE)
+    crop = padded[y0 + side : y0 + 2 * side, x0 + side : x0 + 2 * side]
+    crop = cv2.resize(crop, (CROP_SIZE, CROP_SIZE), interpolation=cv2.INTER_AREA)
+    return crop_stats(crop / 255.0)
+
+
+def frame_quality(gray: np.ndarray, landmarks: list[Point], eyes: list[EyeMeasure]) -> FrameQuality:
+    height, width = gray.shape[:2]
+    stats = [eye_crop_stats(gray, e.iris_center, e.iris_radius) for e in eyes]
+    crops = None if any(s is None for s in stats) else (stats[0], stats[1])
+    return assess_quality(
+        frame_size=(width, height),
+        face_count=1,
+        landmarks=landmarks,
+        iris_radii=(eyes[0].iris_radius, eyes[1].iris_radius),
+        reflex_found=(eyes[0].reflex_offset is not None, eyes[1].reflex_offset is not None),
+        crops=crops,
+    )
 
 
 def measure_image(path: Path, landmarker: vision.FaceLandmarker) -> dict:
@@ -61,7 +92,14 @@ def measure_image(path: Path, landmarker: vision.FaceLandmarker) -> dict:
     asymmetry = None
     if left.reflex_offset and right.reflex_offset:
         asymmetry = asdict(mirrored_asymmetry(left.reflex_offset, right.reflex_offset))
-    return {"file": path.name, "eyes": [asdict(e) for e in eyes], "asymmetry": asymmetry}
+    landmarks = [Point(p.x * width, p.y * height) for p in result.face_landmarks[0]]
+    quality = asdict(frame_quality(gray, landmarks, eyes))
+    return {
+        "file": path.name,
+        "eyes": [asdict(e) for e in eyes],
+        "asymmetry": asymmetry,
+        "quality": quality,
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
