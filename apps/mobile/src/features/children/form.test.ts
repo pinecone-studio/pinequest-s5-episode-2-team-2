@@ -1,4 +1,4 @@
-import { childFormFields, MAX_NAME_LENGTH, newChildId, parseChildForm } from "./form";
+import { ageThisYear, childFormFields, MAX_NAME_LENGTH, newChildId, parseChildForm } from "./form";
 
 const now = new Date("2026-10-26T03:00:00Z");
 
@@ -50,4 +50,11 @@ test("fills the form from a saved profile", () => {
 test("creates distinct readable IDs", () => {
   expect(newChildId(0, () => 0)).toBe("child-0-0");
   expect(newChildId(1, () => 0.5)).not.toBe(newChildId(1, () => 0.25));
+});
+
+test("works out the age this year from the birth year alone", () => {
+  expect(ageThisYear(2020, now)).toBe(6);
+  expect(ageThisYear(2026, now)).toBe(0);
+  expect(ageThisYear(null, now)).toBeNull();
+  expect(ageThisYear(2027, now)).toBeNull();
 });

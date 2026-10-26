@@ -12,6 +12,7 @@ export const childrenCopy = {
   select: "TODO(copy): Select",
   name: "TODO(copy): Name or nickname",
   birthYear: "TODO(copy): Birth year (optional)",
+  age: (years: number) => `TODO(copy): ${years} years old this year`,
   errors: {
     nameRequired: "TODO(copy): Enter a name or nickname",
     nameTooLong: "TODO(copy): Use at most 40 characters",

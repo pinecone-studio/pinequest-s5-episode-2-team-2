@@ -69,6 +69,12 @@ test("marks the selected child and selects another", async () => {
   expect(radios().map((r) => r.props.accessibilityState.checked)).toEqual([false, true]);
 });
 
+test("shows the selection and the age this year", async () => {
+  await render();
+  const age = new Date().getFullYear() - 2020;
+  expect(text()).toContain(`${copy.active} · ${copy.age(age)}`);
+});
+
 test("opens a profile for editing", async () => {
   await render();
   const edit = nodes("Pressable").find(
