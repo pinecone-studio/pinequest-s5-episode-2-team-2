@@ -39,11 +39,10 @@ beforeEach(async () => {
   sqlite = new DatabaseSync(":memory:");
   await migrateDatabase(db);
   sqlite.exec("INSERT INTO consent (id, version, accepted_at) VALUES (1, '1', '2026-10-26')");
-  // Stand-ins for tables later features add, with a foreign key between them.
+  // A stand-in for the sessions table a later feature adds.
   sqlite.exec(`
-    CREATE TABLE children (id TEXT PRIMARY KEY);
     CREATE TABLE sessions (id TEXT PRIMARY KEY, child_id TEXT REFERENCES children (id));
-    INSERT INTO children VALUES ('c1');
+    INSERT INTO children (id, name, created_at) VALUES ('c1', 'Child', '2026-10-26');
     INSERT INTO sessions VALUES ('s1', 'c1');
   `);
 });
@@ -63,7 +62,7 @@ test("keeps the schema and migration version so the app still works afterwards",
   await deleteAllData(db);
   expect(sqlite.prepare("PRAGMA user_version").get()).toEqual({ user_version: migrations.length });
   expect(count("app_metadata")).toBe(1);
-  sqlite.exec("INSERT INTO children VALUES ('c2')");
+  sqlite.exec("INSERT INTO children (id, name, created_at) VALUES ('c2', 'Child', '2026-10-26')");
   expect(count("children")).toBe(1);
 });
 
