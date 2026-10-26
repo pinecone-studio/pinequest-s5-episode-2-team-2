@@ -44,6 +44,22 @@ Prints one JSON line per `.jpg`, `.jpeg` or `.png` image: per-eye `iris_center`,
 (`NO_FACE`, `MULTIPLE_FACES`, `UNREADABLE`). Images are only read, never written or uploaded.
 Keep image folders outside the repo.
 
+## dataset
+
+Pre-labeling for Label Studio (#6). `dataset.prelabel` reads captures named as in
+`docs/capture-protocol.md` section 6 (videos or images), takes 3 frames from the middle of each
+video, cuts a square crop around each iris (5 iris radii wide) and writes the heuristic iris
+centre, iris edge and reflex as Label Studio predictions. Files that do not follow the naming
+scheme, or are marked `usable = no` in the data sheet, are skipped and listed.
+
+```bash
+uv run python -m dataset.prelabel /path/to/session /path/to/batch --sheet sheet.csv
+```
+
+The output folder (`crops/` and `tasks.json`) belongs on the private Drive, never in the repo.
+The labeling config is `dataset/labelstudio.xml`; setup and labeling rules are in
+`docs/annotation-guide.md`.
+
 ## keypoints
 
 Eye keypoint model (#17): an ImageNet MobileNetV3-Small from `timm` with a small regression

@@ -1,0 +1,12 @@
+<!-- Label Studio labeling config for eye crops (#6). See docs/annotation-guide.md. -->
+<View>
+  <KeyPointLabels name="kp" toName="image" strokeWidth="1" opacity="0.9">
+    <Label value="iris_center" background="#2f80ed" maxUsages="1" />
+    <Label value="iris_edge" background="#27ae60" maxUsages="1" />
+    <Label value="reflex" background="#eb5757" maxUsages="1" />
+  </KeyPointLabels>
+  <Image name="image" value="$image" zoom="true" zoomControl="true" />
+  <Choices name="flags" toName="image" choice="multiple" showInline="true">
+    <Choice value="unclear" />
+  </Choices>
+</View>

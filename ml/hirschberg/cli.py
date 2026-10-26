@@ -24,7 +24,7 @@ IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
 IRIS_LANDMARKS = ((468, 469, 470, 471, 472), (473, 474, 475, 476, 477))
 
 
-def _iris_estimates(landmarks, width: int, height: int) -> list[tuple[Point, float]]:
+def iris_estimates(landmarks, width: int, height: int) -> list[tuple[Point, float]]:
     irises = []
     for center_idx, *edge_idx in IRIS_LANDMARKS:
         c = landmarks[center_idx]
@@ -54,7 +54,7 @@ def measure_image(path: Path, landmarker: vision.FaceLandmarker) -> dict:
     eyes = [
         measure_eye(gray, side, center, radius)
         for side, (center, radius) in zip(
-            sides, _iris_estimates(result.face_landmarks[0], width, height), strict=True
+            sides, iris_estimates(result.face_landmarks[0], width, height), strict=True
         )
     ]
     left, right = eyes
