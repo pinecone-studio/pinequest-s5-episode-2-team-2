@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
+import { Platform } from "react-native";
 import { useTensorflowModel } from "react-native-fast-tflite";
 import { useAsyncRunner, useFrameOutput } from "react-native-vision-camera";
 import { useResizer } from "react-native-vision-camera-resizer";
@@ -11,6 +12,7 @@ import type { LandmarkFrame } from "./facePipeline";
 const resolution = { width: 3840, height: 2160 };
 
 export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError: () => void) {
+  const timestampScale = Platform.OS === "android" ? 1 / 1_000_000 : 1000;
   const detector = useTensorflowModel(detectorAsset, []);
   const mesh = useTensorflowModel(meshAsset, []);
   const { resizer, error } = useResizer({
@@ -50,8 +52,8 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
     dropFramesWhileBusy: true,
     onFrame(frame) {
       "worklet";
-      // VisionCamera V5 timestamps are seconds on both iOS and Android.
-      const timestampMs = frame.timestamp * 1000;
+      // V5.2.3 native timestamps are seconds on iOS and nanoseconds on Android.
+      const timestampMs = frame.timestamp * timestampScale;
       const previous = timing.getBlocking();
       if (
         !live.getBlocking() ||
