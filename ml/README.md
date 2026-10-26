@@ -40,8 +40,9 @@ uv run python -m hirschberg.cli path/to/images
 ```
 
 Prints one JSON line per `.jpg`, `.jpeg` or `.png` image: per-eye `iris_center`,
-`iris_radius`, `reflex`, `reflex_offset` and `confidence`, plus `asymmetry`, or an `error`
-(`NO_FACE`, `MULTIPLE_FACES`, `UNREADABLE`). Images are only read, never written or uploaded.
+`iris_radius`, `reflex`, `reflex_offset` and `confidence`, plus `asymmetry` and `quality` (the
+same checks and reasons as the app, `docs/quality-checks.md`), or an `error` (`NO_FACE`,
+`MULTIPLE_FACES`, `UNREADABLE`). Images are only read, never written or uploaded.
 Keep image folders outside the repo.
 
 ### Per-capture summary
