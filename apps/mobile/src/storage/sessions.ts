@@ -63,3 +63,9 @@ export async function listSessions(db: SessionDb, childId: string | null): Promi
   );
   return rows.map(fromRow);
 }
+
+/** Removes one saved scan; resolves to false when it did not exist. */
+export async function deleteSession(db: SessionDb, id: string): Promise<boolean> {
+  const { changes } = await db.runAsync("DELETE FROM sessions WHERE id = ?", id);
+  return changes > 0;
+}
