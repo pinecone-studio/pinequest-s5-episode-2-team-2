@@ -6,3 +6,4 @@ export * from "./aggregate";
 export * from "./quality";
 export * from "./pixels";
 export * from "./scan";
+export * from "./representative";
