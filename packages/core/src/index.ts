@@ -5,3 +5,4 @@ export * from "./policy";
 export * from "./aggregate";
 export * from "./quality";
 export * from "./pixels";
+export * from "./scan";
