@@ -44,6 +44,12 @@ Prints one JSON line per `.jpg`, `.jpeg` or `.png` image: per-eye `iris_center`,
 (`NO_FACE`, `MULTIPLE_FACES`, `UNREADABLE`). Images are only read, never written or uploaded.
 Keep image folders outside the repo.
 
+### Per-capture summary
+
+`uv run python -m hirschberg.summarize results.jsonl` groups CLI results by capture (frames
+named `<capture>_f<frame>`) and prints the frames used, median asymmetry and spread per
+capture, the same summary the app computes per scan.
+
 ### Calibration analysis
 
 For `C` captures (#8), take frames from each video named `<capture>_f<frame>.jpg`, run the CLI
