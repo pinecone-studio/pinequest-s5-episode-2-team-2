@@ -28,6 +28,19 @@ export const migrations: readonly Migration[] = [
         );
       `),
   },
+  {
+    version: 3,
+    up: (db) =>
+      db.execAsync(`
+        CREATE TABLE children (
+          id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+          name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+          birth_year INTEGER CHECK (birth_year IS NULL OR
+            (typeof(birth_year) = 'integer' AND birth_year BETWEEN 1 AND 9999)),
+          created_at TEXT NOT NULL
+        );
+      `),
+  },
 ];
 
 type MigrationDatabase = {
