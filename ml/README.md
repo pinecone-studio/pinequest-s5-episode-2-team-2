@@ -80,6 +80,14 @@ are crop pixels, paths are relative to the manifest, and the split must keep eac
 in a single split. `reflex` is `null` when no reflex is visible; `heuristic` is the
 `hirschberg` result for the same crop and may be left out.
 
+`dataset.build` writes it from one or more Label Studio JSON exports of a batch. It copies the
+used crops next to the manifest and splits people 70/15/15 with a fixed seed, so nobody is in
+two splits. Crops flagged `unclear` or missing the iris points are left out:
+
+```bash
+uv run python -m dataset.build /path/to/batch export_*.json --out data/keypoints
+```
+
 ```json
 {
   "crop": "S03/P007_N_r1_L.png",
