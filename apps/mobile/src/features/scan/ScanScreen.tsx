@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { ActivityIndicator, AppState, Linking, StyleSheet, View } from "react-native";
 import { router, useFocusEffect, useIsFocused } from "expo-router";
-import { Camera, useCameraDevice, useCameraPermission } from "react-native-vision-camera";
+import { useCameraDevice, useCameraPermission } from "react-native-vision-camera";
 import { mockScanResult } from "@app/core";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { theme } from "../../theme";
 import { useScanResult } from "./ScanResultContext";
+import { ScanCamera } from "./ScanCamera";
 import { initialScanState, SCAN_DURATION_MS, scanReducer, torchEnabled } from "./state";
 
 export default function ScanScreen() {
@@ -13,6 +14,8 @@ export default function ScanScreen() {
   const [appState, setAppState] = useState(AppState.currentState);
   const [ready, setReady] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
+  const permissionPending = useRef(false);
+  const [requestingPermission, setRequestingPermission] = useState(false);
   const focused = useIsFocused();
   const { hasPermission, canRequestPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice("back");
@@ -41,6 +44,11 @@ export default function ScanScreen() {
     });
     return () => subscription.remove();
   }, []);
+
+  useEffect(() => {
+    dispatch({ type: "CANCEL" });
+    setReady(false);
+  }, [hasPermission, device?.id]);
 
   useEffect(() => {
     if (state.status !== "scanning") return;
@@ -78,12 +86,18 @@ export default function ScanScreen() {
   }, [state, active, setResult]);
 
   async function allowCamera() {
+    if (permissionPending.current) return;
+    permissionPending.current = true;
+    setRequestingPermission(true);
     setPermissionError(false);
     try {
       if (canRequestPermission) await requestPermission();
       else await Linking.openSettings();
     } catch {
       setPermissionError(true);
+    } finally {
+      permissionPending.current = false;
+      setRequestingPermission(false);
     }
   }
 
@@ -106,6 +120,7 @@ export default function ScanScreen() {
                 : "TODO(copy): Тохиргоо нээх"
             }
             onPress={() => void allowCamera()}
+            disabled={requestingPermission}
           />
           {permissionError && (
             <Text accessibilityRole="alert">
@@ -119,15 +134,15 @@ export default function ScanScreen() {
         <>
           <View style={styles.preview}>
             {showCamera && (
-              <Camera
-                style={StyleSheet.absoluteFill}
+              <ScanCamera
+                key={device.id}
                 device={device}
-                isActive={active}
-                torchMode={torchEnabled(state, active, device.hasTorch) ? "on" : "off"}
-                onStarted={() => setReady(true)}
-                onStopped={() => setReady(false)}
-                onError={() => dispatch({ type: "FAIL" })}
-                onInterruptionStarted={() => dispatch({ type: "FAIL" })}
+                torchOn={torchEnabled(state, active, device.hasTorch)}
+                onReady={() => setReady(true)}
+                onFailure={() => {
+                  setReady(false);
+                  dispatch({ type: "FAIL" });
+                }}
               />
             )}
             <View
@@ -185,7 +200,10 @@ export default function ScanScreen() {
               </Text>
               <Button
                 label="TODO(copy): Дахин оролдох"
-                onPress={() => dispatch({ type: "RETRY" })}
+                onPress={() => {
+                  setReady(false);
+                  dispatch({ type: "RETRY" });
+                }}
               />
             </>
           )}
