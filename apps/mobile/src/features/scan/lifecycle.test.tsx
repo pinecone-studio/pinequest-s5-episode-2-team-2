@@ -2,7 +2,9 @@ import { act } from "react";
 import type * as ReactModule from "react";
 import { create } from "react-test-renderer";
 import type { ReactTestRenderer } from "react-test-renderer";
-import type { ScanResult } from "@app/core";
+import type { PolicyConfig, ScanResult } from "@app/core";
+import type { LandmarkFrame } from "../vision/facePipeline";
+import type * as Recorder from "./recorder";
 import ScanScreen from "./ScanScreen";
 import { ScanResultProvider } from "./ScanResultContext";
 
@@ -13,9 +15,31 @@ const mockSettings = jest.fn();
 const mockRequestPermission = jest.fn();
 const mockAnalyze = jest.fn<ScanResult | Promise<ScanResult>, unknown[]>();
 let mockFocused = true;
+let mockPolicy: PolicyConfig | null = null;
+jest.mock("./scanPolicy", () => ({
+  get SCAN_POLICY() {
+    return mockPolicy;
+  },
+  SCAN_POLICY_VERSION: "policy-test",
+}));
+const mockFinish = jest.fn();
+jest.mock("./recorder", () => {
+  const actual = jest.requireActual<typeof Recorder>("./recorder");
+  return {
+    ...actual,
+    finishScan: (...args: Parameters<typeof actual.finishScan>) => {
+      mockFinish(...args);
+      return actual.finishScan(...args);
+    },
+  };
+});
 let mockModelsReady = true;
+let mockReport: (frame: LandmarkFrame) => void = () => {};
 jest.mock("../vision/useLandmarks", () => ({
-  useLandmarks: () => ({ output: {}, ready: mockModelsReady }),
+  useLandmarks: (report: (frame: LandmarkFrame) => void) => {
+    mockReport = report;
+    return { output: {}, ready: mockModelsReady };
+  },
 }));
 const mockPermission = {
   hasPermission: true,
@@ -101,6 +125,7 @@ beforeEach(async () => {
   jest.useFakeTimers({ doNotFake: ["nextTick", "setImmediate", "queueMicrotask"] });
   jest.resetAllMocks();
   mockFocused = true;
+  mockPolicy = null;
   mockModelsReady = true;
   mockPermission.hasPermission = true;
   mockPermission.canRequestPermission = false;
@@ -318,4 +343,32 @@ test("session start alone cannot enable scanning before the preview starts", asy
   expect(button("Бэлтгэх").props.disabled).toBe(true);
   await act(async () => camera().props.onPreviewStarted());
   expect(button("Бэлтгэх").props.disabled).toBe(false);
+});
+
+test("with a policy set, only frames recorded during the scan decide the result", async () => {
+  mockPolicy = { referAsymmetry: 0.2, minFramesUsed: 1, maxSpread: 0.1, validated: false };
+  const noFace: LandmarkFrame = {
+    faceCount: 0,
+    landmarks: [],
+    frameSize: { width: 3840, height: 2160 },
+    timestampMs: 0,
+    latencyMs: 10,
+  };
+  const failing = { ...noFace, eyeFailure: "MODEL_UNAVAILABLE" as const };
+  await act(async () => {
+    camera().props.onStarted();
+    camera().props.onPreviewStarted();
+  });
+  await press("Бэлтгэх");
+  // Before the scan starts: ignored.
+  await act(async () => mockReport(failing));
+  await press("3 секунд");
+  await act(async () => mockReport(noFace));
+  await advance(3100);
+  expect(mockPush).toHaveBeenLastCalledWith("/scan/result");
+  expect(mockAnalyze).not.toHaveBeenCalled();
+  const [recording, meta] = mockFinish.mock.calls[0]!;
+  expect(recording.frames).toHaveLength(1);
+  expect(recording.failure).toBeNull();
+  expect(meta.policyVersion).toBe("policy-test");
 });

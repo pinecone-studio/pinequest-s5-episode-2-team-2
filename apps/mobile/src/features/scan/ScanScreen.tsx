@@ -5,8 +5,11 @@ import { useCameraDevice, useCameraPermission } from "react-native-vision-camera
 import { mockScanResult } from "@app/core";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { theme } from "../../theme";
+import type { LandmarkFrame } from "../vision/facePipeline";
+import { emptyRecording, finishScan, recordFrame } from "./recorder";
 import { useScanResult } from "./ScanResultContext";
 import { ScanCamera } from "./ScanCamera";
+import { SCAN_POLICY, SCAN_POLICY_VERSION } from "./scanPolicy";
 import { initialScanState, SCAN_DURATION_MS, scanReducer, torchEnabled } from "./state";
 
 export default function ScanScreen() {
@@ -19,7 +22,14 @@ export default function ScanScreen() {
   const focused = useIsFocused();
   const { hasPermission, canRequestPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice("back");
-  const { setResult } = useScanResult();
+  const { setResult, setEyes } = useScanResult();
+  // Frames of the running scan; a ref so recording does not re-render the screen.
+  const recording = useRef(emptyRecording());
+  const scanning = useRef(false);
+  scanning.current = state.status === "scanning";
+  const onFrame = useCallback((frame: LandmarkFrame) => {
+    if (scanning.current) recording.current = recordFrame(recording.current, frame);
+  }, []);
   const active = focused && appState === "active";
   const showCamera =
     active && hasPermission && !!device && ["idle", "aligning", "scanning"].includes(state.status);
@@ -59,17 +69,37 @@ export default function ScanScreen() {
   useEffect(() => {
     if (state.status !== "processing" || !active) return;
     let cancelled = false;
+    const frames = recording.current;
     Promise.resolve()
-      .then(() =>
-        mockScanResult("RETAKE", {
-          id: `mock-${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          childId: null,
-          durationMs: SCAN_DURATION_MS,
-        }),
-      )
-      .then((result) => {
-        if (!cancelled) dispatch({ type: "RESOLVE", result });
+      .then(async () => {
+        if (!SCAN_POLICY) {
+          return {
+            result: await mockScanResult("RETAKE", {
+              id: `mock-${Date.now()}`,
+              createdAt: new Date().toISOString(),
+              childId: null,
+              durationMs: SCAN_DURATION_MS,
+            }),
+            eyes: null,
+          };
+        }
+        return finishScan(
+          frames,
+          {
+            id: `scan-${Date.now()}`,
+            createdAt: new Date(Date.now() - SCAN_DURATION_MS).toISOString(),
+            childId: null,
+            durationMs: SCAN_DURATION_MS,
+            modelVersion: "keypoints",
+            policyVersion: SCAN_POLICY_VERSION,
+          },
+          SCAN_POLICY,
+        );
+      })
+      .then(({ result, eyes }) => {
+        if (cancelled) return;
+        setEyes(eyes);
+        dispatch({ type: "RESOLVE", result });
       })
       .catch(() => {
         if (!cancelled) dispatch({ type: "FAIL" });
@@ -77,7 +107,7 @@ export default function ScanScreen() {
     return () => {
       cancelled = true;
     };
-  }, [state.status, active]);
+  }, [state.status, active, setEyes]);
 
   useEffect(() => {
     if (state.status !== "done" || !active) return;
@@ -140,6 +170,7 @@ export default function ScanScreen() {
                 key={device.id}
                 device={device}
                 torchOn={torchEnabled(state, active, device.hasTorch)}
+                onFrame={onFrame}
                 onReady={() => setReady(true)}
                 onFailure={() => {
                   setReady(false);
@@ -173,7 +204,10 @@ export default function ScanScreen() {
               <Button
                 label="TODO(copy): 3 секунд шалгах"
                 disabled={!active || !ready || !device.hasTorch}
-                onPress={() => dispatch({ type: "START", nowMs: performance.now() })}
+                onPress={() => {
+                  recording.current = emptyRecording();
+                  dispatch({ type: "START", nowMs: performance.now() });
+                }}
               />
             </>
           )}
