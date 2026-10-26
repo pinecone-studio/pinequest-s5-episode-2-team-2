@@ -3,10 +3,11 @@ export const historyCopy = {
   title: "TODO(copy): History",
   noChild: "TODO(copy): Add a child profile to keep a history",
   empty: "TODO(copy): No saved scans yet",
-  scans: (n: number) => `${n} TODO(copy): scans`,
   failed: "TODO(copy): Could not load the history. Try again.",
   retry: "TODO(copy): Retry",
   open: "TODO(copy): Open scan details",
+  all: (n: number) => `TODO(copy): All ${n}`,
+  noneWithOutcome: "TODO(copy): No scans with this result",
   detail: {
     title: "TODO(copy): Scan details",
     missing: "TODO(copy): This scan no longer exists",
