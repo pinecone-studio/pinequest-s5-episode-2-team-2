@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { Button, Card, Screen, Text } from "../../components/ui";
+import { LatestScanCard } from "../history/LatestScanCard";
 
 export default function HomeScreen() {
   return (
@@ -12,6 +13,7 @@ export default function HomeScreen() {
         <Text>TODO(copy): Eye examination notice</Text>
         <Button label="TODO(copy): Open Scan" onPress={() => router.navigate("/scan")} />
       </Card>
+      <LatestScanCard />
     </Screen>
   );
 }
