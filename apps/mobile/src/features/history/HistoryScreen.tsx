@@ -7,6 +7,7 @@ import { Button, Card, Screen, Text } from "../../components/ui";
 import { listSessions } from "../../storage/sessions";
 import { theme } from "../../theme";
 import { useActiveChildId } from "../children/useActiveChildId";
+import { ProgressChart } from "../progress/ProgressChart";
 import { outcomeCopy } from "../scan/resultCopy";
 import { historyCopy as copy } from "./copy";
 import { formatScanTime, groupByDay } from "./format";
@@ -53,6 +54,9 @@ export default function HistoryScreen() {
         </Card>
       ) : (
         <>
+          <Card>
+            <ProgressChart sessions={sessions} />
+          </Card>
           <Text variant="caption" style={styles.muted}>
             {copy.scans(sessions.length)}
           </Text>
