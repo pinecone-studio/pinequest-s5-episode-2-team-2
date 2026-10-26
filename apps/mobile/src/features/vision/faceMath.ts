@@ -116,7 +116,7 @@ export function sampleCrop(
   sourceSize: number,
   region: FaceRegion,
   outputSize: number,
-): Float32Array {
+): Float32Array<ArrayBuffer> {
   "worklet";
   if (
     rgb.length !== sourceSize * sourceSize * 3 ||

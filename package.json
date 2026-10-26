@@ -17,6 +17,7 @@
     "mobile": "npm run start --workspace @app/mobile",
     "mobile:ios": "npm run ios --workspace @app/mobile",
     "mobile:android": "npm run android --workspace @app/mobile",
+    "premobile:export": "npm run models --workspace @app/mobile",
     "mobile:export": "npm exec --workspace @app/mobile -- expo export --platform ios --output-dir dist/ios"
   },
   "devDependencies": {
