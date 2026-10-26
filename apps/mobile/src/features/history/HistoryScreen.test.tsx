@@ -4,6 +4,7 @@ import { create, type ReactTestRenderer } from "react-test-renderer";
 import { mockScanResult, type ScanResult } from "@app/core";
 import HistoryScreen from "./HistoryScreen";
 import { historyCopy as copy } from "./copy";
+import { progressCopy } from "../progress/copy";
 import { outcomeCopy } from "../scan/resultCopy";
 
 let mockChildId: string | null | undefined;
@@ -74,6 +75,7 @@ test("lists sessions by day and opens one", async () => {
   expect(text()).toContain("2026.10.26");
   expect(text()).toContain("2026.10.25");
   expect(text()).toContain(outcomeCopy.REFER.title);
+  expect(text()).toContain(progressCopy.notice);
   const rows = nodes("Pressable");
   expect(rows).toHaveLength(2);
   await act(async () => rows[0]!.props.onPress());
