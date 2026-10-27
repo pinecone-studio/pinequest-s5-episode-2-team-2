@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Нүдний гэрэл — eye and light reflex</title>
+  <desc>Original vector artwork created for PineQuest Team 2 with Codex assistance. MIT licensed.</desc>
+  <path d="M152 512C244 384 366 320 512 320s268 64 360 192c-92 128-214 192-360 192S244 640 152 512Z" fill="#FFFFFF" stroke="#1D2B4F" stroke-width="32" stroke-linejoin="round"/>
+  <circle cx="512" cy="512" r="176" fill="#2F6FED" stroke="#1F55C4" stroke-width="16"/>
+  <circle cx="512" cy="512" r="84" fill="#0F1B2D"/>
+  <circle cx="558" cy="456" r="28" fill="#FFFFFF"/>
+</svg>
