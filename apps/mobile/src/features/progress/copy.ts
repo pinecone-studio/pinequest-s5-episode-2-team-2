@@ -1,8 +1,8 @@
 // Placeholders until the team writes the final Mongolian copy (CONTRIBUTING.md "App copy").
 export const progressCopy = {
-  title: "TODO(copy): Progress",
-  notEnough: "TODO(copy): The chart appears after two measured scans",
-  notice: "TODO(copy): The score is a measurement, not a diagnosis",
+  title: "TODO(copy): Хэмжилтийн явц",
+  notEnough: "TODO(copy): Хэмжилттэй хоёр шалгалтын дараа график харагдана",
+  notice: "TODO(copy): Энэ нь хэмжилтийн үзүүлэлт бөгөөд онош биш",
   summary: (count: number, top: number) =>
-    `TODO(copy): ${count} measured scans, highest score ${top.toFixed(2)}`,
+    `TODO(copy): Хэмжилттэй ${count} шалгалт, хамгийн их үзүүлэлт ${top.toFixed(2)}`,
 } as const;
