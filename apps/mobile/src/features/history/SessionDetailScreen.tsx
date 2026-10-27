@@ -7,7 +7,7 @@ import { Button, Card, Screen, Text } from "../../components/ui";
 import { deleteSession, getSession } from "../../storage/sessions";
 import { theme } from "../../theme";
 import { outcomeCopy, reasonCopy, resultCopy } from "../scan/resultCopy";
-import { SCAN_POLICY_VERSION } from "../scan/scanPolicy";
+import { isUnvalidatedPolicy } from "../scan/scanPolicy";
 import { historyCopy } from "./copy";
 import { formatScanTime } from "./format";
 
@@ -61,7 +61,7 @@ export default function SessionDetailScreen() {
         </Card>
       ) : (
         <>
-          {session.policyVersion === SCAN_POLICY_VERSION && (
+          {isUnvalidatedPolicy(session.policyVersion) && (
             <Text accessibilityRole="alert">{resultCopy.demo}</Text>
           )}
           <Text variant="caption" style={styles.muted}>
