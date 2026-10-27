@@ -11,7 +11,7 @@ export default function HomeScreen() {
       <Card>
         <Text>TODO(copy): App title</Text>
         <Text>TODO(copy): Eye examination notice</Text>
-        <Button label="TODO(copy): Open Scan" onPress={() => router.navigate("/scan")} />
+        <Button label="TODO(copy): Open checks" onPress={() => router.navigate("/tests")} />
       </Card>
       <LatestScanCard />
     </Screen>
