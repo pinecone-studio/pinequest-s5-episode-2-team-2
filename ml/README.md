@@ -91,8 +91,9 @@ uv run python -m hirschberg.calibration calibration.jsonl
 
 It prints a Markdown report: reflex shift per degree of gaze with a 95% interval (resampling
 people), repeatability across repeats, the smallest reliable change in degrees and prism
-dioptres, the frame failure rate, and the mirrored asymmetry per angle, which should stay near
-zero because both eyes turn together.
+dioptres, the frame failure rate, and the mirrored asymmetry per angle. That asymmetry grows
+with the angle (both reflexes move the same way, which the mirroring adds up), which shows how
+much looking away from the camera would raise a scan's score.
 
 ## dataset
 

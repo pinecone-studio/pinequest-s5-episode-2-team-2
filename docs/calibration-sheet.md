@@ -24,10 +24,13 @@ we talk to them. If the capture distance changes, regenerate the sheet: every of
 with `d`.
 
 **What it does and does not simulate.** Both eyes look at the same target, so both turn
-together. The torch reflex moves the same way in both eyes and the _mirrored asymmetry_
-stays near zero. That is the point: calibration scans test that the reflex moves by the
-expected amount per degree, and that looking off-centre alone does not produce a false
-asymmetry. Real one-eyed deviation is covered by the adult-only `D` scans.
+together and the torch reflex moves the same way in both eyes. Calibration scans test that
+the reflex moves by the expected amount per degree. They also show what looking away does to
+the score: the _mirrored asymmetry_ cancels reflexes that are mirror-symmetric (both slightly
+nasal), but a shift in the same image direction in both eyes adds up, so it grows by about
+twice the per-degree shift. Looking 2.5° away is already above the refer threshold, which is
+why frames where the child is not looking at the camera must be rejected. Real one-eyed
+deviation is covered by the adult-only `D` scans.
 
 ## Print and check
 

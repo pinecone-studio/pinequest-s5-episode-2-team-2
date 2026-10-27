@@ -44,8 +44,9 @@ app uses (`docs/quality-checks.md`).
   rejected, most frequent first. Many rejected frames point to a capture problem or to
   quality limits that need tuning.
 - **calibration**: reflex shift per degree with a 95% interval, repeatability, the smallest
-  reliable change in degrees and prism dioptres, and the asymmetry per gaze angle, which
-  should stay near zero because both eyes turn together.
+  reliable change in degrees and prism dioptres, and the asymmetry per gaze angle. Because
+  both eyes turn the same way, the mirrored asymmetry grows by about twice the shift per
+  degree; a frame where the child looks away would therefore look like a deviation.
 - **evaluate**: AUC, sensitivity and specificity at every threshold and the threshold with
   the highest Youden index, with intervals that resample whole people.
 
