@@ -10,9 +10,10 @@ import { childrenCopy as copy } from "./copy";
 import { ageThisYear } from "./form";
 
 /** Profiles on the Profile tab: tap to select, edit, or add a new one. */
-export function ChildrenList() {
+export function ChildrenList({ onSelect }: { onSelect?: () => void } = {}) {
   const db = useSQLiteContext();
   const [children, setChildren] = useState<Child[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -32,8 +33,14 @@ export function ChildrenList() {
   useFocusEffect(load);
 
   async function select(id: string) {
-    await setActiveChildId(db, id);
-    setActiveId(id);
+    setFailed(false);
+    try {
+      await setActiveChildId(db, id);
+      setActiveId(id);
+      onSelect?.();
+    } catch {
+      setFailed(true);
+    }
   }
 
   if (children === null) return null;
@@ -42,6 +49,7 @@ export function ChildrenList() {
       <Text style={styles.heading} accessibilityRole="header">
         {copy.title}
       </Text>
+      {failed && <Text accessibilityRole="alert">{copy.errors.failed}</Text>}
       {children.length === 0 && <Text>{copy.empty}</Text>}
       {children.map((child) => {
         const selected = child.id === activeId;
