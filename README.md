@@ -18,6 +18,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how we work.
 | `ml/`            | Annotation, fine-tuning, evaluation, export                 |
 | `docs/`          | Capture protocol, model card, limitations                   |
 
+## Documentation
+
+| Topic                                          | Doc                                                                                                                                                                                        |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| How a scan becomes a result, module by module  | [architecture.md](docs/architecture.md)                                                                                                                                                    |
+| Medical sources behind every threshold and tip | [references.md](docs/references.md)                                                                                                                                                        |
+| What the tests check and how to run them       | [testing.md](docs/testing.md)                                                                                                                                                              |
+| Frame quality checks and their limits          | [quality-checks.md](docs/quality-checks.md)                                                                                                                                                |
+| The keypoint model and its evaluation          | [model-card.md](docs/model-card.md), [evaluation-report.md](docs/evaluation-report.md)                                                                                                     |
+| Collecting and checking captures               | [capture-protocol.md](docs/capture-protocol.md), [data-dictionary.md](docs/data-dictionary.md), [consent-form.md](docs/consent-form.md), [calibration-sheet.md](docs/calibration-sheet.md) |
+| From captures to thresholds                    | [evaluation-workflow.md](docs/evaluation-workflow.md)                                                                                                                                      |
+| TypeScript and Python kept identical           | [shared-fixtures.md](docs/shared-fixtures.md)                                                                                                                                              |
+
 ## Development
 
 Requires Node 22.13+ (see `.nvmrc`; mobile migration tests use Node's SQLite engine).
