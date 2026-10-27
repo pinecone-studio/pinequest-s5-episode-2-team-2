@@ -5,7 +5,7 @@ import ProfileScreen from "../../../app/(tabs)/profile";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
-jest.mock("../children/ChildrenList", () => ({ ChildrenList: "ChildrenList" }));
+jest.mock("../dashboard/ProfileDashboard", () => ({ ProfileDashboard: "ProfileDashboard" }));
 jest.mock("../../components/ui", () => ({
   Button: "Button",
   Card: "Card",
@@ -23,7 +23,7 @@ test.each([false, true])(
       await act(async () => {
         renderer = create(<ProfileScreen />);
       });
-      const settings = renderer.root.findAllByProps({ label: "TODO(copy): Settings" });
+      const settings = renderer.root.findAllByProps({ label: "TODO(copy): Тохиргоо" });
       expect(settings).toHaveLength(1);
       settings[0]!.props.onPress();
       expect(mockPush).toHaveBeenCalledWith("/settings");

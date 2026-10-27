@@ -13,7 +13,13 @@ const HEIGHT = 160;
 const DOT = 12;
 
 /** Asymmetry score over time with outcome-coloured markers; plain views, no chart library. */
-export function ProgressChart({ sessions }: { sessions: readonly ScanResult[] }) {
+export function ProgressChart({
+  sessions,
+  showTitle = true,
+}: {
+  sessions: readonly ScanResult[];
+  showTitle?: boolean;
+}) {
   const [width, setWidth] = useState(0);
   const series = progressSeries(sessions);
   const inner = Math.max(0, width - DOT);
@@ -22,7 +28,7 @@ export function ProgressChart({ sessions }: { sessions: readonly ScanResult[] })
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>{copy.title}</Text>
+      {showTitle && <Text style={styles.heading}>{copy.title}</Text>}
       {series.length < 2 ? (
         <Text variant="caption" style={styles.muted}>
           {copy.notEnough}
