@@ -46,6 +46,8 @@ class EyeScene:
     iris_radius: float = 40.0
     angle_deg: float = 0.0
     """Horizontal gaze rotation; positive moves the reflex to image right."""
+    vertical_deg: float = 0.0
+    """Vertical gaze rotation; positive moves the reflex down in the image."""
     kappa: float = 0.0
     """Reflex offset of a straight eye in iris radii (angle kappa), added to the rotation."""
     reflex_radius: float = 0.07
@@ -82,7 +84,8 @@ def render_eye(scene: EyeScene, rng: np.random.Generator | None = None) -> Synth
     cx = size / 2 + scene.center_jitter[0]
     cy = size / 2 + scene.center_jitter[1]
     offset_x = offset_for_angle(scene.angle_deg) + scene.kappa
-    reflex = Point(cx + offset_x * r, cy)
+    offset_y = offset_for_angle(scene.vertical_deg)
+    reflex = Point(cx + offset_x * r, cy + offset_y * r)
 
     def px(v: float) -> int:
         return int(round(v * s))
@@ -91,15 +94,17 @@ def render_eye(scene: EyeScene, rng: np.random.Generator | None = None) -> Synth
     # Lid opening: an ellipse wider than the iris that hides its top and bottom edges a little.
     lid_h = px(scene.lid_opening * r)
     cv2.ellipse(big, (px(cx), px(cy)), (px(2.6 * r), lid_h), 0, 0, 360, SCLERA, -1)
-    # Turning the eye narrows the iris horizontally by cos(angle).
+    # Turning the eye narrows the iris by cos(angle) along the turn.
     squash = math.cos(math.radians(scene.angle_deg))
+    squash_y = math.cos(math.radians(scene.vertical_deg))
     iris = np.zeros_like(big)
-    cv2.ellipse(iris, (px(cx), px(cy)), (px(r * squash), px(r)), 0, 0, 360, 1, -1)
+    cv2.ellipse(iris, (px(cx), px(cy)), (px(r * squash), px(r * squash_y)), 0, 0, 360, 1, -1)
     lid = np.zeros_like(big)
     cv2.ellipse(lid, (px(cx), px(cy)), (px(2.6 * r), lid_h), 0, 0, 360, 1, -1)
     big[(iris > 0) & (lid > 0)] = scene.iris_level
     pupil = np.zeros_like(big)
-    cv2.ellipse(pupil, (px(cx), px(cy)), (px(0.4 * r * squash), px(0.4 * r)), 0, 0, 360, 1, -1)
+    pupil_axes = (px(0.4 * r * squash), px(0.4 * r * squash_y))
+    cv2.ellipse(pupil, (px(cx), px(cy)), pupil_axes, 0, 0, 360, 1, -1)
     big[(pupil > 0) & (lid > 0)] = PUPIL
     spot = np.zeros_like(big)
     cv2.circle(spot, (px(reflex.x), px(reflex.y)), max(1, px(scene.reflex_radius * r)), 1, -1)
@@ -121,5 +126,5 @@ def render_eye(scene: EyeScene, rng: np.random.Generator | None = None) -> Synth
         iris_center=Point(cx, cy),
         iris_radius=r,
         reflex=reflex,
-        reflex_offset=Point(offset_x, 0.0),
+        reflex_offset=Point(offset_x, offset_y),
     )

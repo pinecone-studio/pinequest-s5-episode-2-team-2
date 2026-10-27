@@ -109,3 +109,13 @@ def test_dark_iris_still_measures():
     assert int(eye.image[int(c.y), int(c.x - 0.7 * 40)]) == 40
     measured = measure_eye(eye.image, "imageLeft", Point(c.x + 2, c.y - 2), 37)
     assert measured.reflex_offset.x == pytest.approx(eye.reflex_offset.x, abs=0.03)
+
+
+@pytest.mark.parametrize("vertical", [-5, 5, 10])
+def test_vertical_gaze_moves_the_reflex_vertically(vertical):
+    eye = render_eye(EyeScene(iris_radius=40, vertical_deg=vertical))
+    assert eye.reflex_offset.x == 0
+    assert eye.reflex_offset.y == pytest.approx(offset_for_angle(vertical))
+    measured = measure_eye(eye.image, "imageLeft", eye.iris_center, 40)
+    assert measured.reflex_offset.y == pytest.approx(eye.reflex_offset.y, abs=0.03)
+    assert measured.reflex_offset.x == pytest.approx(0, abs=0.03)
