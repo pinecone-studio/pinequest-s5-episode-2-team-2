@@ -83,9 +83,27 @@ def table(summaries: dict[str, ScanSummary]) -> str:
     return "\n".join(rows)
 
 
+def as_json_lines(summaries: dict[str, ScanSummary]) -> str:
+    """One JSON object per capture, with the same field names as the app's ScanSummary."""
+    return "\n".join(
+        json.dumps(
+            {
+                "capture": capture,
+                "framesTotal": s.frames_total,
+                "framesUsed": s.frames_used,
+                "asymmetryScore": s.asymmetry_score,
+                "spread": s.spread,
+                "qualityReasons": s.quality_reasons,
+            }
+        )
+        for capture, s in summaries.items()
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("results", type=Path, nargs="+")
+    parser.add_argument("--json", action="store_true", help="print JSON lines instead of Markdown")
     args = parser.parse_args(argv)
     lines = [
         json.loads(text)
@@ -97,7 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     if not summaries:
         print("No results found.", file=sys.stderr)
         return 1
-    print(table(summaries))
+    print(as_json_lines(summaries) if args.json else table(summaries))
     return 0
 
 
