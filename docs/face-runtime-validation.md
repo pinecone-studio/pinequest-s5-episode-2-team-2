@@ -91,13 +91,74 @@ controls module build scheduling; see Apple's [build settings reference](https:/
 and React Native's [precompiled-build compatibility notes](https://reactnative.dev/blog/2025/08/12/react-native-0.81).
 
 Xcode Run with this workaround passed native compilation and installation.
-Launch was then blocked by an untrusted Developer App certificate on the phone;
-the owner must complete the device's Trust step before preview/result checks.
+Launch was initially blocked by an untrusted Developer App certificate on the phone.
 `codesign --verify --strict` passed, and the embedded development profile was
-current, matched the existing Team and included the paired phone. Device-side
-Verify App has not yet completed; local signature validity does not establish
-device trust.
+current, matched the existing Team and included the paired phone. The owner
+subsequently completed Verify App using mobile data after Wi-Fi verification did
+not complete. Xcode Run then launched the installed app successfully.
 Release and Simulator builds have not been tested with it. This build setting
 does not validate the camera, trained eye inference, live guidance or screening
 thresholds. The runtime checkout was subsequently fast-forwarded to `b5a2504`
-(#132/#133, unchanged native dependencies) for the next launch.
+(#132/#133, unchanged native dependencies) for the visible-preview run below.
+
+## Visible object preview and thermal stop — 2026-10-27
+
+The physical device, OS, Xcode and Debug build setup above were retained. Xcode
+reported `Running mobile on Uuganaa`. After selecting the refreshed Metro server
+and opening Scan, the owner confirmed that the object preview was visible and
+moving. The earlier black feed also affected Apple's Camera app; the owner
+confirmed that Camera recovered after restarting the phone. The restart does not
+establish the original cause.
+
+Runtime source was main `b5a2504`, including #132/#133. Both MediaPipe models
+loaded, and callbacks reported portrait 2160 × 3840 frames, all `faceCount=0`.
+No human participant, face still or recording was captured. These measurements
+cover the no-face detector path; face mesh and eye inference were not exercised.
+
+| Sample                          | Callbacks | Camera timestamp span | Median worker latency | p95 worker latency | Analysis rate |
+| ------------------------------- | --------: | --------------------: | --------------------: | -----------------: | ------------: |
+| Initial collection              |       440 |              45.302 s |             45.075 ms |          46.907 ms |      9.691 Hz |
+| Last 60 s before debugger pause |       201 |              59.834 s |            134.833 ms |         149.783 ms |      3.343 Hz |
+
+p95 uses nearest rank; analysis rate is `(callbacks - 1) / timestamp span`.
+The initial collection lasted 60.014 seconds of wall time but contained only
+45.302 seconds of callback timestamps (7.332 callbacks/s by wall time). It is not
+a full steady-state 60-second callback window. The later sample includes every
+logged callback in the final 60 seconds of camera timestamps ending at
+`177534620.397125` ms, before the diagnostic debugger pause; no latency-based
+filter was applied. Its maximum callback gap was 333.468 ms. Neither rate measures
+camera capture FPS or preview FPS.
+
+After that window, LLDB read the public `NSProcessInfo` properties:
+`thermalState=3` (critical), `lowPowerModeEnabled=0`. The process was resumed,
+then stopped with Xcode Stop; the debug session ended. The owner subsequently
+disconnected USB and confirmed that the phone was cooling with its screen off.
+No additional thermal stress test was attempted. USB power and Device Hub viewing
+were active during the run; initial thermal state, ambient temperature and device
+temperature in degrees were not measured, so heat cannot be attributed solely to
+the app or the two samples treated as a controlled thermal comparison.
+
+The diagnostic debugger pause lasted about 49 seconds and produced a subsequent
+49,684 ms callback plus dropped-frame messages. That callback is outside the
+pre-pause timestamp window above; it is a debugger artifact, not steady-state
+inference latency. Raw scalar logs and both sample summaries remain in local
+validation artifacts; images and model weights are not committed.
+
+Before another device run, let the phone cool and check its thermal baseline.
+Face tracking, eye overlay alignment, approved 4K still mapping and representative
+face/mesh/eye timings remain untested. Native cancel/background/tab/interruption,
+torch and retry checks, and scan → measured result → saved history, also remain
+pending. The previous permission-denial recovery observation is separate from
+these checks. Keep #11 open; a moving no-face preview does not complete it.
+
+The new model card (#135) reports pilot TFLite export `batch01-v2-bs16-e200`, but
+its private artifact location and an app-container URI were not available on this
+Mac or found through connected Drive search. No consented participant or approved
+4K still was available for this session. The pilot contains no torch reflex and
+must not be used for reflex offset until retrained on #29; its existence does not
+establish native eye inference or complete #12/#13. The assigned annotation batch
+and 20 independent double annotations for #34 are also still unavailable here.
+
+The teammate's later #137 records a separate Release spike-app model parity and
+latency check. It is useful model evidence, but does not exercise this app's Scan
+camera path and is not counted as this session's native eye-crop acceptance.
