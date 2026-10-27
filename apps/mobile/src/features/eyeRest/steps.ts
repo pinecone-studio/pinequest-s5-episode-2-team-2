@@ -21,7 +21,7 @@ export function stepAt(exercise: Exercise, elapsedMs: number): StepState {
   const round = Math.floor(elapsed / oneRound);
   let intoRound = elapsed - round * oneRound;
   for (let stepIndex = 0; stepIndex < exercise.steps.length; stepIndex++) {
-    const { seconds } = exercise.steps[stepIndex];
+    const { seconds } = exercise.steps[stepIndex]!;
     if (intoRound < seconds) {
       return {
         done: false,
