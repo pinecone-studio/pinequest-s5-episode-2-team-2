@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Нүдний гэрэл",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,6 +8,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
+      "icon": "./assets/icon.png",
       "bundleIdentifier": "studio.pinecone.pinequest.team2",
       "infoPlist": {
         "NSCameraUsageDescription": "Нүдний шалгалт хийхэд камер ашиглана. Зураг хадгалахгүй, утаснаас гаргахгүй."
