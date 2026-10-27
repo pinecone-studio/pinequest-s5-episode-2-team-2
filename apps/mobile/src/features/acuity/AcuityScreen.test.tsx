@@ -7,11 +7,14 @@ import { Optotype } from "./Optotype";
 const mockBack = jest.fn();
 jest.mock("expo-router", () => ({ router: { back: () => mockBack() } }));
 jest.mock("./SaveAcuityButton", () => ({ SaveAcuityButton: "SaveAcuityButton" }));
+jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 jest.mock("../../components/ui", () => ({
   Button: "Button",
   Card: "Card",
   Screen: "Screen",
   Text: "Text",
+  Verdict: "Verdict",
+  Notice: "Notice",
 }));
 jest.mock("react-native", () => ({
   View: "View",
@@ -23,10 +26,15 @@ jest.mock("react-native", () => ({
 
 let renderer: ReactTestRenderer;
 const all = (type: string) => renderer.root.findAll((n) => n.type === type);
+// Buttons by label; the age-group choices are Pressables with an accessibility label.
 const press = (label: string) =>
   act(() =>
-    all("Button")
-      .find((b) => b.props.label === label)!
+    renderer.root
+      .find(
+        (n) =>
+          (n.type === ("Button" as never) && n.props.label === label) ||
+          (n.type === ("Pressable" as never) && n.props.accessibilityLabel === label),
+      )
       .props.onPress(),
   );
 beforeEach(() => Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }));
@@ -53,6 +61,8 @@ test("runs both eyes from age group to result", () => {
   act(() => {
     renderer = create(<AcuityScreen />);
   });
+  // Four age-group choices.
+  expect(all("Pressable")).toHaveLength(4);
   press(copy.groups.adult);
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("right"));
   press(copy.ready);

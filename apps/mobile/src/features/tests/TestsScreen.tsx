@@ -1,11 +1,11 @@
 import { router, useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { listAcuityResults } from "../../storage/acuity";
 import { listSessions } from "../../storage/sessions";
-import { theme } from "../../theme";
+import { fonts, theme } from "../../theme";
 import { useActiveChildId } from "../children/useActiveChildId";
 import { CHECKS, latestAcuityLine, latestScanLine, type CheckId } from "./checks";
 import { testsCopy as copy } from "./copy";
@@ -42,15 +42,25 @@ export default function TestsScreen() {
         const check = copy.checks[id];
         return (
           <Card key={id}>
-            <Text style={styles.name}>{check.title}</Text>
+            <View style={styles.head}>
+              <View style={[styles.icon, { backgroundColor: ICON[id].background }]}>
+                <Text style={[styles.iconGlyph, { color: ICON[id].color }]}>{ICON[id].glyph}</Text>
+              </View>
+              <View style={styles.headText}>
+                <Text style={styles.name}>{check.title}</Text>
+                <Text variant="caption" style={styles.muted}>
+                  {check.time} · {check.needs}
+                </Text>
+              </View>
+            </View>
             <Text>{check.what}</Text>
-            <Text variant="caption" style={styles.muted}>
-              {check.time} · {check.needs}
-            </Text>
             {latest[id] && (
-              <Text variant="caption" style={styles.muted}>
-                {latest[id]}
-              </Text>
+              <View style={styles.latest}>
+                <View style={styles.dot} />
+                <Text variant="caption" style={styles.muted}>
+                  {latest[id]}
+                </Text>
+              </View>
             )}
             <Button
               label={route ? copy.start : copy.comingSoon}
@@ -64,7 +74,19 @@ export default function TestsScreen() {
   );
 }
 
+// Decorative icon per check, in the demo's teal and blue accents.
+const ICON: Record<CheckId, { glyph: string; color: string; background: string }> = {
+  strabismus: { glyph: "◉", color: theme.colors.primary, background: theme.colors.primarySoft },
+  vision: { glyph: "E", color: "#0F8F82", background: "#DDF7F3" },
+};
+
 const styles = StyleSheet.create({
-  name: { fontWeight: "700" },
+  head: { flexDirection: "row", alignItems: "center", gap: 12 },
+  icon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  iconGlyph: { fontFamily: fonts.black, fontWeight: "900", fontSize: 24 },
+  headText: { flex: 1, gap: 2 },
+  name: { fontFamily: fonts.black, fontWeight: "900", fontSize: 18, lineHeight: 24 },
   muted: { color: theme.colors.muted },
+  latest: { flexDirection: "row", alignItems: "center", gap: 8 },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: theme.colors.primary },
 });
