@@ -53,8 +53,18 @@ def skip_reason(path: Path, sheet: dict[str, dict]) -> str | None:
     return None
 
 
-def extract(captures: Path, out: Path, step: int, sheet: dict[str, dict]) -> tuple[int, dict]:
-    """Writes frames for every usable video; returns the frame count and skipped files."""
+def extract(
+    captures: Path,
+    out: Path,
+    step: int,
+    sheet: dict[str, dict],
+    max_frames: int | None = None,
+) -> tuple[int, dict]:
+    """Writes frames for every usable video; returns the frame count and skipped files.
+
+    `max_frames` caps the frames taken from one video (the first ones), so a long recording
+    does not outweigh the 3-second captures in the reports.
+    """
     written, skipped = 0, {}
     videos = sorted(p for p in captures.iterdir() if p.suffix.lower() in VIDEO_SUFFIXES)
     for path in videos:
@@ -64,6 +74,8 @@ def extract(captures: Path, out: Path, step: int, sheet: dict[str, dict]) -> tup
             continue
         count = 0
         for index, frame in every_nth_frame(path, step):
+            if max_frames is not None and count >= max_frames:
+                break
             target = out / f"{path.stem}_f{index}.jpg"
             cv2.imwrite(str(target), frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
             count += 1
@@ -79,9 +91,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("out", type=Path)
     parser.add_argument("--step", type=int, default=3)
     parser.add_argument("--sheet", type=Path)
+    parser.add_argument("--max-frames", type=int, help="at most this many frames per video")
     args = parser.parse_args(argv)
     if args.step < 1:
         parser.error("--step must be at least 1")
+    if args.max_frames is not None and args.max_frames < 1:
+        parser.error("--max-frames must be at least 1")
     if inside_repo(args.out):
         print(
             "Refusing to write frames inside the repository; use the private Drive.",
@@ -89,7 +104,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
     args.out.mkdir(parents=True, exist_ok=True)
-    written, skipped = extract(args.captures, args.out, args.step, load_sheet(args.sheet))
+    written, skipped = extract(
+        args.captures, args.out, args.step, load_sheet(args.sheet), args.max_frames
+    )
     print(f"Wrote {written} frames to {args.out}.")
     for name, reason in sorted(skipped.items()):
         print(f"Skipped {name}: {reason}")
