@@ -91,7 +91,7 @@ def test_report_and_cli(tmp_path, capsys):
     text = report(group_captures(synthetic()))
     assert "| Shift per degree (iris radii) | 0.0200 |" in text
     assert "| Frame failure rate | 0.250 (42/168) |" in text
-    assert "| -10° | 6 | 0.010 |" in text
+    assert "| -10 deg | 6 | 0.010 |" in text
 
     path = tmp_path / "results.jsonl"
     path.write_text("\n".join(json.dumps(x) for x in synthetic()) + "\n", "utf8")
@@ -111,3 +111,7 @@ def test_frames_rejected_by_quality_are_not_measured():
     blurred = [{**good, "quality": {"ok": False, "reasons": ["BLUR"]}}, good]
     [capture] = group_captures(blurred)
     assert (capture.frames, capture.failed) == (2, 1)
+
+
+def test_report_is_ascii_so_it_prints_on_any_console():
+    report(group_captures(synthetic())).encode("ascii")
