@@ -23,7 +23,7 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
 from keypoints.data import EyeCrops, label_vector
-from keypoints.metrics import keypoint_errors, markdown_table
+from keypoints.metrics import error_intervals, interval_table, keypoint_errors, markdown_table
 
 
 def build_model(pretrained: bool) -> nn.Module:
@@ -119,12 +119,20 @@ def main(argv: list[str] | None = None) -> int:
 
     torch.save(model.state_dict(), out_dir / "model.pt")
     test_targets = np.stack([t.numpy() for _, t in test])
-    results = {"model": keypoint_errors(predict(model, DataLoader(test, 64), device), test_targets)}
+    model_pred = predict(model, DataLoader(test, 64), device)
+    people = [row.get("person_id") or str(i) for i, row in enumerate(test.rows)]
+    results = {"model": keypoint_errors(model_pred, test_targets)}
+    intervals = {"model": error_intervals(model_pred, test_targets, people)}
     h_pred, h_target = heuristic_vectors(manifest, test.rows)
     if len(h_pred):
         results["heuristic"] = keypoint_errors(h_pred, h_target)
-    (out_dir / "metrics.json").write_text(json.dumps({"config": cfg, "test": results}, indent=2))
+        h_people = [p for p, row in zip(people, test.rows, strict=True) if row.get("heuristic")]
+        intervals["heuristic"] = error_intervals(h_pred, h_target, h_people)
+    report = {"config": cfg, "test": results, "intervals": intervals}
+    (out_dir / "metrics.json").write_text(json.dumps(report, indent=2))
     print(markdown_table(results))
+    print()
+    print(interval_table(intervals))
     return 0
 
 
