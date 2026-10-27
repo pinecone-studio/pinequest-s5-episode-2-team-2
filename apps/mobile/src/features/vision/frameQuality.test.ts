@@ -1,4 +1,6 @@
-import type { Point } from "@app/core";
+import type { CropStats, Point, QualityReason } from "@app/core";
+import { GUIDANCE, guidanceForFrame } from "../scan/guidance";
+import { toFrameAnalysis } from "../scan/recorder";
 import type { EyePrediction } from "./eyeCrops";
 import type { LandmarkFrame } from "./facePipeline";
 import { withFrameQuality } from "./frameQuality";
@@ -75,6 +77,37 @@ test("keeps missing-model failure and unavailable pixel checks while reporting c
   expect(result.quality).toMatchObject({
     ok: false,
     reasons: ["EYES_CLOSED", "EYE_NOT_FOUND"],
+    sharpness: null,
+    exposure: null,
+  });
+});
+
+test.each<[CropStats, QualityReason]>([
+  [{ sharpness: 0, exposure: 0.5, clipped: 0 }, "BLUR"],
+  [{ sharpness: 0.01, exposure: 0.1, clipped: 0 }, "TOO_DARK"],
+  [{ sharpness: 0.01, exposure: 0.9, clipped: 0 }, "OVEREXPOSED"],
+  [{ sharpness: 0.01, exposure: 0.5, clipped: 0.2 }, "OVEREXPOSED"],
+])("eye crop statistics %p reach guidance and recorded-frame quality as %s", (stats, reason) => {
+  const eyes = (["imageLeft", "imageRight"] as const).map((side, index): EyePrediction => ({
+    side,
+    irisCenter: { x: 430 + index * 140, y: 500 },
+    irisRadius: 40,
+    reflex: { x: 431 + index * 140, y: 500 },
+    reflexVisibleProbability: 0.9,
+    crop: { side, x: 330 + index * 140, y: 400, size: 200 },
+    cropStats: index === 0 ? stats : { sharpness: 0.01, exposure: 0.5, clipped: 0 },
+  })) as [EyePrediction, EyePrediction];
+  const result = withFrameQuality({ ...frame, eyes, eyeFailure: null });
+  expect(result.quality).toMatchObject({
+    ok: false,
+    reasons: [reason],
+    sharpness: Math.min(stats.sharpness, 0.01),
+    exposure: (stats.exposure + 0.5) / 2,
+  });
+  expect(guidanceForFrame(result)).toBe(GUIDANCE[reason]);
+  expect(toFrameAnalysis(result).quality).toBe(result.quality);
+  delete eyes[1].cropStats;
+  expect(withFrameQuality({ ...frame, eyes }).quality).toMatchObject({
     sharpness: null,
     exposure: null,
   });

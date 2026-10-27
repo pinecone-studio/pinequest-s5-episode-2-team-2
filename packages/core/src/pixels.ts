@@ -19,6 +19,7 @@ export const CLIP_LEVEL = 0.98;
 
 /** Rec. 601 luminance from interleaved RGB in 0..1, the weights OpenCV uses for grayscale. */
 export function lumaFromRgb(rgb: ArrayLike<number>): Float32Array {
+  "worklet";
   const luma = new Float32Array(Math.floor(rgb.length / 3));
   for (let i = 0; i < luma.length; i++) {
     luma[i] = 0.299 * rgb[i * 3]! + 0.587 * rgb[i * 3 + 1]! + 0.114 * rgb[i * 3 + 2]!;
@@ -28,6 +29,7 @@ export function lumaFromRgb(rgb: ArrayLike<number>): Float32Array {
 
 /** Sharpness and exposure of one eye crop; null when the crop is too small or invalid. */
 export function cropStats({ width, height, luma }: LumaCrop): CropStats | null {
+  "worklet";
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 3 || height < 3) return null;
   if (luma.length !== width * height) return null;
 
