@@ -101,3 +101,11 @@ def test_a_larger_window_reflection_is_taken_for_the_torch_reflex():
     assert wrong.reflex_offset.x == pytest.approx(-0.45, abs=0.05)
     assert ok.confidence == wrong.confidence == 0.5
     assert ok.reflex_count == wrong.reflex_count == 2
+
+
+def test_dark_iris_still_measures():
+    eye = render_eye(EyeScene(iris_radius=40, angle_deg=-5, iris_level=40))
+    c = eye.iris_center
+    assert int(eye.image[int(c.y), int(c.x - 0.7 * 40)]) == 40
+    measured = measure_eye(eye.image, "imageLeft", Point(c.x + 2, c.y - 2), 37)
+    assert measured.reflex_offset.x == pytest.approx(eye.reflex_offset.x, abs=0.03)

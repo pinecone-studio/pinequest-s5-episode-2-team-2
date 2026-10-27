@@ -52,6 +52,8 @@ class EyeScene:
     """Reflex spot radius in iris radii."""
     lid_opening: float = 1.05
     """Half-height of the lid opening in iris radii; below 1 the lids cover part of the iris."""
+    iris_level: int = IRIS
+    """Grey level of the iris; close to PUPIL for a dark brown iris."""
     window: tuple[float, float, float] | None = None
     """A second reflection (window, lamp): x and y from the iris centre and radius, all in
     iris radii. None for only the torch reflex."""
@@ -95,7 +97,7 @@ def render_eye(scene: EyeScene, rng: np.random.Generator | None = None) -> Synth
     cv2.ellipse(iris, (px(cx), px(cy)), (px(r * squash), px(r)), 0, 0, 360, 1, -1)
     lid = np.zeros_like(big)
     cv2.ellipse(lid, (px(cx), px(cy)), (px(2.6 * r), lid_h), 0, 0, 360, 1, -1)
-    big[(iris > 0) & (lid > 0)] = IRIS
+    big[(iris > 0) & (lid > 0)] = scene.iris_level
     pupil = np.zeros_like(big)
     cv2.ellipse(pupil, (px(cx), px(cy)), (px(0.4 * r * squash), px(0.4 * r)), 0, 0, 360, 1, -1)
     big[(pupil > 0) & (lid > 0)] = PUPIL
