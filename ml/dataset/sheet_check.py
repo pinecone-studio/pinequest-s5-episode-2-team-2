@@ -48,8 +48,8 @@ def row_problems(row: dict) -> list[str]:
     return problems
 
 
-def coverage_problems(rows: list[dict]) -> list[str]:
-    """Scans each person still needs; only usable rows count."""
+def usable_counts(rows: list[dict]) -> tuple[dict[str, dict[str, int]], set[str]]:
+    """Usable captures per person and condition, and which people are adults."""
     seen: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     adults = set()
     for row in rows:
@@ -59,6 +59,38 @@ def coverage_problems(rows: list[dict]) -> list[str]:
         seen[meta["person_id"]][meta["condition"]] += 1
         if row.get("age_group", "").strip() == "adult":
             adults.add(meta["person_id"])
+    return seen, adults
+
+
+def coverage_table(rows: list[dict]) -> str:
+    """One Markdown row per person: usable N, calibration targets and D captures, and done."""
+    seen, adults = usable_counts(rows)
+    lines = [
+        "| Person | Adult | N | Calibration targets | D | Complete |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    done = 0
+    for person, counts in sorted(seen.items()):
+        targets = sum(1 for c in CALIBRATION if counts[c])
+        adult = person in adults
+        complete = (
+            counts["N"] >= NORMAL_REPEATS
+            and targets == len(CALIBRATION)
+            and (not adult or counts["D"] >= DEVIATION_REPEATS)
+        )
+        done += complete
+        d = f"{counts['D']}/{DEVIATION_REPEATS}" if adult else "-"
+        lines.append(
+            f"| {person} | {'yes' if adult else 'no'} | {counts['N']}/{NORMAL_REPEATS} | "
+            f"{targets}/{len(CALIBRATION)} | {d} | {'yes' if complete else 'no'} |"
+        )
+    lines += ["", f"Complete: {done} of {len(seen)} people."]
+    return "\n".join(lines)
+
+
+def coverage_problems(rows: list[dict]) -> list[str]:
+    """Scans each person still needs; only usable rows count."""
+    seen, adults = usable_counts(rows)
     problems = []
     for person, counts in sorted(seen.items()):
         missing = []
@@ -90,6 +122,8 @@ def main(argv: list[str] | None = None) -> int:
     errors, missing = check(rows)
     people = len({r.get("person_id", "") for r in rows})
     print(f"Rows: {len(rows)}, people: {people}.")
+    print()
+    print(coverage_table(rows))
     for title, items in (("Errors", errors), ("Missing scans", missing)):
         if items:
             print(f"\n{title}:")

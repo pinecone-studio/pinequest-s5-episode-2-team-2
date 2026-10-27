@@ -1,6 +1,6 @@
 import csv
 
-from dataset.sheet_check import CALIBRATION, check, main, row_problems
+from dataset.sheet_check import CALIBRATION, check, coverage_table, main, row_problems
 
 ANGLES = {"00": "0", "25": "2.5", "05": "5", "10": "10"}
 
@@ -84,3 +84,13 @@ def test_cli(tmp_path, capsys):
         writer.writerows(rows)
     assert main([str(path)]) == 1
     assert "no consent_id" in capsys.readouterr().out
+
+
+def test_coverage_table_shows_each_person_and_who_is_complete():
+    rows = complete("P001") + complete("P002", adult=False)
+    rows += [r for r in complete("P003") if "_D_" not in r["file_name"]]
+    table = coverage_table(rows)
+    assert "| P001 | yes | 3/3 | 7/7 | 2/2 | yes |" in table
+    assert "| P002 | no | 3/3 | 7/7 | - | yes |" in table
+    assert "| P003 | yes | 3/3 | 7/7 | 0/2 | no |" in table
+    assert "Complete: 2 of 3 people." in table
