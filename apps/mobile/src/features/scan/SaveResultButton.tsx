@@ -3,6 +3,7 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { Text } from "../../components/ui";
+import { fonts, theme } from "../../theme";
 import { saveSession } from "../../storage/sessions";
 import { useActiveChildId } from "../children/useActiveChildId";
 import { resultCopy } from "./resultCopy";
@@ -67,17 +68,27 @@ export function SaveResultButton({ result }: { result: ScanResult }) {
 }
 
 const styles = StyleSheet.create({
-  // Same outline button as the result screen's other secondary actions.
+  // The shared secondary pill button (#152): white, 56 pt, extra-bold blue label.
   button: {
-    borderColor: "#137BFA",
-    borderWidth: 1,
-    borderRadius: 24,
-    minHeight: 48,
-    padding: 10,
+    minHeight: 56,
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: theme.spacing.lg,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+    shadowColor: "#1F55C4",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  disabled: { opacity: 0.5 },
-  label: { fontSize: 15, lineHeight: 22, fontWeight: "700", color: "#153C80" },
-  note: { fontSize: 14, lineHeight: 20, textAlign: "center", color: "#526574" },
+  disabled: { opacity: 0.5, shadowOpacity: 0 },
+  label: {
+    fontFamily: fonts.extraBold,
+    fontWeight: "800",
+    fontSize: 17,
+    lineHeight: 22,
+    color: theme.colors.primary,
+  },
+  note: { fontSize: 14, lineHeight: 20, textAlign: "center", color: theme.colors.muted },
 });

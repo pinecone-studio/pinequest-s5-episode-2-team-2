@@ -1,7 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Button, Text } from "../../components/ui";
+import { Button, Card, Notice, Text, Verdict } from "../../components/ui";
+import { fonts, theme } from "../../theme";
 import { EyeDiagramView } from "../eyeView/EyeDiagramView";
 import { SaveResultButton } from "./SaveResultButton";
 import { useScanResult } from "./ScanResultContext";
@@ -30,7 +31,11 @@ export default function ResultScreen() {
           {copy.title}
         </Text>
         {result?.policyVersion === SCAN_POLICY_VERSION && (
-          <Text accessibilityRole="alert">{copy.demo}</Text>
+          <Notice>
+            <Text accessibilityRole="alert" style={styles.alert}>
+              {copy.demo}
+            </Text>
+          </Notice>
         )}
         {result && outcome ? (
           <>
@@ -53,37 +58,29 @@ export default function ResultScreen() {
                 </Text>
               </>
             )}
-            <View style={[styles.card, { backgroundColor: outcome.background }]}>
-              <View style={styles.row}>
-                <Text accessible={false} style={[styles.icon, { color: outcome.color }]}>
-                  {outcome.icon}
-                </Text>
-                <Text accessibilityRole="header" style={[styles.outcome, { color: outcome.color }]}>
-                  {outcome.title}
-                </Text>
-              </View>
+            <Verdict outcome={result.outcome} title={outcome.title} icon={outcome.icon}>
               <Text style={styles.body}>{outcome.explanation}</Text>
-            </View>
+            </Verdict>
             {result.reasons.length > 0 && (
-              <View style={styles.section}>
+              <Card>
                 <Text style={styles.heading}>{copy.reasons}</Text>
                 {[...new Set(result.reasons)].map((reason) => (
                   <Text key={reason} style={styles.body}>
                     • {reasonCopy[reason]}
                   </Text>
                 ))}
-              </View>
+              </Card>
             )}
-            <View style={styles.section}>
+            <Card>
               <Text style={styles.heading}>{copy.next}</Text>
               <Text style={styles.body}>{outcome.next}</Text>
-            </View>
+            </Card>
           </>
         ) : (
           <Text style={styles.body}>{copy.empty}</Text>
         )}
-        <Text style={[styles.body, styles.notice]}>{copy.notice}</Text>
-        <Button label={copy.retry} onPress={retry} style={styles.primary} />
+        <Notice>{copy.notice}</Notice>
+        <Button label={copy.retry} onPress={retry} />
         {result &&
           (result.policyVersion === SCAN_POLICY_VERSION ? (
             <Text accessibilityLiveRegion="polite">{copy.saved}</Text>
@@ -95,23 +92,32 @@ export default function ResultScreen() {
   );
 }
 
+// Styled like the web demo's result page (#152): page title, verdict card, white section
+// cards, amber notices and pill buttons from the shared components.
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F8FBFF" },
+  screen: { flex: 1, backgroundColor: theme.colors.background },
   content: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    gap: 12,
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.lg,
+    gap: 14,
     width: "100%",
     maxWidth: 520,
     alignSelf: "center",
   },
   back: { minHeight: 44, minWidth: 44, justifyContent: "center", alignSelf: "flex-start" },
-  arrow: { fontSize: 32, color: "#153C80" },
-  title: { fontSize: 23, lineHeight: 30, fontWeight: "700", color: "#153C80", marginBottom: 4 },
+  arrow: { fontFamily: fonts.bold, fontSize: 32, color: theme.colors.text },
+  title: {
+    fontFamily: fonts.black,
+    fontWeight: "900",
+    fontSize: 26,
+    lineHeight: 32,
+    color: theme.colors.text,
+  },
+  alert: { color: theme.colors.onNotice, fontFamily: fonts.bold, fontWeight: "700", fontSize: 13 },
   preview: {
     height: 120,
-    backgroundColor: "#E7F0FF",
-    borderRadius: 20,
+    backgroundColor: theme.colors.primarySoft,
+    borderRadius: theme.radius.md,
     flexDirection: "row",
     justifyContent: "space-evenly",
     alignItems: "center",
@@ -132,7 +138,7 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     borderWidth: 9,
-    borderColor: "#5C8CAA",
+    borderColor: theme.colors.primary,
     backgroundColor: "#19344B",
   },
   glint: {
@@ -148,17 +154,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     height: "100%",
     width: 1,
-    backgroundColor: "#3CC4B3",
+    backgroundColor: "#14B8A6",
     left: "50%",
   },
-  card: { padding: 16, borderRadius: 18, gap: 10 },
-  row: { flexDirection: "row", alignItems: "center", gap: 10 },
-  icon: { fontSize: 26, fontWeight: "700", width: 32, textAlign: "center" },
-  outcome: { flex: 1, fontSize: 18, lineHeight: 25, fontWeight: "700" },
-  section: { gap: 5 },
-  heading: { fontSize: 15, lineHeight: 22, fontWeight: "700", color: "#153C80" },
-  body: { fontSize: 14, lineHeight: 21, color: "#31547E" },
-  muted: { fontSize: 12, lineHeight: 18, color: "#536C8B" },
-  notice: { padding: 12, borderRadius: 12, backgroundColor: "#EDF3FF" },
-  primary: { backgroundColor: "#137BFA", borderRadius: 24, minHeight: 48 },
+  heading: { fontFamily: fonts.black, fontWeight: "900", fontSize: 17, lineHeight: 24 },
+  body: { fontSize: 15, lineHeight: 22, color: theme.colors.muted },
+  muted: { color: theme.colors.muted },
 });
