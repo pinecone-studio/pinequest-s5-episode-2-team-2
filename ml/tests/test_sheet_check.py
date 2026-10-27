@@ -94,3 +94,13 @@ def test_coverage_table_shows_each_person_and_who_is_complete():
     assert "| P002 | no | 3/3 | 7/7 | - | yes |" in table
     assert "| P003 | yes | 3/3 | 7/7 | 0/2 | no |" in table
     assert "Complete: 2 of 3 people." in table
+
+
+def test_calibration_names_need_a_direction_that_fits_the_angle():
+    no_dir = row("P001_C05_r1_ip13_20261024", target_dir="")
+    zero_with_dir = row("P001_C00L_r1_ip13_20261024", target_angle_deg="0", target_dir="L")
+    no_angle = row("P001_C_r1_ip13_20261024", target_angle_deg="", target_dir="")
+    for bad in (no_dir, zero_with_dir, no_angle):
+        assert any("calibration needs L or R" in p for p in row_problems(bad)), bad["file_name"]
+    good = row("P001_C05L_r1_ip13_20261024")
+    assert not any("calibration needs" in p for p in row_problems(good))
