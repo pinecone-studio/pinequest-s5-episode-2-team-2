@@ -75,3 +75,25 @@ def test_uses_cli_quality_when_present():
         pytest.approx(0.1),
         ["BLUR"],
     )
+
+
+def test_json_lines_use_the_app_field_names(tmp_path, capsys):
+    path = tmp_path / "results.jsonl"
+    lines = [
+        measured("A_f0.jpg", 0.1),
+        measured("A_f1.jpg", 0.3),
+        {"file": "B.jpg", "error": "NO_FACE"},
+    ]
+    path.write_text("\n".join(json.dumps(x) for x in lines), "utf8")
+    assert main([str(path), "--json"]) == 0
+    rows = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert rows[0] == {
+        "capture": "A",
+        "framesTotal": 2,
+        "framesUsed": 2,
+        "asymmetryScore": pytest.approx(0.2),
+        "spread": pytest.approx(0.1),
+        "qualityReasons": [],
+    }
+    assert rows[1]["capture"] == "B" and rows[1]["asymmetryScore"] is None
+    assert rows[1]["qualityReasons"] == ["NO_FACE"]
