@@ -13,6 +13,7 @@ from hirschberg.bench import (
     measure_scene,
     projected_score,
     repeatability_sd,
+    run_vertical,
     scan_score,
     smallest_change,
     to_degrees,
@@ -75,6 +76,7 @@ def test_cli_prints_the_report(capsys):
     out = capsys.readouterr().out
     assert "# Synthetic bench test" in out
     assert "| clean |" in out and "| 20 PD |" in out
+    assert "| vertical gaze (clean) |" in out
     with pytest.raises(SystemExit):
         main(["--trials", "1"])
 
@@ -93,3 +95,12 @@ def test_projection_refers_around_the_target_and_not_straight_eyes():
     assert referred(4) < 0.05
     assert 0.3 < referred(8) < 0.7
     assert referred(20) > 0.99
+
+
+def test_vertical_runs_compare_the_vertical_offset():
+    trials = run_vertical(CONDITIONS["clean"], 2, np.random.default_rng(0))
+    assert len(trials) == 14
+    assert {round(t.true_offset, 6) for t in trials} == {
+        round(offset_for_angle(a), 6) for a in (-10, -5, -2.5, 0, 2.5, 5, 10)
+    }
+    assert fit_slope(trials) == pytest.approx(1, abs=0.05)
