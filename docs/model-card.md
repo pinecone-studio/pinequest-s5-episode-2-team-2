@@ -13,8 +13,8 @@ captures (#29).
   a linear head of 6 outputs.
 - **Code:** `ml/keypoints/` (`train.py` trains and evaluates, `export.py` converts to TFLite).
 - **Version:** no released weights yet. Pilot run `batch01-v2-bs16-e200`: the baseline config
-  with `batch_size = 16` and `epochs = 200`, trained at commit `b5a2504` on an Apple M3 (MPS) in under
-  two minutes. Weights are on the team Drive, not in git.
+  with `batch_size = 16` and `epochs = 200`, trained at commit `b5a2504` on an Apple M3 (MPS)
+  in under two minutes. Weights are on the team Drive, not in git.
 
 ## On-device contract
 
