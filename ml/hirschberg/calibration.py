@@ -219,13 +219,14 @@ def report(captures: Sequence[Capture]) -> str:
             return statistics.median(values) if values else None
 
         lines.append(
-            f"| {angle:+g}° | {len(at)} | {_fmt(median_asym(at))} | "
+            f"| {angle:+g} deg | {len(at)} | {_fmt(median_asym(at))} | "
             f"{_fmt_ci(bootstrap_ci(at, median_asym))} |"
         )
     lines += [
         "",
         "Shift is the mean horizontal reflex offset of both eyes in image coordinates; positive",
-        "angles are the person's right. The smallest reliable change is 1.96 × √2 × SD / |slope|.",
+        "angles are the person's right. The smallest reliable change is",
+        "1.96 * sqrt(2) * SD / |slope|.",
         "Intervals resample whole people, so they are wide with few participants.",
     ]
     return "\n".join(lines)
