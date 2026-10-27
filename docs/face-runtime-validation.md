@@ -57,3 +57,43 @@ approved recording was available. Face-following, eye-point alignment, portrait
 coordinate verification, full pipeline latency/rate and native eye inference
 remain untested. Cancel/background/tab/interruption/torch/retry device checks
 also remain pending; unit tests do not replace them. Keep #11 open.
+
+## Fresh-install native build follow-up — 2026-10-27
+
+Main runtime source `39dec2e`, the same Xcode/iPhone/Debug setup. After `npm ci`,
+ExpoSQLite's generated `ios/sqlite3.h` was absent. `pod install` restores it from
+the package's vendored sources. Without it, the compiler can resolve Apple's
+system SQLite header and report missing `exsqlite3_*` functions.
+
+Restoring the header alone and a clean build still failed in Swift's explicit
+dependency scan: `_Builtin_stdarg` was needed but not provided while implicit
+module use was disabled. The affected explicit ExpoSQLite PCM imported SDK
+SQLite3 and lacked Expo's prefixed symbols. The project-specific caches were
+backed up; no SDK, package source or dependency version was patched.
+
+For this observed Xcode 27.1 failure, use the manual helper after native
+preparation, with the CocoaPods Ruby environment active:
+
+```sh
+npm ci
+# Generate the iOS project if absent, then refresh CocoaPods after npm ci:
+cd apps/mobile/ios
+pod install
+cd ../../..
+ruby scripts/configure_ios_swift_modules.rb
+```
+
+It sets `SWIFT_ENABLE_EXPLICIT_MODULES=NO` only on the generated `ExpoSQLite`
+and `mobile` targets, leaves other targets untouched, and skips writes when
+already configured. It validates both projects/targets before changing either.
+Reapply after pod install/prebuild regenerates those projects. The setting
+controls module build scheduling; see Apple's [build settings reference](https://developer.apple.com/documentation/xcode/build-settings-reference)
+and React Native's [precompiled-build compatibility notes](https://reactnative.dev/blog/2025/08/12/react-native-0.81).
+
+Xcode Run with this workaround passed native compilation and installation.
+Launch was then blocked by an untrusted Developer App certificate on the phone;
+the owner must complete the device's Trust step before preview/result checks.
+Release and Simulator builds have not been tested with it. This build setting
+does not validate the camera, trained eye inference, live guidance or screening
+thresholds. The runtime checkout was subsequently fast-forwarded to `b5a2504`
+(#132/#133, unchanged native dependencies) for the next launch.
