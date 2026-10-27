@@ -6,12 +6,13 @@ measured offline would not match what the phone shows. The JSON files in
 `packages/core/fixtures/` hold inputs with the expected outputs, and both test suites read
 them.
 
-| Fixture          | TypeScript                                            | Python                                   | Covers                                               |
-| ---------------- | ----------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------- |
-| `geometry.json`  | `geometry.ts` (`geometryFixtures.test.ts`)            | `measure.py` (`test_geometry_parity.py`) | Reflex offset, mirrored asymmetry and its magnitude  |
-| `quality.json`   | `quality.ts`, `pixels.ts` (`qualityFixtures.test.ts`) | `quality.py` (`test_quality.py`)         | Reason codes, head pose, crop sharpness and exposure |
-| `aggregate.json` | `aggregate.ts` (`aggregateFixtures.test.ts`)          | `aggregate.py` (`test_aggregate.py`)     | Median score, spread, rejected-frame reasons         |
-| `policy.json`    | `policy.ts` (`policyFixtures.test.ts`)                | `policy.py` (`test_policy.py`)           | Outcome and reasons, values exactly at the limits    |
+| Fixture          | TypeScript                                             | Python                                                         | Covers                                                |
+| ---------------- | ------------------------------------------------------ | -------------------------------------------------------------- | ----------------------------------------------------- |
+| `geometry.json`  | `geometry.ts` (`geometryFixtures.test.ts`)             | `measure.py` (`test_geometry_parity.py`)                       | Reflex offset, mirrored asymmetry and its magnitude   |
+| `quality.json`   | `quality.ts`, `pixels.ts` (`qualityFixtures.test.ts`)  | `quality.py` (`test_quality.py`)                               | Reason codes, head pose, crop sharpness and exposure  |
+| `aggregate.json` | `aggregate.ts` (`aggregateFixtures.test.ts`)           | `aggregate.py` (`test_aggregate.py`)                           | Median score, spread, rejected-frame reasons          |
+| `policy.json`    | `policy.ts` (`policyFixtures.test.ts`)                 | `policy.py` (`test_policy.py`)                                 | Outcome and reasons, values exactly at the limits     |
+| `eyeCrop.json`   | `eyeCrops.ts`, `pixels.ts` (`eyeCropFixtures.test.ts`) | `prelabel.py`, `keypoints/data.py` (`test_eye_crop_parity.py`) | Eye crop position and size, the 128 × 128 model input |
 
 Tolerances: 1e-9 for geometry, 1e-6 for the other values (the expectations are rounded to six
 decimals). Reason codes and outcomes must match exactly, including order.
@@ -27,7 +28,15 @@ decimals). Reason codes and outcomes must match exactly, including order.
 The thresholds in `policy.json` are test values, not the app's demo thresholds. JSON has no
 NaN, so `aggregate.json` writes a non-finite measurement as `null` in an asymmetry component.
 
+`eyeCrop.json` lives in `apps/mobile/src/features/measurement/fixtures/` because the crop code
+is in the app, not in `packages/core`. It is written by `npx tsx scripts/make_eye_crop_fixture.ts`
+from a synthetic frame that both sides build from the same formula, so no image is stored. The
+crop position and size must match exactly; the model input may differ by two grey levels, because
+OpenCV resizes 8-bit images in fixed point and rounds (measured: under one grey level).
+
 ## Not covered yet
 
 The keypoint model itself: running the same eye crops through the exported model in Python and
-on the phone, and comparing the outputs, needs the trained model on a device.
+on the phone, and comparing the outputs, needs the trained model on a device. The input side is
+covered by `eyeCrop.json`, and `keypoints.export` already checks TFLite against PyTorch on the
+desktop.
