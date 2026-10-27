@@ -57,6 +57,13 @@ export const exercises: Exercise[] = [
 export const eyeRestCopy = {
   title: "Нүд амраах дасгал",
   sourcePrefix: "Эх сурвалж:",
+  start: "Эхлэх",
+  stop: "Зогсоох",
+  again: "Дахин хийх",
+  done: "Дууслаа. Нүдээ амраасанд баярлалаа!",
+  round: (current: number, total: number) => `Давталт ${current}/${total}`,
+  secondsLeft: (seconds: number) => `${seconds} сек`,
+  openFromTips: "Нүд амраах дасгал хийх",
   notice:
     "Энэ дасгалууд нь нүд амраах завсарлага юм. Хялар болон залхуу нүдийг эмчлэхгүй тул эмчийн зааврыг үргэлжлүүлэн дагаарай.",
 } as const;
