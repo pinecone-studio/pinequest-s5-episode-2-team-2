@@ -100,3 +100,4 @@ def test_a_larger_window_reflection_is_taken_for_the_torch_reflex():
     assert ok.reflex_offset.x == pytest.approx(small.reflex_offset.x, abs=0.03)
     assert wrong.reflex_offset.x == pytest.approx(-0.45, abs=0.05)
     assert ok.confidence == wrong.confidence == 0.5
+    assert ok.reflex_count == wrong.reflex_count == 2

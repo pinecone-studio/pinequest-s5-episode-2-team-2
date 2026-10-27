@@ -30,6 +30,8 @@ class EyeMeasure:
     reflex: Point | None
     reflex_offset: Point | None
     confidence: float
+    reflex_count: int = 0
+    """Bright blobs found in the iris; more than one means another light is reflected too."""
 
 
 def reflex_offset(iris_center: Point, iris_radius: float, reflex: Point) -> Point:
@@ -123,4 +125,4 @@ def measure_eye(gray: np.ndarray, side: EyeSide, center: Point, radius: float) -
     confidence = 0.0 if reflex is None else (1.0 if blobs == 1 else 0.5)
     if refined is None:
         confidence *= 0.5
-    return EyeMeasure(side, center, radius, reflex, offset, confidence)
+    return EyeMeasure(side, center, radius, reflex, offset, confidence, blobs)

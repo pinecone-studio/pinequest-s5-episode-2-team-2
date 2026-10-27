@@ -122,8 +122,13 @@ def assess_quality(
     reflex_found: tuple[bool, bool] | None,
     crops: tuple[CropStats, CropStats] | None = None,
     config: QualityConfig = DEFAULT_QUALITY_CONFIG,
+    reflex_counts: tuple[int, int] | None = None,
 ) -> FrameQuality:
     """Quality reasons for one frame, in the same order as assessQuality in quality.ts.
+
+    `reflex_counts` (bright blobs per eye, from the heuristic) adds MULTIPLE_REFLEXES when an
+    eye shows more than one: a window or lamp reflection can be taken for the torch reflex.
+    The app's keypoint model reports a single reflex, so assessQuality has no such input.
 
     iris_radii and reflex_found are None when the eyes were not measured.
     """
@@ -175,4 +180,6 @@ def assess_quality(
             reasons.append("OVEREXPOSED")
     if not all(reflex_found):
         reasons.append("REFLEX_NOT_FOUND")
+    if reflex_counts is not None and any(n > 1 for n in reflex_counts):
+        reasons.append("MULTIPLE_REFLEXES")
     return result(reasons, pose)

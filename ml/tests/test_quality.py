@@ -57,3 +57,18 @@ def test_crop_stats_match_core(case):
 def test_crop_stats_rejects_invalid_crops():
     assert crop_stats(np.full((4, 4), np.nan)) is None
     assert crop_stats(np.zeros(16)) is None
+
+
+def test_multiple_reflexes_reject_the_frame_when_counts_are_given():
+    case = next(c for c in FIXTURES["cases"] if c["name"] == "frontal")
+    args = dict(
+        frame_size=tuple(case["frameSize"]),
+        face_count=1,
+        landmarks=landmarks(case["points"]),
+        iris_radii=(48, 48),
+        reflex_found=(True, True),
+    )
+    assert assess_quality(**args).reasons == []
+    assert assess_quality(**args, reflex_counts=(1, 1)).reasons == []
+    q = assess_quality(**args, reflex_counts=(2, 1))
+    assert not q.ok and q.reasons == ["MULTIPLE_REFLEXES"]

@@ -65,6 +65,7 @@ def frame_quality(gray: np.ndarray, landmarks: list[Point], eyes: list[EyeMeasur
         iris_radii=(eyes[0].iris_radius, eyes[1].iris_radius),
         reflex_found=(eyes[0].reflex_offset is not None, eyes[1].reflex_offset is not None),
         crops=crops,
+        reflex_counts=(eyes[0].reflex_count, eyes[1].reflex_count),
     )
 
 

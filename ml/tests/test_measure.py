@@ -59,6 +59,7 @@ def test_measure_eye_offset_is_normalized():
     assert eye.reflex_offset.x == pytest.approx(9 / 30, abs=0.05)
     assert eye.reflex_offset.y == pytest.approx(-6 / 30, abs=0.05)
     assert eye.confidence == 1
+    assert eye.reflex_count == 1
 
 
 def test_reflex_offset_rejects_bad_radius():
