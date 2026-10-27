@@ -5,10 +5,10 @@ Usage: python -m hirschberg.evaluate results.jsonl [results2.jsonl ...] [--min-f
 Input is hirschberg.cli output for frames of `N` (normal) and `D` (intentional deviation,
 adults only) captures, named `<capture>_f<frame>.<ext>` as in docs/capture-protocol.md. Each
 capture is summarized like a scan (hirschberg.summarize); `D` captures are positives, `N`
-negatives. Prints a Markdown report: AUC, sensitivity and specificity at every candidate
-threshold, and the threshold with the highest Youden index, each with 95% intervals that
-resample whole people. These are intentional deviations by adults, not patients: the numbers
-describe the measurement, not clinical accuracy.
+negatives. Prints a Markdown report: AUC, sensitivity and specificity at the app's threshold
+(or `--threshold`) and at every candidate threshold, and the threshold with the highest Youden
+index, each with 95% intervals that resample whole people. These are intentional deviations by
+adults, not patients: the numbers describe the measurement, not clinical accuracy.
 """
 
 from __future__ import annotations
@@ -29,6 +29,8 @@ from hirschberg.summarize import summarize_captures
 
 BOOTSTRAP_ROUNDS = 2000
 Z95 = 1.96
+# The app's refer threshold (apps/mobile/src/features/scan/scanPolicy.ts): 8 prism dioptres.
+APP_THRESHOLD = 0.069
 
 
 @dataclass(frozen=True)
@@ -162,7 +164,7 @@ def _ci(ci: tuple[float, float] | None) -> str:
     return "n/a" if ci is None else f"{ci[0]:.3f} to {ci[1]:.3f}"
 
 
-def report(captures: Sequence[Capture], too_poor: int) -> str:
+def report(captures: Sequence[Capture], too_poor: int, threshold: float = APP_THRESHOLD) -> str:
     pos = sum(c.deviated for c in captures)
     people = len({c.person for c in captures})
     lines = [
@@ -175,6 +177,16 @@ def report(captures: Sequence[Capture], too_poor: int) -> str:
         "clinical accuracy.",
         "",
         f"AUC: {_fmt(auc(captures))} (95% CI {_ci(bootstrap(captures, auc))})",
+    ]
+    at = operating_point(captures, threshold)
+    sens = bootstrap(captures, lambda s: operating_point(s, threshold).sensitivity)
+    spec = bootstrap(captures, lambda s: operating_point(s, threshold).specificity)
+    lines += [
+        "",
+        f"At the app's threshold {threshold:.3f}: sensitivity {_fmt(at.sensitivity)} "
+        f"(95% CI {_ci(sens)}), specificity {_fmt(at.specificity)} (95% CI {_ci(spec)}); "
+        f"TP {at.true_positive}, FN {at.false_negative}, TN {at.true_negative}, "
+        f"FP {at.false_positive}.",
     ]
     best = best_threshold(captures)
     if best is not None:
@@ -205,6 +217,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("results", type=Path, nargs="+")
     parser.add_argument("--min-frames", type=int, default=5)
+    parser.add_argument(
+        "--threshold", type=float, default=APP_THRESHOLD, help="refer threshold to report"
+    )
     args = parser.parse_args(argv)
     lines = [
         json.loads(text)
@@ -216,7 +231,7 @@ def main(argv: list[str] | None = None) -> int:
     if not captures:
         print("No N or D captures with enough usable frames.", file=sys.stderr)
         return 1
-    print(report(captures, too_poor))
+    print(report(captures, too_poor, args.threshold))
     return 0
 
 
