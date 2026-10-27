@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { Button, Card, Notice, Text, Verdict } from "../../components/ui";
 import { fonts, theme } from "../../theme";
 import { EyeDiagramView } from "../eyeView/EyeDiagramView";
+import { tipsCopy } from "../tips/content";
 import { SaveResultButton } from "./SaveResultButton";
 import { useScanResult } from "./ScanResultContext";
 import { outcomeCopy, reasonCopy, resultCopy as copy } from "./resultCopy";
@@ -81,6 +82,11 @@ export default function ResultScreen() {
         )}
         <Notice>{copy.notice}</Notice>
         <Button label={copy.retry} onPress={retry} />
+        <Button
+          label={tipsCopy.openTips}
+          variant="secondary"
+          onPress={() => router.push("/tips")}
+        />
         {result &&
           (result.policyVersion === SCAN_POLICY_VERSION ? (
             <Text accessibilityLiveRegion="polite">{copy.saved}</Text>

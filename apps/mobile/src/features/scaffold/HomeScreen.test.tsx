@@ -26,10 +26,15 @@ test("starts a check, opens the vision check and keeps the latest scan", () => {
     renderer = create(<HomeScreen />);
   });
   const buttons = renderer.root.findAll((n) => n.type === ("Button" as never));
-  expect(buttons.map((b) => b.props.variant ?? "primary")).toEqual(["primary", "secondary"]);
+  expect(buttons.map((b) => b.props.variant ?? "primary")).toEqual([
+    "primary",
+    "secondary",
+    "secondary",
+  ]);
   act(() => buttons[0]!.props.onPress());
   act(() => buttons[1]!.props.onPress());
-  expect(mockNavigate.mock.calls).toEqual([["/tests"], ["/acuity"]]);
+  act(() => buttons[2]!.props.onPress());
+  expect(mockNavigate.mock.calls).toEqual([["/tests"], ["/acuity"], ["/tips"]]);
   expect(renderer.root.findAll((n) => n.type === ("LatestScanCard" as never))).toHaveLength(1);
   expect(JSON.stringify(renderer.toJSON())).toContain("Онош биш");
 });
