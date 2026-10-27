@@ -8,7 +8,7 @@ import { tipsCopy } from "../tips/content";
 import { SaveResultButton } from "./SaveResultButton";
 import { useScanResult } from "./ScanResultContext";
 import { outcomeCopy, reasonCopy, resultCopy as copy } from "./resultCopy";
-import { SCAN_POLICY_VERSION } from "./scanPolicy";
+import { isUnvalidatedPolicy } from "./scanPolicy";
 
 export default function ResultScreen() {
   const { result, setResult, eyes } = useScanResult();
@@ -31,7 +31,7 @@ export default function ResultScreen() {
         <Text accessibilityRole="header" style={styles.title}>
           {copy.title}
         </Text>
-        {result?.policyVersion === SCAN_POLICY_VERSION && (
+        {result && isUnvalidatedPolicy(result.policyVersion) && (
           <Notice>
             <Text accessibilityRole="alert" style={styles.alert}>
               {copy.demo}
@@ -88,7 +88,7 @@ export default function ResultScreen() {
           onPress={() => router.push("/tips")}
         />
         {result &&
-          (result.policyVersion === SCAN_POLICY_VERSION ? (
+          (isUnvalidatedPolicy(result.policyVersion) ? (
             <Text accessibilityLiveRegion="polite">{copy.saved}</Text>
           ) : (
             <SaveResultButton result={result} />
