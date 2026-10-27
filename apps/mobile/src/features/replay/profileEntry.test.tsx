@@ -23,7 +23,7 @@ test.each([false, true])(
       await act(async () => {
         renderer = create(<ProfileScreen />);
       });
-      const settings = renderer.root.findAllByProps({ label: "TODO(copy): Тохиргоо" });
+      const settings = renderer.root.findAllByProps({ label: "Тохиргоо" });
       expect(settings).toHaveLength(1);
       settings[0]!.props.onPress();
       expect(mockPush).toHaveBeenCalledWith("/settings");

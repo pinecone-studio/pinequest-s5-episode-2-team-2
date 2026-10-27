@@ -1,10 +1,10 @@
-// Placeholders until the team writes the final Mongolian copy (CONTRIBUTING.md "App copy").
+// Mongolian app copy, approved by the team lead (CONTRIBUTING.md "App copy").
 export const eyeViewCopy = {
-  title: "TODO(copy): Measured eyes",
+  title: "Хэмжсэн нүд",
   // Back camera: the image-left eye is the child's right eye.
-  sides: { imageLeft: "TODO(copy): Right eye", imageRight: "TODO(copy): Left eye" },
-  noReflex: "TODO(copy): no light reflex found",
+  sides: { imageLeft: "Баруун нүд", imageRight: "Зүүн нүд" },
+  noReflex: "гэрлийн тусгал олдсонгүй",
   reflexAt: (x: number, y: number) =>
-    `TODO(copy): light reflex ${x.toFixed(2)}, ${y.toFixed(2)} iris radii from the centre`,
-  legend: "TODO(copy): Circle: iris. Dot: light reflex. Drawn from the measurement, not a photo.",
+    `гэрлийн тусгал төвөөс ${x.toFixed(2)}, ${y.toFixed(2)} радиус зайтай`,
+  legend: "Тойрог: солонгон бүрхэвч. Цэг: гэрлийн тусгал. Зураг биш, хэмжилтээр зурсан.",
 } as const;

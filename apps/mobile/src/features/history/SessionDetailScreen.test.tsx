@@ -63,7 +63,7 @@ test("shows the outcome, reasons and frame counts of the saved scan", async () =
   for (const expected of [outcomeCopy.RETAKE.title, reasonCopy.BLUR, reasonCopy.TOO_FEW_FRAMES]) {
     expect(text()).toContain(expected);
   }
-  expect(text()).toContain("Frames used");
+  expect(text()).toContain("Ашигласан кадр");
 });
 
 test("says when the scan no longer exists", async () => {
