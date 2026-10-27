@@ -74,6 +74,15 @@ iris radius (`ml/keypoints/metrics.py`); lower is better.
   median 0.246); the run above was chosen to fix that, and both runs were scored on the same
   test split.
 
+### Measurement precision
+
+Without torch-lit captures yet, the reflex measurement was bench-tested on synthetic eyes and
+compared with published Hirschberg calibration data: see
+[`evaluation-report.md`](evaluation-report.md). In short, the measurement follows the true
+offset with a slope of 1.00–1.01 and can tell apart changes of 0.7–2.4 PD on clean synthetic
+images, well below the 8 PD refer target; real eyes are expected to be noisier (the best
+published video test repeats within ±3.6 PD).
+
 ## Export
 
 - Converted with `litert-torch` by `python -m keypoints.export` (see `ml/README.md`).
