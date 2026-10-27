@@ -1,8 +1,9 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { PixelRatio, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
-import { Button, Card, Screen, Text } from "../../components/ui";
-import { theme } from "../../theme";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Button, Card, Notice, Screen, Text, Verdict } from "../../components/ui";
+import { fonts, theme } from "../../theme";
 import {
   decimalAcuity,
   fittingLevels,
@@ -18,14 +19,17 @@ import { SaveAcuityButton } from "./SaveAcuityButton";
 import { beginEye, respond, startSession, type Session } from "./session";
 
 const GROUPS: AgeGroup[] = ["child3", "child4", "child5", "adult"];
-const ARROWS: { direction: Direction; glyph: string; label: string }[] = [
-  { direction: 270, glyph: "↑", label: copy.up },
-  { direction: 180, glyph: "←", label: copy.left },
-  { direction: 0, glyph: "→", label: copy.right },
-  { direction: 90, glyph: "↓", label: copy.down },
+// Arrow pad laid out as a cross, as in the web demo: up on top, left and right, down below.
+const ARROWS: { direction: Direction; glyph: string; label: string; row: number; col: number }[] = [
+  { direction: 270, glyph: "↑", label: copy.up, row: 0, col: 1 },
+  { direction: 180, glyph: "←", label: copy.left, row: 1, col: 0 },
+  { direction: 0, glyph: "→", label: copy.right, row: 1, col: 2 },
+  { direction: 90, glyph: "↓", label: copy.down, row: 2, col: 1 },
 ];
+const KEY = 72;
+const GAP = 6;
 
-/** Tumbling-E vision check at 3 m (#139). A parent taps the direction the child shows. */
+/** Tumbling-E vision check at 3 m (#139), styled like the web demo (#152). */
 export default function AcuityScreen() {
   const { width, height } = useWindowDimensions();
   const pointsPerMm = iPhonePointsPerMm(PixelRatio.get());
@@ -39,16 +43,22 @@ export default function AcuityScreen() {
           {copy.title}
         </Text>
         <Text>{copy.setup}</Text>
-        <Text style={styles.label}>{copy.who}</Text>
-        {GROUPS.map((group) => (
-          <Button
-            key={group}
-            label={copy.groups[group]}
-            onPress={() =>
-              setSession(startSession(group, fittingLevels(maxPoints, pointsPerMm), Math.random))
-            }
-          />
-        ))}
+        <Text style={styles.section}>{copy.who}</Text>
+        <View style={styles.choices}>
+          {GROUPS.map((group) => (
+            <Pressable
+              key={group}
+              accessibilityRole="button"
+              accessibilityLabel={copy.groups[group]}
+              onPress={() =>
+                setSession(startSession(group, fittingLevels(maxPoints, pointsPerMm), Math.random))
+              }
+              style={({ pressed }) => [styles.choice, pressed && styles.choicePressed]}
+            >
+              <Text style={styles.choiceLabel}>{copy.groups[group]}</Text>
+            </Pressable>
+          ))}
+        </View>
       </Screen>
     );
   }
@@ -60,7 +70,7 @@ export default function AcuityScreen() {
           {copy.title}
         </Text>
         <Card>
-          <Text>{copy.cover(session.eye)}</Text>
+          <Text style={styles.coverText}>{copy.cover(session.eye)}</Text>
           <Button label={copy.ready} onPress={() => setSession(beginEye(session))} />
         </Card>
       </Screen>
@@ -76,6 +86,10 @@ export default function AcuityScreen() {
         <Text variant="title" accessibilityRole="header">
           {copy.resultTitle}
         </Text>
+        <Verdict
+          outcome={refer ? "REFER" : "NO_VISIBLE_SIGN"}
+          title={refer ? copy.refer : copy.noSign}
+        />
         <Card>
           {(["right", "left"] as const).map((eye) => {
             const v = session.results[eye];
@@ -88,14 +102,11 @@ export default function AcuityScreen() {
               </View>
             );
           })}
-          <Text style={styles.label}>{refer ? copy.refer : copy.noSign}</Text>
-          <Text variant="caption" style={styles.muted}>
-            {copy.notice}
-          </Text>
         </Card>
+        <Notice>{copy.notice}</Notice>
         <SaveAcuityButton check={{ group: session.group, right, left, refer }} />
-        <Button label={copy.again} onPress={() => setSession(null)} />
-        <Button label={copy.done} onPress={() => router.back()} />
+        <Button label={copy.again} variant="outline" onPress={() => setSession(null)} />
+        <Button label={copy.done} variant="link" onPress={() => router.back()} />
       </Screen>
     );
   }
@@ -104,55 +115,84 @@ export default function AcuityScreen() {
   const crowded = (letter * CROWDED_UNITS) / 5 <= maxPoints;
   const answer = (shown: Direction | null) => setSession(respond(session, shown, Math.random));
   return (
-    <View style={styles.test}>
-      <Text variant="caption" style={styles.muted}>
-        {copy.eyeLabel(session.eye)} ·{" "}
-        {copy.progress(session.test.level + 1, session.levels.length)}
-      </Text>
+    <SafeAreaView edges={["top", "bottom"]} style={styles.test}>
+      <View style={styles.top}>
+        <Text style={styles.topText}>{copy.eyeLabel(session.eye)}</Text>
+        <Text style={styles.topText}>
+          {copy.progress(session.test.level + 1, session.levels.length)}
+        </Text>
+      </View>
       <View style={styles.letter}>
         <Optotype size={letter} direction={session.direction} crowded={crowded} />
       </View>
-      <View style={styles.arrows}>
-        {ARROWS.map(({ direction, glyph, label }) => (
+      <View style={styles.pad}>
+        {ARROWS.map(({ direction, glyph, label, row, col }) => (
           <Pressable
             key={direction}
             accessibilityRole="button"
             accessibilityLabel={label}
             onPress={() => answer(direction)}
-            style={({ pressed }) => [styles.arrow, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.arrow,
+              { top: row * (KEY + GAP), left: col * (KEY + GAP) },
+              pressed && styles.arrowPressed,
+            ]}
           >
             <Text style={styles.glyph}>{glyph}</Text>
           </Pressable>
         ))}
       </View>
-      <Button label={copy.cantSee} onPress={() => answer(null)} />
-    </View>
+      <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  label: { fontWeight: "700" },
-  muted: { color: theme.colors.muted },
+  section: { fontFamily: fonts.black, fontWeight: "900", fontSize: 16 },
+  choices: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  choice: {
+    flexBasis: "47%",
+    flexGrow: 1,
+    minHeight: 72,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: theme.spacing.sm,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surface,
+  },
+  choicePressed: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primarySoft },
+  choiceLabel: {
+    fontFamily: fonts.extraBold,
+    fontWeight: "800",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  coverText: { fontFamily: fonts.bold, fontWeight: "700", fontSize: 17, lineHeight: 24 },
   row: { flexDirection: "row", justifyContent: "space-between" },
-  value: { fontWeight: "700" },
+  value: { fontFamily: fonts.black, fontWeight: "900" },
   // Plain white, no other content near the letter, as for a printed chart.
   test: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    padding: theme.spacing.lg,
-    paddingTop: 60,
+    paddingHorizontal: theme.spacing.lg,
     gap: theme.spacing.md,
+    alignItems: "stretch",
   },
+  top: { flexDirection: "row", justifyContent: "space-between", paddingTop: theme.spacing.sm },
+  topText: { fontFamily: fonts.extraBold, fontWeight: "800", color: theme.colors.muted },
   letter: { flex: 1, alignItems: "center", justifyContent: "center" },
-  arrows: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.sm },
+  pad: { alignSelf: "center", width: 3 * KEY + 2 * GAP, height: 3 * KEY + 2 * GAP },
   arrow: {
-    flex: 1,
-    minHeight: 64,
+    position: "absolute",
+    width: KEY,
+    height: KEY,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.background,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primarySoft,
   },
-  pressed: { opacity: 0.6 },
-  glyph: { fontSize: 28, fontWeight: "700", color: theme.colors.primary },
+  arrowPressed: { backgroundColor: theme.colors.border },
+  glyph: { fontFamily: fonts.black, fontWeight: "900", fontSize: 32, color: theme.colors.primary },
 });

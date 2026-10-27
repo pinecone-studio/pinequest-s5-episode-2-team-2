@@ -45,7 +45,12 @@ export function SaveAcuityButton({
           : null;
   return (
     <>
-      <Button label={copy.save} disabled={disabled} onPress={() => void save()} />
+      <Button
+        label={copy.save}
+        variant="secondary"
+        disabled={disabled}
+        onPress={() => void save()}
+      />
       {note && (
         <Text accessibilityLiveRegion="polite" style={{ color: theme.colors.muted }}>
           {note}
