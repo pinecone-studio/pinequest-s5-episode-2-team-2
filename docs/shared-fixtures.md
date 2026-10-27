@@ -34,9 +34,14 @@ from a synthetic frame that both sides build from the same formula, so no image 
 crop position and size must match exactly; the model input may differ by two grey levels, because
 OpenCV resizes 8-bit images in fixed point and rounds (measured: under one grey level).
 
-## Not covered yet
+## Keypoint model on the phone
 
-The keypoint model itself: running the same eye crops through the exported model in Python and
-on the phone, and comparing the outputs, needs the trained model on a device. The input side is
-covered by `eyeCrop.json`, and `keypoints.export` already checks TFLite against PyTorch on the
-desktop.
+The model itself is checked by hand, not by a test suite, because it needs a trained model and a
+phone. With the pilot model (`docs/model-card.md`), on an iPhone 12 Pro Max with
+react-native-fast-tflite on CPU: the 128 × 128 inputs produced by the app's crop code were saved
+on the phone and run through the same `keypoints.tflite` with LiteRT on a Mac. The largest output
+difference was 2.1e-7. Together with `eyeCrop.json` (input) and `keypoints.export` (TFLite vs
+PyTorch), the chain from frame to model output matches between the app and the training code.
+
+Repeat this check for every released model. It was run with the TFLite spike app, which copies
+the app's `eyeRegions` and RGB `cropPixels`, not with the scan screen itself.

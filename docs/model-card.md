@@ -79,8 +79,12 @@ iris radius (`ml/keypoints/metrics.py`); lower is better.
 - Converted with `litert-torch` by `python -m keypoints.export` (see `ml/README.md`).
 - Checked against PyTorch on 16 synthetic eye crops; the export fails if any output differs
   by more than 1e-4. Pilot run: largest difference 1.0e-6 (`reflex_y`); the file is 6.2 MB.
-- `TODO`: iPhone latency on CPU vs CoreML. For MediaPipe's face models the CPU delegate was
-  faster (`docs/spikes/tflite.md`).
+- iPhone 12 Pro Max, iOS 26.5, react-native-fast-tflite 3.0.1, Release build, 50 runs per eye
+  crop after 5 warm-up runs: **CPU median 1.33 ms, p95 1.46 ms**. The CoreML delegate cannot
+  load this model ("Failed to create TFLite interpreter"); the app already loads it on CPU
+  (`useEyeModel`). Metal is not supported by fast-tflite.
+- On the same phone, the 128 × 128 inputs the app's crop code produced were saved and run through
+  the same file with LiteRT on a Mac: largest output difference 2.1e-7 (CPU delegate).
 
 ## Limitations
 
