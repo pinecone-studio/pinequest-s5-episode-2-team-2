@@ -1,25 +1,33 @@
-// All onboarding text is a placeholder until the team writes the final Mongolian copy (#30).
+// Mongolian app copy, approved by the team lead (#30).
 // Copy rules: CONTRIBUTING.md "App copy" (no diagnosis, no "healthy/normal" wording).
 export const onboardingPages = [
-  { key: "purpose", title: "TODO(copy): Purpose title", body: "TODO(copy): What the app does" },
+  {
+    key: "purpose",
+    title: "Нүдний гэрэл",
+    body: "Хүүхдийн нүдэнд туссан гэрлийн тусгалыг 3 секундэд шалгаж, нүдний эмчид хандах хэрэгтэй эсэхийг зөвлөнө.",
+  },
   {
     key: "limits",
-    title: "TODO(copy): Limits title",
-    body: "TODO(copy): Not a diagnosis; does not replace an eye exam",
+    title: "Онош тавихгүй",
+    body: "Энэ апп онош тавихгүй бөгөөд нүдний эмчийн үзлэгийг орлохгүй. Санаа зовж байвал нүдний эмчид хандаарай.",
   },
   {
     key: "privacy",
-    title: "TODO(copy): Privacy title",
-    body: "TODO(copy): Images never leave the phone and are not stored",
+    title: "Зураг утаснаас гарахгүй",
+    body: "Бүх шинжилгээ энэ утсан дээр хийгдэнэ. Зураг хадгалахгүй, интернэтээр илгээхгүй.",
   },
-  { key: "how", title: "TODO(copy): How to scan title", body: "TODO(copy): How to scan" },
+  {
+    key: "how",
+    title: "Хэрхэн шалгах вэ",
+    body: "Утсаа хүүхдийн нүдний түвшинд, 35 см орчим зайд барина. Хүүхэд камерын гэрэл рүү харж байхад 3 секунд шалгана.",
+  },
 ] as const;
 
 export const onboardingCopy = {
   step: (current: number, total: number) => `${current} / ${total}`,
-  consent: "TODO(copy): I have read this and understand the app does not diagnose",
-  next: "TODO(copy): Next",
-  back: "TODO(copy): Back",
-  accept: "TODO(copy): Agree and continue",
-  saveError: "TODO(copy): Could not save, try again",
+  consent: "Би уншиж танилцсан бөгөөд энэ апп онош тавихгүйг ойлгосон",
+  next: "Дараах",
+  back: "Буцах",
+  accept: "Зөвшөөрөөд үргэлжлүүлэх",
+  saveError: "Хадгалж чадсангүй, дахин оролдоно уу",
 } as const;

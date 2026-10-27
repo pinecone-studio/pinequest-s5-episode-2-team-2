@@ -57,8 +57,7 @@ function DeveloperReplay() {
         setLatest(null);
       }
     } catch {
-      if (mounted.current)
-        setMessage("TODO(copy): Хавтас сонгоогүй эсвэл бичлэгийн формат тохирохгүй байна.");
+      if (mounted.current) setMessage("Хавтас сонгоогүй эсвэл бичлэгийн формат тохирохгүй байна.");
     } finally {
       pickPending.current = false;
       if (mounted.current) setPicking(false);
@@ -68,7 +67,7 @@ function DeveloperReplay() {
   async function start() {
     if (!selected || controller.current) return;
     if (analysis.isBusy()) {
-      setMessage("TODO(copy): Түр хүлээгээд дахин оролдоно уу.");
+      setMessage("Түр хүлээгээд дахин оролдоно уу.");
       return;
     }
     const abort = new AbortController();
@@ -104,11 +103,10 @@ function DeveloperReplay() {
         },
         abort.signal,
       );
-      if (mounted.current && !abort.signal.aborted)
-        setMessage("TODO(copy): Дахин тоглуулж дууслаа.");
+      if (mounted.current && !abort.signal.aborted) setMessage("Дахин тоглуулж дууслаа.");
     } catch {
       if (mounted.current && !abort.signal.aborted)
-        setMessage("TODO(copy): Бичлэгийг боловсруулж чадсангүй. Дахин оролдоно уу.");
+        setMessage("Бичлэгийг боловсруулж чадсангүй. Дахин оролдоно уу.");
     } finally {
       if (controller.current === abort) controller.current = null;
       if (mounted.current) setBusy(false);
@@ -117,43 +115,39 @@ function DeveloperReplay() {
 
   return (
     <Screen>
-      <Text variant="title">TODO(copy): Бичлэг дахин тоглуулах</Text>
-      <Text>
-        TODO(copy): Хөгжүүлэгчийн туршилт. Зураг илгээхгүй, хадгалахгүй. Нүдний үзлэгийг орлохгүй.
-      </Text>
+      <Text variant="title">Бичлэг дахин тоглуулах</Text>
+      <Text>Хөгжүүлэгчийн туршилт. Зураг илгээхгүй, хадгалахгүй. Нүдний үзлэгийг орлохгүй.</Text>
       <Button
-        label="TODO(copy): Бичлэгийн хавтас сонгох"
+        label="Бичлэгийн хавтас сонгох"
         disabled={busy || picking}
         onPress={() => void choose()}
       />
       {selected && (
         <Card>
           <Text>
-            TODO(copy): Frame: {count} / {selected.recording.frames.length}
+            Кадр: {count} / {selected.recording.frames.length}
           </Text>
           <Text accessibilityLiveRegion="polite">{guidanceForFrame(latest)}</Text>
-          <Text>TODO(copy): Боловсруулалт: {latest ? latest.latencyMs.toFixed(1) : "—"} ms</Text>
+          <Text>Боловсруулалт: {latest ? latest.latencyMs.toFixed(1) : "—"} ms</Text>
           <Button
-            label="TODO(copy): Дахин тоглуулах"
+            label="Дахин тоглуулах"
             disabled={busy || !analysis.ready}
             onPress={() => void start()}
           />
         </Card>
       )}
-      {analysis.error && (
-        <Text accessibilityRole="alert">TODO(copy): Туршилтын модель ачаалагдсангүй.</Text>
-      )}
+      {analysis.error && <Text accessibilityRole="alert">Туршилтын модель ачаалагдсангүй.</Text>}
       {busy && (
         <Button
-          label="TODO(copy): Цуцлах"
+          label="Цуцлах"
           onPress={() => {
             controller.current?.abort();
-            setMessage("TODO(copy): Цуцалж байна.");
+            setMessage("Цуцалж байна.");
           }}
         />
       )}
       {!!message && <Text accessibilityLiveRegion="polite">{message}</Text>}
-      <Button label="TODO(copy): Буцах" onPress={() => router.back()} />
+      <Button label="Буцах" onPress={() => router.back()} />
     </Screen>
   );
 }
