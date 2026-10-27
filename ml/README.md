@@ -61,6 +61,15 @@ uv run python -m hirschberg.cli /drive/frames > results.jsonl
 named `<capture>_f<frame>`) and prints the frames used, median asymmetry and spread per
 capture, the same summary the app computes per scan.
 
+### Synthetic bench test
+
+`uv run python -m hirschberg.bench` measures rendered eyes (`hirschberg.synthetic`) at known
+gaze angles under clean, noisy, blurred, dark, far, close and combined hard conditions. It
+reports slope, repeatability and the smallest reliable change, failure rate, iris and reflex
+errors, and the share of simulated scans referred at the app's 8 prism dioptre threshold,
+all with 95% intervals. The eyes are drawings, so this tests the algorithm, not accuracy on
+children; it runs without any recordings.
+
 ### Detection evaluation
 
 `uv run python -m hirschberg.evaluate results.jsonl` uses the frames of `N` and `D` captures:
