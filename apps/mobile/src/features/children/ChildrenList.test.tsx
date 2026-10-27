@@ -83,3 +83,11 @@ test("opens a profile for editing", async () => {
   await act(async () => edit!.props.onPress());
   expect(mockPush).toHaveBeenCalledWith({ pathname: "/child/[id]", params: { id: "b" } });
 });
+
+test("a failed selection keeps the previous child and reports the failure", async () => {
+  mockSetActive.mockRejectedValue(new Error("write failed"));
+  await render();
+  await act(async () => radios()[1]!.props.onPress());
+  expect(text()).toContain(copy.errors.failed);
+  expect(radios().map((r) => r.props.accessibilityState.checked)).toEqual([true, false]);
+});
