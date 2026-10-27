@@ -18,7 +18,13 @@ jest.mock("expo-router", () => ({
 }));
 jest.mock("./SaveResultButton", () => ({ SaveResultButton: "SaveResultButton" }));
 jest.mock("../eyeView/EyeDiagramView", () => ({ EyeDiagramView: "EyeDiagramView" }));
-jest.mock("../../components/ui", () => ({ Button: "Button", Text: "Text" }));
+jest.mock("../../components/ui", () => ({
+  Button: "Button",
+  Card: "Card",
+  Notice: "Notice",
+  Text: "Text",
+  Verdict: "Verdict",
+}));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 jest.mock("react-native", () => ({
   Pressable: "Pressable",
