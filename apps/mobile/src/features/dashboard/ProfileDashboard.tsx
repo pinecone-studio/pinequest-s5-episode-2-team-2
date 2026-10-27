@@ -9,6 +9,7 @@ import { ageThisYear } from "../children/form";
 import { dashboardCopy as copy } from "./copy";
 import { loadDashboard, type Dashboard } from "./data";
 import { ScanCards } from "./ScanCards";
+import { CareCards } from "./CareCards";
 
 type State = { status: "loading" } | { status: "failed" } | { status: "ready"; data: Dashboard };
 
@@ -83,7 +84,12 @@ export function ProfileDashboard() {
           }}
         />
       )}
-      {details && <ScanCards details={details} />}
+      {details && (
+        <>
+          <ScanCards details={details} />
+          <CareCards details={details} />
+        </>
+      )}
     </>
   );
 }

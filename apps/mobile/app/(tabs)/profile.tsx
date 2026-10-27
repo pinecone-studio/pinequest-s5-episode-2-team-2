@@ -10,9 +10,6 @@ export default function ProfileScreen() {
         {dashboardCopy.title}
       </Text>
       <ProfileDashboard />
-      {/* Treatment and habits work on the selected child. */}
-      <Button label="TODO(copy): Эмчилгээ" onPress={() => router.push("/treatment")} />
-      <Button label="TODO(copy): Дадлууд" onPress={() => router.push("/habits")} />
       <Button label={dashboardCopy.settings} onPress={() => router.push("/settings")} />
       {__DEV__ && (
         <Card>

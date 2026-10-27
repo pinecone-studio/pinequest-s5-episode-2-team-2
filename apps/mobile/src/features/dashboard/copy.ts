@@ -1,5 +1,13 @@
 // TODO(copy): Mongolian draft wording for team review; no diagnostic claims.
 export const dashboardCopy = {
+  treatment: "TODO(copy): Сүүлийн 7 өдрийн эмчилгээ",
+  kinds: { patch: "TODO(copy): Нүдний наалт", glasses: "TODO(copy): Нүдний шил" },
+  noTreatment: "TODO(copy): Энэ хугацаанд бүртгэл алга",
+  noGoal: "TODO(copy): Эмчийн заасан өдрийн зорилго бүртгэгдээгүй",
+  habits: "TODO(copy): Өнөөдрийн дадлууд",
+  noHabits: "TODO(copy): Өнөөдөр дадал бүртгээгүй байна",
+  outdoor: (minutes: number) => `TODO(copy): Гадаа өнгөрүүлсэн хугацаа: ${minutes} минут`,
+  breaks: (count: number) => `TODO(copy): Дэлгэцээс завсарласан: ${count} удаа`,
   open: "TODO(copy): Дэлгэрэнгүй",
   scan: "TODO(copy): Сүүлийн нүдний шалгалт",
   noScan: "TODO(copy): Хадгалсан нүдний шалгалт алга",
