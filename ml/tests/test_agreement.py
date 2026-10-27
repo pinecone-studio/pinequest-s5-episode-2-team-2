@@ -88,3 +88,26 @@ def test_report_and_cli(tmp_path, capsys):
     assert "# Annotation agreement" in capsys.readouterr().out
     path.write_text(json.dumps([task("a.png", annotation(1, eye()))]), "utf8")
     assert main([str(path)]) == 1
+
+
+@pytest.mark.parametrize("missing", [None, "", " ", {}, {"email": "unknown"}, True, 1.5])
+def test_unknown_reviewer_cannot_satisfy_double_annotation(missing):
+    tasks = [task("a.png", annotation(missing, eye()), annotation(1, eye()))]
+    assert pairs(tasks) == []
+
+
+def test_absent_reviewer_is_not_counted():
+    unknown = annotation(1, eye())
+    del unknown["completed_by"]
+    assert pairs([task("a.png", unknown, annotation(2, eye()))]) == []
+
+
+def test_expanded_and_scalar_reviewer_ids_are_the_same_person():
+    tasks = [
+        task("a.png", annotation(1, eye(), "1")),
+        task("a.png", annotation({"id": 1, "email": "first@example.test"}, eye(cx=22), "2")),
+    ]
+    assert pairs(tasks) == []
+    assert annotations_by_crop(tasks)["a.png"]["1"] == eye(cx=22)
+    tasks.append(task("a.png", annotation({"id": 2}, eye())))
+    assert len(pairs(tasks)) == 1
