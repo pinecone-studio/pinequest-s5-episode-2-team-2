@@ -40,6 +40,9 @@ def row_problems(row: dict) -> list[str]:
     if meta["scan_type"] == "D" and row.get("age_group", "").strip() != "adult":
         problems.append(f"{name}: D scans are for adults only")
     if meta["scan_type"] == "C":
+        if meta["angle"] is None or (meta["angle"] == "00") != (meta["dir"] is None):
+            # The calibration analysis cannot use these and would skip them silently.
+            problems.append(f"{name}: calibration needs L or R for 2.5-10 degrees and none for 0")
         angle = ANGLE_CODES.get(row.get("target_angle_deg", "").strip())
         if angle != meta["angle"]:
             problems.append(f"{name}: target_angle_deg does not match the file name")
