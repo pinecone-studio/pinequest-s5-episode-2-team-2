@@ -7,14 +7,14 @@ export type CheckId = keyof typeof copy.checks;
 
 export interface Check {
   id: CheckId;
-  /** Where the check starts; null until it exists in the app (vision check: #139). */
-  route: "/scan" | null;
+  /** Where the check starts; null for a check that is not in the app. */
+  route: "/scan" | "/acuity" | null;
 }
 
 /** The checks the Tests screen offers, in display order (#140). */
 export const CHECKS: readonly Check[] = [
   { id: "strabismus", route: "/scan" },
-  { id: "vision", route: null },
+  { id: "vision", route: "/acuity" },
 ];
 
 /** One line about the selected child's most recent scan, newest first in `sessions`. */

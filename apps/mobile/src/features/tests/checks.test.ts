@@ -5,9 +5,7 @@ import { testsCopy as copy } from "./copy";
 
 test("offers the strabismus scan and the vision check, in that order", () => {
   expect(CHECKS.map((c) => c.id)).toEqual(["strabismus", "vision"]);
-  expect(CHECKS[0]!.route).toBe("/scan");
-  // The vision check has no screen yet (#139).
-  expect(CHECKS[1]!.route).toBeNull();
+  expect(CHECKS.map((c) => c.route)).toEqual(["/scan", "/acuity"]);
 });
 
 test("describes the most recent scan with its outcome and age", () => {
