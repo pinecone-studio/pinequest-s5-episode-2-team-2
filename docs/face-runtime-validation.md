@@ -93,6 +93,10 @@ and React Native's [precompiled-build compatibility notes](https://reactnative.d
 Xcode Run with this workaround passed native compilation and installation.
 Launch was then blocked by an untrusted Developer App certificate on the phone;
 the owner must complete the device's Trust step before preview/result checks.
+`codesign --verify --strict` passed, and the embedded development profile was
+current, matched the existing Team and included the paired phone. Device-side
+Verify App has not yet completed; local signature validity does not establish
+device trust.
 Release and Simulator builds have not been tested with it. This build setting
 does not validate the camera, trained eye inference, live guidance or screening
 thresholds. The runtime checkout was subsequently fast-forwarded to `b5a2504`
