@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Text } from "../../components/ui";
 import { fonts } from "../../theme";
 import { LatestScanCard } from "../history/LatestScanCard";
+import { tipsCopy } from "../tips/content";
 import { EyeHero } from "./EyeHero";
 
 // The web demo's start-screen copy (demo/web-poc, apps/web-demo/src/strings.ts), a team draft.
@@ -44,6 +45,11 @@ export default function HomeScreen() {
               label={copy.vision}
               variant="secondary"
               onPress={() => router.navigate("/acuity")}
+            />
+            <Button
+              label={tipsCopy.openTips}
+              variant="secondary"
+              onPress={() => router.navigate("/tips")}
             />
             <Text variant="caption" style={styles.footnote}>
               {copy.footnote}
