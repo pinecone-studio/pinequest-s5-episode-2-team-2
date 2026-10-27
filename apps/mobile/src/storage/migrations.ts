@@ -111,6 +111,23 @@ export const migrations: readonly Migration[] = [
         );
       `),
   },
+  {
+    // #139: one row per vision check; the smallest logMAR level passed per eye (NULL: none).
+    version: 7,
+    up: (db) =>
+      db.execAsync(`
+        CREATE TABLE acuity_results (
+          id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+          child_id TEXT REFERENCES children (id) ON DELETE CASCADE,
+          created_at TEXT NOT NULL,
+          age_group TEXT NOT NULL CHECK (age_group IN ('child3', 'child4', 'child5', 'adult')),
+          right_logmar REAL CHECK (right_logmar IS NULL OR right_logmar BETWEEN 0 AND 1),
+          left_logmar REAL CHECK (left_logmar IS NULL OR left_logmar BETWEEN 0 AND 1),
+          refer INTEGER NOT NULL CHECK (refer IN (0, 1))
+        );
+        CREATE INDEX acuity_results_by_child ON acuity_results (child_id, created_at DESC, id DESC);
+      `),
+  },
 ];
 
 type MigrationDatabase = {

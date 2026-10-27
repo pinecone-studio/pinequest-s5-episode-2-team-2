@@ -3,10 +3,11 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useState } from "react";
 import { StyleSheet } from "react-native";
 import { Button, Card, Screen, Text } from "../../components/ui";
+import { listAcuityResults } from "../../storage/acuity";
 import { listSessions } from "../../storage/sessions";
 import { theme } from "../../theme";
 import { useActiveChildId } from "../children/useActiveChildId";
-import { CHECKS, latestScanLine, type CheckId } from "./checks";
+import { CHECKS, latestAcuityLine, latestScanLine, type CheckId } from "./checks";
 import { testsCopy as copy } from "./copy";
 
 /** One place to choose a check: the strabismus scan or the vision check (#140). */
@@ -19,8 +20,10 @@ export default function TestsScreen() {
     useCallback(() => {
       if (!childId) return setLatest({});
       let active = true;
-      listSessions(db, childId).then(
-        (sessions) => active && setLatest({ strabismus: latestScanLine(sessions) }),
+      Promise.all([listSessions(db, childId), listAcuityResults(db, childId)]).then(
+        ([sessions, acuity]) =>
+          active &&
+          setLatest({ strabismus: latestScanLine(sessions), vision: latestAcuityLine(acuity) }),
         () => active && setLatest({}),
       );
       return () => {

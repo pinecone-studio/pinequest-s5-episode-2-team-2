@@ -29,6 +29,10 @@ export const acuityCopy = {
   refer: "TODO(copy): Seeing an eye doctor is recommended.",
   noSign: "TODO(copy): No sign was seen at this check.",
   notice: "TODO(copy): This check does not diagnose and does not replace an eye exam.",
+  save: "TODO(copy): Save to history",
+  saved: "TODO(copy): Saved to history",
+  failed: "TODO(copy): Could not save. Try again.",
+  noChild: "TODO(copy): Add a child profile to save results",
   again: "TODO(copy): Check again",
   done: "TODO(copy): Done",
 } as const;
