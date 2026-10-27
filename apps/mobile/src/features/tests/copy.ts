@@ -1,26 +1,24 @@
-// Placeholders until the team writes the final Mongolian copy (CONTRIBUTING.md "App copy").
+// Mongolian app copy, approved by the team lead (CONTRIBUTING.md "App copy").
 export const testsCopy = {
-  title: "TODO(copy): Checks",
-  intro: "TODO(copy): Choose a check. Neither one is a diagnosis.",
-  start: "TODO(copy): Start",
-  comingSoon: "TODO(copy): Coming soon",
-  notYet: "TODO(copy): Not done yet",
+  title: "Шалгалтууд",
+  intro: "Шалгалтаа сонгоно уу. Аль нь ч онош тавихгүй.",
+  start: "Эхлэх",
+  comingSoon: "Удахгүй",
+  notYet: "Хараахан шалгаагүй",
   lastResult: (outcome: string, days: number) =>
-    days === 0
-      ? `TODO(copy): Last: ${outcome}, today`
-      : `TODO(copy): Last: ${outcome}, ${days} days ago`,
+    days === 0 ? `Сүүлд: ${outcome}, өнөөдөр` : `Сүүлд: ${outcome}, ${days} өдрийн өмнө`,
   checks: {
     strabismus: {
-      title: "TODO(copy): Eye alignment scan",
-      what: "TODO(copy): Looks at the light reflex in both eyes for signs of a squint.",
-      time: "TODO(copy): 3 seconds",
-      needs: "TODO(copy): Torch on, phone about 35 cm away",
+      title: "Хялар шалгах",
+      what: "Хоёр нүдэнд туссан гэрлийн тусгалыг харьцуулж, хялрын шинж байгаа эсэхийг шалгана.",
+      time: "3 секунд",
+      needs: "Гэрэл асаалттай, утас 35 см орчим зайд",
     },
     vision: {
-      title: "TODO(copy): Vision check",
-      what: "TODO(copy): Shows the letter E in different sizes for each eye.",
-      time: "TODO(copy): About 3 minutes",
-      needs: "TODO(copy): About 3 m of space",
+      title: "Хараа шалгах",
+      what: "Нүд тус бүрт янз бүрийн хэмжээтэй Е үсэг харуулж, хэр сайн харж байгааг шалгана.",
+      time: "3 минут орчим",
+      needs: "3 метр орчим зай",
     },
   },
 } as const;

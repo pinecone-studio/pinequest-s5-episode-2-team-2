@@ -13,11 +13,8 @@ export default function ProfileScreen() {
       <Button label={dashboardCopy.settings} onPress={() => router.push("/settings")} />
       {__DEV__ && (
         <Card>
-          <Text>TODO(copy): Хөгжүүлэгчийн тохиргоо</Text>
-          <Button
-            label="TODO(copy): Бичлэг дахин тоглуулах"
-            onPress={() => router.push("/scan/replay")}
-          />
+          <Text>Хөгжүүлэгчийн тохиргоо</Text>
+          <Button label="Бичлэг дахин тоглуулах" onPress={() => router.push("/scan/replay")} />
         </Card>
       )}
     </Screen>

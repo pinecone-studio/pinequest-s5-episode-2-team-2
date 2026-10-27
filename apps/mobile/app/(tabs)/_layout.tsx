@@ -20,10 +20,10 @@ export default function TabLayout() {
         tabBarLabelStyle: { fontFamily: fonts.bold, fontSize: 14 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "TODO(copy): Home" }} />
-      <Tabs.Screen name="scan" options={{ title: "TODO(copy): Scan" }} />
-      <Tabs.Screen name="history" options={{ title: "TODO(copy): History" }} />
-      <Tabs.Screen name="profile" options={{ title: "TODO(copy): Profile" }} />
+      <Tabs.Screen name="index" options={{ title: "Нүүр" }} />
+      <Tabs.Screen name="scan" options={{ title: "Шалгах" }} />
+      <Tabs.Screen name="history" options={{ title: "Түүх" }} />
+      <Tabs.Screen name="profile" options={{ title: "Профайл" }} />
     </Tabs>
   );
 }

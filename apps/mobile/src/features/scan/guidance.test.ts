@@ -12,14 +12,15 @@ const frame: LandmarkFrame = {
 };
 
 test.each(Object.keys(GUIDANCE) as QualityReason[])(
-  "renders Mongolian TODO copy for %s",
+  "renders final Mongolian copy for %s",
   (reason) => {
     const text = guidanceForFrame({
       ...frame,
       quality: mockFrameQuality({ ok: false, reasons: [reason] }),
     });
     expect(text).toBe(GUIDANCE[reason]);
-    expect(text).toMatch(/^TODO\(copy\): /);
+    expect(text).not.toContain("TODO");
+    expect(text).toMatch(/[А-Яа-яӨөҮү]/);
   },
 );
 

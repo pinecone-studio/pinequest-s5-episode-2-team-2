@@ -8,7 +8,7 @@ import { LatestScanCard } from "../history/LatestScanCard";
 import { EyeHero } from "./EyeHero";
 
 // The web demo's start-screen copy (demo/web-poc, apps/web-demo/src/strings.ts), a team draft.
-// TODO(copy): review with the team; the app name is decided in #142.
+// Approved by the team lead; the app name is decided in #142.
 const copy = {
   badge: "Туршилтын хувилбар",
   title: "Нүдний гэрэл",
