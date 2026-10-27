@@ -5,11 +5,13 @@ import pytest
 
 from hirschberg.bench import (
     CONDITIONS,
+    MEASUREMENT_SD_MM,
     REFER_ASYMMETRY,
     Trial,
     fit_slope,
     main,
     measure_scene,
+    projected_score,
     repeatability_sd,
     scan_score,
     smallest_change,
@@ -75,3 +77,19 @@ def test_cli_prints_the_report(capsys):
     assert "| clean |" in out and "| 20 PD |" in out
     with pytest.raises(SystemExit):
         main(["--trials", "1"])
+
+
+def test_measurement_sd_matches_the_published_limits_of_agreement():
+    assert MEASUREMENT_SD_MM * 1.96 * math.sqrt(2) == pytest.approx(0.18)
+
+
+def test_projection_refers_around_the_target_and_not_straight_eyes():
+    rng = np.random.default_rng(0)
+
+    def referred(deviation: float) -> float:
+        return sum(projected_score(deviation, rng) >= REFER_ASYMMETRY for _ in range(2000)) / 2000
+
+    assert referred(0) < 0.01
+    assert referred(4) < 0.05
+    assert 0.3 < referred(8) < 0.7
+    assert referred(20) > 0.99

@@ -10,7 +10,9 @@ estimate as the face landmarks would give. Prints a Markdown report with 95% int
   reliable change, in iris radii, prism dioptres and degrees;
 - the failure rate (no reflex found) and the iris centre and reflex position errors;
 - a screening simulation: the share of 3-second scans referred at the app's threshold for
-  deviations from 0 to 20 prism dioptres.
+  deviations from 0 to 20 prism dioptres;
+- the same projected with the published spread of Hirschberg ratios, iris sizes and video
+  measurement noise, which is closer to what real children would give.
 
 The eyes are drawings, so the numbers describe the algorithm under these conditions, not
 accuracy on children.
@@ -193,6 +195,41 @@ def scan_score(scene: EyeScene, deviation_pd: float, rng: np.random.Generator) -
     return statistics.median(values) if len(values) >= 5 else None
 
 
+# Published variability for the projection below:
+# - Hirschberg ratio between children: SD 1.9 PD/mm (Hasebe et al., IOVS 1998;39:2782-5).
+# - Visible iris diameter between people: SD 0.42 mm (Rüfer et al., Cornea 2005;24:259-61).
+# - Repeated video Hirschberg measurements agree within ±0.18 mm (95% limits, Hasebe et al.,
+#   IOVS 1995;36:2678-85), so one measurement has SD 0.18 / (1.96 * sqrt 2) = 0.065 mm.
+HIRSCHBERG_RATIO_SD = 1.9
+IRIS_DIAMETER_SD_MM = 0.42
+MEASUREMENT_SD_MM = 0.18 / (Z95 * math.sqrt(2))
+
+
+def projected_score(deviation_pd: float, rng: np.random.Generator) -> float:
+    """Scan score for one simulated child, with published between-child and measurement spread.
+
+    The deviation becomes a reflex shift through that child's Hirschberg ratio, the shift is
+    measured with the published noise, and the app expresses it in that child's own iris
+    radii; the threshold assumed the population mean ratio and iris size.
+    """
+    ratio = max(1.0, float(rng.normal(HIRSCHBERG_RATIO, HIRSCHBERG_RATIO_SD)))
+    radius_mm = float(rng.normal(IRIS_RADIUS_MM * 2, IRIS_DIAMETER_SD_MM)) / 2
+    shift_mm = deviation_pd / ratio + float(rng.normal(0, MEASUREMENT_SD_MM))
+    return abs(shift_mm) / radius_mm
+
+
+def projected_rows(children: int, rng: np.random.Generator) -> list[str]:
+    rows = []
+    for d in DEVIATIONS_PD:
+        scores = [projected_score(d, rng) for _ in range(children)]
+        referred = sum(s >= REFER_ASYMMETRY for s in scores)
+        rows.append(
+            f"| {d} PD | {statistics.median(scores):.3f} | {referred}/{children} | "
+            f"{_ci(wilson(referred, children), 2)} |"
+        )
+    return rows
+
+
 def _fmt(v: float | None, digits: int = 3) -> str:
     return "n/a" if v is None else f"{v:.{digits}f}"
 
@@ -234,7 +271,7 @@ def screening_rows(scene: EyeScene, scans: int, rng: np.random.Generator) -> lis
     return rows
 
 
-def report(trials: int, scans: int, seed: int) -> str:
+def report(trials: int, scans: int, seed: int, children: int = 2000) -> str:
     rng = np.random.default_rng(seed)
     results = {name: run_condition(scene, trials, rng) for name, scene in CONDITIONS.items()}
     lines = [
@@ -270,6 +307,16 @@ def report(trials: int, scans: int, seed: int) -> str:
         ]
     lines += [
         "",
+        f"Projection with published variability: {children} simulated children per deviation, "
+        f"Hirschberg ratio SD {HIRSCHBERG_RATIO_SD} PD/mm, iris diameter SD "
+        f"{IRIS_DIAMETER_SD_MM} mm, measurement SD {MEASUREMENT_SD_MM:.3f} mm.",
+        "",
+        "| Deviation | Median score | Referred | 95% CI |",
+        "| --- | --- | --- | --- |",
+        *projected_rows(children, rng),
+    ]
+    lines += [
+        "",
         "Synthetic drawings test the algorithm, not children's eyes: real lids, lashes, tear",
         "film, movement and phone optics are not modelled.",
     ]
@@ -281,10 +328,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--trials", type=int, default=40)
     parser.add_argument("--scans", type=int, default=40)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--children", type=int, default=2000)
     args = parser.parse_args(argv)
     if args.trials < 2 or args.scans < 1:
         parser.error("--trials must be at least 2 and --scans at least 1")
-    print(report(args.trials, args.scans, args.seed))
+    print(report(args.trials, args.scans, args.seed, args.children))
     return 0
 
 
