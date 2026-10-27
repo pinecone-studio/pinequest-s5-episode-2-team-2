@@ -11,6 +11,7 @@ from hirschberg.synthetic import (
     PUPIL,
     REFLEX,
     SCLERA,
+    SKIN,
     EyeScene,
     offset_for_angle,
     prism_dioptres,
@@ -65,3 +66,18 @@ def test_measurement_recovers_the_offset_on_a_clean_eye(angle):
     assert measured.reflex_offset is not None
     assert measured.reflex_offset.x == pytest.approx(eye.reflex_offset.x, abs=0.03)
     assert measured.reflex_offset.y == pytest.approx(0, abs=0.03)
+
+
+def test_lids_cover_the_iris_top_and_bottom():
+    eye = render_eye(EyeScene(iris_radius=40, lid_opening=0.6))
+    c = eye.iris_center
+    assert int(eye.image[int(c.y - 0.8 * 40), int(c.x)]) == SKIN
+    assert int(eye.image[int(c.y), int(c.x - 0.7 * 40)]) == IRIS
+
+
+@pytest.mark.parametrize("opening", [0.75, 0.65])
+def test_measurement_still_finds_the_offset_with_lowered_lids(opening):
+    eye = render_eye(EyeScene(iris_radius=40, angle_deg=5, lid_opening=opening))
+    measured = measure_eye(eye.image, "imageLeft", eye.iris_center, 40)
+    assert measured.reflex_offset is not None
+    assert measured.reflex_offset.x == pytest.approx(eye.reflex_offset.x, abs=0.05)

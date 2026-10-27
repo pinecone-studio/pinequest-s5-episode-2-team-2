@@ -50,6 +50,8 @@ class EyeScene:
     """Reflex offset of a straight eye in iris radii (angle kappa), added to the rotation."""
     reflex_radius: float = 0.07
     """Reflex spot radius in iris radii."""
+    lid_opening: float = 1.05
+    """Half-height of the lid opening in iris radii; below 1 the lids cover part of the iris."""
     center_jitter: tuple[float, float] = (0.0, 0.0)
     """Sub-pixel shift of the iris centre from the image centre."""
     blur_sigma: float = 0.0
@@ -82,16 +84,21 @@ def render_eye(scene: EyeScene, rng: np.random.Generator | None = None) -> Synth
 
     big = np.full((size * s, size * s), SKIN, np.float32)
     # Lid opening: an ellipse wider than the iris that hides its top and bottom edges a little.
-    cv2.ellipse(big, (px(cx), px(cy)), (px(2.6 * r), px(1.05 * r)), 0, 0, 360, SCLERA, -1)
+    lid_h = px(scene.lid_opening * r)
+    cv2.ellipse(big, (px(cx), px(cy)), (px(2.6 * r), lid_h), 0, 0, 360, SCLERA, -1)
     # Turning the eye narrows the iris horizontally by cos(angle).
     squash = math.cos(math.radians(scene.angle_deg))
     iris = np.zeros_like(big)
     cv2.ellipse(iris, (px(cx), px(cy)), (px(r * squash), px(r)), 0, 0, 360, 1, -1)
     lid = np.zeros_like(big)
-    cv2.ellipse(lid, (px(cx), px(cy)), (px(2.6 * r), px(1.05 * r)), 0, 0, 360, 1, -1)
+    cv2.ellipse(lid, (px(cx), px(cy)), (px(2.6 * r), lid_h), 0, 0, 360, 1, -1)
     big[(iris > 0) & (lid > 0)] = IRIS
-    cv2.ellipse(big, (px(cx), px(cy)), (px(0.4 * r * squash), px(0.4 * r)), 0, 0, 360, PUPIL, -1)
-    cv2.circle(big, (px(reflex.x), px(reflex.y)), max(1, px(scene.reflex_radius * r)), REFLEX, -1)
+    pupil = np.zeros_like(big)
+    cv2.ellipse(pupil, (px(cx), px(cy)), (px(0.4 * r * squash), px(0.4 * r)), 0, 0, 360, 1, -1)
+    big[(pupil > 0) & (lid > 0)] = PUPIL
+    spot = np.zeros_like(big)
+    cv2.circle(spot, (px(reflex.x), px(reflex.y)), max(1, px(scene.reflex_radius * r)), 1, -1)
+    big[(spot > 0) & (lid > 0)] = REFLEX
 
     image = cv2.resize(big, (size, size), interpolation=cv2.INTER_AREA)
     if scene.blur_sigma > 0:
