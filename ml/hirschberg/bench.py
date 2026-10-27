@@ -75,7 +75,8 @@ class Trial:
     """Reflex position error in iris radii."""
 
 
-def measure_scene(scene: EyeScene, rng: np.random.Generator) -> Trial:
+def measure_scene(scene: EyeScene, rng: np.random.Generator, axis: str = "x") -> Trial:
+    """One render and measurement; `axis` picks the offset component compared ("x" or "y")."""
     jitter = (float(rng.uniform(-0.5, 0.5)), float(rng.uniform(-0.5, 0.5)))
     eye = render_eye(replace(scene, center_jitter=jitter), rng)
     r = eye.iris_radius
@@ -88,15 +89,25 @@ def measure_scene(scene: EyeScene, rng: np.random.Generator) -> Trial:
     center_error = (
         math.dist((m.iris_center.x, m.iris_center.y), (eye.iris_center.x, eye.iris_center.y)) / r
     )
+    true_offset = getattr(eye.reflex_offset, axis)
     if m.reflex is None or m.reflex_offset is None:
-        return Trial(eye.reflex_offset.x, None, center_error, None)
+        return Trial(true_offset, None, center_error, None)
     reflex_error = math.dist((m.reflex.x, m.reflex.y), (eye.reflex.x, eye.reflex.y)) / r
-    return Trial(eye.reflex_offset.x, m.reflex_offset.x, center_error, reflex_error)
+    return Trial(true_offset, getattr(m.reflex_offset, axis), center_error, reflex_error)
 
 
 def run_condition(scene: EyeScene, trials: int, rng: np.random.Generator) -> list[Trial]:
     return [
         measure_scene(replace(scene, angle_deg=angle), rng)
+        for angle in ANGLES
+        for _ in range(trials)
+    ]
+
+
+def run_vertical(scene: EyeScene, trials: int, rng: np.random.Generator) -> list[Trial]:
+    """Like run_condition, with the eye turned up and down instead of sideways."""
+    return [
+        measure_scene(replace(scene, vertical_deg=angle), rng, axis="y")
         for angle in ANGLES
         for _ in range(trials)
     ]
@@ -294,6 +305,7 @@ def report(trials: int, scans: int, seed: int, children: int = 2000) -> str:
         "| Reflex error, median (95% CI) |",
         "| --- | --- | --- | --- |",
     ]
+    results["vertical gaze (clean)"] = run_vertical(CONDITIONS["clean"], trials, rng)
     for name, condition_trials in results.items():
         measurement, errors = condition_rows(name, condition_trials)
         lines.append(measurement)
