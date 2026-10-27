@@ -1,6 +1,8 @@
+import { router } from "expo-router";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
-import { Card, Screen, Text } from "../../components/ui";
+import { Button, Card, Screen, Text } from "../../components/ui";
 import { theme } from "../../theme";
+import { eyeRestCopy } from "../eyeRest/content";
 import { tipSections, tipsCopy as copy } from "./content";
 
 /** #144: why early checks matter, eye-friendly habits and when to see an eye doctor. */
@@ -32,6 +34,11 @@ export default function TipsScreen() {
           ))}
         </Card>
       ))}
+      <Button
+        label={eyeRestCopy.openFromTips}
+        variant="secondary"
+        onPress={() => router.push("/eye-rest")}
+      />
       <Text variant="caption" style={styles.notice}>
         {copy.notice}
       </Text>

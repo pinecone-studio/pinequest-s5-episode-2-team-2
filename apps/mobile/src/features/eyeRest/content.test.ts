@@ -19,7 +19,9 @@ test("keys are unique", () => {
 test("copy never claims a diagnosis, healthy eyes or a cure", () => {
   const banned = [/оношло/i, /хэвийн/i, /эрүүл нүд/i, /эдгэр/i, /засна/i];
   const texts = [
-    ...Object.values(eyeRestCopy),
+    ...Object.values(eyeRestCopy).map((value) =>
+      typeof value === "function" ? value(1, 5) : value,
+    ),
     ...exercises.flatMap((e) => [e.title, e.summary, ...e.steps.map((s) => s.text)]),
   ];
   for (const text of texts) {
