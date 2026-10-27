@@ -1,16 +1,26 @@
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import TipsScreen from "./TipsScreen";
+import { eyeRestCopy } from "../eyeRest/content";
 import { tipSections, tipsCopy } from "./content";
 
 const mockOpen = jest.fn(async () => true);
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({
+  router: { push: (...args: unknown[]) => mockPush(...(args as [])) },
+}));
 jest.mock("react-native", () => ({
   Linking: { openURL: (...args: unknown[]) => mockOpen(...(args as [])) },
   Pressable: "Pressable",
   View: "View",
   StyleSheet: { create: (styles: unknown) => styles },
 }));
-jest.mock("../../components/ui", () => ({ Card: "Card", Screen: "Screen", Text: "Text" }));
+jest.mock("../../components/ui", () => ({
+  Button: "Button",
+  Card: "Card",
+  Screen: "Screen",
+  Text: "Text",
+}));
 
 let renderer: ReactTestRenderer;
 const text = () => JSON.stringify(renderer.toJSON());
@@ -42,4 +52,12 @@ test("tapping a source opens its page", async () => {
   const first = tipSections[0]!.tips[0]!;
   await act(async () => links[0]!.props.onPress());
   expect(mockOpen).toHaveBeenCalledWith(first.source.url);
+});
+
+test("the eye-rest button opens the exercises", async () => {
+  const button = renderer.root.find(
+    (node) => String(node.type) === "Button" && node.props.label === eyeRestCopy.openFromTips,
+  );
+  await act(async () => button.props.onPress());
+  expect(mockPush).toHaveBeenCalledWith("/eye-rest");
 });
