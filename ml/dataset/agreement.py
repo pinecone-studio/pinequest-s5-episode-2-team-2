@@ -54,10 +54,11 @@ def annotations_by_crop(tasks: list[dict]) -> dict[str, dict[str, list[dict]]]:
 
 
 def compare(crop: str, first: list[dict], second: list[dict]) -> Pair:
+    """Compare flags for all pairs; point errors need two usable annotations."""
     (pa, fa), (pb, fb) = read_points(first), read_points(second)
     la, lb = to_label(pa), to_label(pb)
     center = radius = reflex = None
-    if la and lb:
+    if la and lb and "unclear" not in (fa | fb):
         scale = (la["iris_radius"] + lb["iris_radius"]) / 2
         if scale > 0:
             (ax, ay), (bx, by) = la["iris_center"], lb["iris_center"]
