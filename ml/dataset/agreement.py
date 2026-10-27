@@ -39,7 +39,14 @@ def annotations_by_crop(tasks: list[dict]) -> dict[str, dict[str, list[dict]]]:
         for a in task.get("annotations", []):
             if a.get("was_cancelled"):
                 continue
-            person = str(a.get("completed_by", ""))
+            person = a.get("completed_by")
+            if isinstance(person, dict):
+                person = person.get("id")
+            if isinstance(person, bool) or not isinstance(person, (int, str)):
+                continue
+            person = str(person).strip()
+            if not person:
+                continue
             stamp = a.get("updated_at", "")
             if person not in crops[crop] or stamp >= crops[crop][person][0]:
                 crops[crop][person] = (stamp, a["result"])
