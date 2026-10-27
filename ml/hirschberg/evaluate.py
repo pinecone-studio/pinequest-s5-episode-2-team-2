@@ -7,8 +7,8 @@ adults only) captures, named `<capture>_f<frame>.<ext>` as in docs/capture-proto
 capture is summarized like a scan (hirschberg.summarize); `D` captures are positives, `N`
 negatives. Prints a Markdown report: AUC, sensitivity and specificity at the app's threshold
 (or `--threshold`) and at every candidate threshold, and the threshold with the highest Youden
-index, each with 95% intervals that resample whole people. These are intentional deviations by adults, not patients: the numbers
-describe the measurement, not clinical accuracy.
+index, each with 95% intervals that resample whole people. These are intentional deviations by
+adults, not patients: the numbers describe the measurement, not clinical accuracy.
 """
 
 from __future__ import annotations
