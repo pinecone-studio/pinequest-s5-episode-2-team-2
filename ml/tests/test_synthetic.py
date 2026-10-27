@@ -81,3 +81,22 @@ def test_measurement_still_finds_the_offset_with_lowered_lids(opening):
     measured = measure_eye(eye.image, "imageLeft", eye.iris_center, 40)
     assert measured.reflex_offset is not None
     assert measured.reflex_offset.x == pytest.approx(eye.reflex_offset.x, abs=0.05)
+
+
+def test_window_reflection_is_drawn_without_moving_the_truth():
+    plain = render_eye(EyeScene(iris_radius=40))
+    eye = render_eye(EyeScene(iris_radius=40, window=(-0.45, -0.4, 0.1)))
+    c = eye.iris_center
+    assert int(eye.image[int(round(c.y - 0.4 * 40)), int(round(c.x - 0.45 * 40))]) == REFLEX
+    assert eye.reflex == plain.reflex
+
+
+def test_a_larger_window_reflection_is_taken_for_the_torch_reflex():
+    """Documents a known weakness: the heuristic keeps the largest bright blob."""
+    small = render_eye(EyeScene(iris_radius=40, window=(-0.45, -0.4, 0.04)))
+    large = render_eye(EyeScene(iris_radius=40, window=(-0.45, -0.4, 0.12)))
+    ok = measure_eye(small.image, "imageLeft", small.iris_center, 40)
+    wrong = measure_eye(large.image, "imageLeft", large.iris_center, 40)
+    assert ok.reflex_offset.x == pytest.approx(small.reflex_offset.x, abs=0.03)
+    assert wrong.reflex_offset.x == pytest.approx(-0.45, abs=0.05)
+    assert ok.confidence == wrong.confidence == 0.5
