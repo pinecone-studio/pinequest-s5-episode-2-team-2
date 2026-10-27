@@ -28,7 +28,10 @@ Checks run in this order. The first three stop the check; the others are collect
 | `OVEREXPOSED`      | Mean luminance and clipped fraction (≥ 0.98)     | mean above 0.85 or more than 10 % clipped; not after `TOO_DARK` |
 | `REFLEX_NOT_FOUND` | Either eye has no reflex                         | —                                                               |
 
-`NOT_LOOKING` and `MULTIPLE_REFLEXES` are reserved and not produced yet.
+`NOT_LOOKING` is reserved and not produced yet. `MULTIPLE_REFLEXES` is produced only by the
+Python CLI, when the heuristic finds more than one bright blob in an iris: the synthetic bench
+showed that a reflection larger than the torch's is otherwise taken for it. The app's keypoint
+model reports one reflex, so `assessQuality` does not produce it.
 
 ## Why these values
 
