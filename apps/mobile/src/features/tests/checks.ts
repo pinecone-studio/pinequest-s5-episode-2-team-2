@@ -1,4 +1,5 @@
 import type { ScanResult } from "@app/core";
+import type { AcuityResult } from "../../storage/acuity";
 import { daysSince } from "../history/daysSince";
 import { outcomeCopy } from "../scan/resultCopy";
 import { testsCopy as copy } from "./copy";
@@ -23,4 +24,13 @@ export function latestScanLine(sessions: readonly ScanResult[], now = new Date()
   const days = latest && daysSince(latest.createdAt, now);
   if (!latest || days === null || days === undefined) return copy.notYet;
   return copy.lastResult(outcomeCopy[latest.outcome].title, days);
+}
+
+/** One line about the selected child's most recent vision check, newest first in `results`. */
+export function latestAcuityLine(results: readonly AcuityResult[], now = new Date()): string {
+  const latest = results[0];
+  const days = latest && daysSince(latest.createdAt, now);
+  if (!latest || days === null || days === undefined) return copy.notYet;
+  const outcome = latest.refer ? outcomeCopy.REFER : outcomeCopy.NO_VISIBLE_SIGN;
+  return copy.lastResult(outcome.title, days);
 }

@@ -14,6 +14,7 @@ import {
 } from "./acuity";
 import { acuityCopy as copy } from "./copy";
 import { CROWDED_UNITS, Optotype } from "./Optotype";
+import { SaveAcuityButton } from "./SaveAcuityButton";
 import { beginEye, respond, startSession, type Session } from "./session";
 
 const GROUPS: AgeGroup[] = ["child3", "child4", "child5", "adult"];
@@ -67,10 +68,9 @@ export default function AcuityScreen() {
   }
 
   if (session.stage === "result") {
-    const refer = needsReferral(
-      { right: session.results.right ?? null, left: session.results.left ?? null },
-      session.group,
-    );
+    const right = session.results.right ?? null;
+    const left = session.results.left ?? null;
+    const refer = needsReferral({ right, left }, session.group);
     return (
       <Screen>
         <Text variant="title" accessibilityRole="header">
@@ -93,6 +93,7 @@ export default function AcuityScreen() {
             {copy.notice}
           </Text>
         </Card>
+        <SaveAcuityButton check={{ group: session.group, right, left, refer }} />
         <Button label={copy.again} onPress={() => setSession(null)} />
         <Button label={copy.done} onPress={() => router.back()} />
       </Screen>

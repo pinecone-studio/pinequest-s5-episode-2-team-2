@@ -6,6 +6,7 @@ import { Optotype } from "./Optotype";
 
 const mockBack = jest.fn();
 jest.mock("expo-router", () => ({ router: { back: () => mockBack() } }));
+jest.mock("./SaveAcuityButton", () => ({ SaveAcuityButton: "SaveAcuityButton" }));
 jest.mock("../../components/ui", () => ({
   Button: "Button",
   Card: "Card",
@@ -67,6 +68,12 @@ test("runs both eyes from age group to result", () => {
   expect(text).toContain(copy.belowChart);
   expect(text).toContain(copy.refer);
   expect(text).toContain(copy.notice);
+  expect(all("SaveAcuityButton")[0]!.props.check).toEqual({
+    group: "adult",
+    right: null,
+    left: null,
+    refer: true,
+  });
   press(copy.done);
   expect(mockBack).toHaveBeenCalled();
 });
