@@ -73,3 +73,17 @@ def test_cli_with_sheet(captures, tmp_path, capsys):
     assert "Skipped P001_N_r1_ip13_20261024.mp4: NOT_USABLE" in printed
     with pytest.raises(SystemExit):
         main([str(captures), str(out), "--step", "0"])
+
+
+def test_max_frames_caps_each_video(captures, tmp_path):
+    out = tmp_path / "capped"
+    out.mkdir()
+    written, _ = extract(captures, out, step=1, sheet={}, max_frames=3)
+    assert written == 6  # two usable videos, three frames each
+    assert sorted(p.name for p in out.iterdir())[:3] == [
+        "P001_D_r1_ip13_20261024_f0.jpg",
+        "P001_D_r1_ip13_20261024_f1.jpg",
+        "P001_D_r1_ip13_20261024_f2.jpg",
+    ]
+    with pytest.raises(SystemExit):
+        main([str(captures), str(tmp_path / "x"), "--max-frames", "0"])
