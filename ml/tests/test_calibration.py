@@ -1,14 +1,18 @@
 import json
+import math
 
 import numpy as np
 import pytest
 
 from hirschberg.calibration import (
+    IRIS_RADIUS_MM,
     capture_key,
     fit_slope,
     frame_values,
     group_captures,
+    hirschberg_ratio,
     main,
+    per_person_ratios,
     repeatability_sd,
     report,
     wilson_ci,
@@ -115,3 +119,21 @@ def test_frames_rejected_by_quality_are_not_measured():
 
 def test_report_is_ascii_so_it_prints_on_any_console():
     report(group_captures(synthetic())).encode("ascii")
+
+
+def test_hirschberg_ratio_from_the_slope():
+    # A ratio of 19.9 PD/mm means 1.7455 / 19.9 mm per degree.
+    slope = 100 * math.tan(math.radians(1)) / 19.9 / IRIS_RADIUS_MM
+    assert hirschberg_ratio(slope) == pytest.approx(19.9)
+    assert hirschberg_ratio(-slope) == pytest.approx(19.9)
+    assert hirschberg_ratio(None) is None and hirschberg_ratio(0) is None
+
+
+def test_per_person_ratios_in_the_report():
+    ratios = per_person_ratios(group_captures(synthetic(noise=0)))
+    expected = hirschberg_ratio(SLOPE)
+    assert list(ratios) == ["P001", "P002", "P003"]
+    assert all(r == pytest.approx(expected) for r in ratios.values())
+    text = report(group_captures(synthetic(noise=0)))
+    assert f"| P001 | {expected:.1f} |" in text
+    assert "published for children 19.9 +/- 1.9" in text

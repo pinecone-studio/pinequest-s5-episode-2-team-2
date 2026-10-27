@@ -31,6 +31,10 @@ FILE_NAME = re.compile(
 ANGLES = {"00": 0.0, "25": 2.5, "05": 5.0, "10": 10.0}
 BOOTSTRAP_ROUNDS = 2000
 Z95 = 1.96
+# Mean visible iris radius (Rüfer et al., Cornea 2005;24:259-61), to turn iris radii into mm.
+IRIS_RADIUS_MM = 11.71 / 2
+# Published Hirschberg ratio in children, for comparison (Hasebe et al., IOVS 1998;39:2782-5).
+PUBLISHED_RATIO = (19.9, 1.9)
 
 
 @dataclass(frozen=True)
@@ -153,6 +157,27 @@ def repeatability_sd(captures: Sequence[Capture]) -> float | None:
     return math.sqrt(squares / dof) if dof else None
 
 
+def hirschberg_ratio(slope: float | None) -> float | None:
+    """Prism dioptres per mm of reflex shift implied by a shift-per-degree slope.
+
+    A slope of s iris radii per degree is s * IRIS_RADIUS_MM mm per degree, and a degree near
+    straight ahead is 100 * tan(1 deg) prism dioptres.
+    """
+    if not slope:
+        return None
+    return 100 * math.tan(math.radians(1)) / (abs(slope) * IRIS_RADIUS_MM)
+
+
+def per_person_ratios(captures: Sequence[Capture]) -> dict[str, float | None]:
+    by_person: dict[str, list[Capture]] = defaultdict(list)
+    for c in captures:
+        by_person[c.person].append(c)
+    return {
+        person: hirschberg_ratio(fit[0] if (fit := fit_slope(own)) else None)
+        for person, own in sorted(by_person.items())
+    }
+
+
 def wilson_ci(failed: int, total: int) -> tuple[float, float] | None:
     if total == 0:
         return None
@@ -203,6 +228,20 @@ def report(captures: Sequence[Capture]) -> str:
         f"| Frame failure rate | {_fmt(rate)} ({failed}/{frames}) | "
         f"{_fmt_ci(wilson_ci(failed, frames))} |"
     )
+
+    ratios = per_person_ratios(captures)
+    known = [r for r in ratios.values() if r is not None]
+    mean, sd = PUBLISHED_RATIO
+    lines += [
+        "",
+        "Hirschberg ratio per person (prism dioptres per mm, assuming a "
+        f"{IRIS_RADIUS_MM * 2:.2f} mm iris); published for children {mean} +/- {sd}:",
+        "",
+        "| Person | Ratio |",
+        "| --- | --- |",
+        *(f"| {person} | {_fmt(ratio, 1)} |" for person, ratio in ratios.items()),
+        f"| All people (median) | {_fmt(statistics.median(known) if known else None, 1)} |",
+    ]
 
     lines += [
         "",
