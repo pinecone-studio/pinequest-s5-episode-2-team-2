@@ -1,5 +1,12 @@
 import { mockEyeMeasure } from "./mocks";
-import { analyzeFrame, assessQuality, eyeOpenness, headPose } from "./quality";
+import {
+  analyzeFrame,
+  assessQuality,
+  eyeOpenness,
+  gazeShift,
+  headPose,
+  lookingAway,
+} from "./quality";
 import type { QualityInput } from "./quality";
 import type { CropStats } from "./pixels";
 import type { EyeMeasure, Point } from "./types";
@@ -185,5 +192,34 @@ describe("analyzeFrame", () => {
       mockEyeMeasure("imageRight", { x: 0, y: 0 }),
     ];
     expect(analyzeFrame(input({ eyes: noReflex })).asymmetry).toBeNull();
+  });
+});
+
+describe("gazeShift and lookingAway", () => {
+  const withIrises = (a: Point, b: Point) => frontalFace({ 468: a, 473: b });
+
+  it("is zero for irises in the middle of the eyes", () => {
+    const [a, b] = gazeShift(withIrises({ x: 430, y: 500 }, { x: 570, y: 500 }));
+    expect(a).toBeCloseTo(0);
+    expect(b).toBeCloseTo(0);
+  });
+
+  it("measures the shift over the eye width and matches irises to the nearer eye", () => {
+    const [a, b] = gazeShift(withIrises({ x: 576, y: 500 }, { x: 427, y: 500 }));
+    expect(a).toBeCloseTo(-3 / 60);
+    expect(b).toBeCloseTo(6 / 60);
+  });
+
+  it("flags both eyes shifted the same way, not one eye or opposite shifts", () => {
+    expect(lookingAway(withIrises({ x: 434, y: 500 }, { x: 574, y: 500 }), 0.03)).toBe(true);
+    expect(lookingAway(withIrises({ x: 426, y: 500 }, { x: 566, y: 500 }), 0.03)).toBe(true);
+    expect(lookingAway(withIrises({ x: 430, y: 500 }, { x: 578, y: 500 }), 0.03)).toBe(false);
+    expect(lookingAway(withIrises({ x: 434, y: 500 }, { x: 566, y: 500 }), 0.03)).toBe(false);
+    expect(lookingAway(withIrises({ x: 431, y: 500 }, { x: 571, y: 500 }), 0.03)).toBe(false);
+  });
+
+  it("adds NOT_LOOKING to the frame's reasons", () => {
+    const lm = withIrises({ x: 434, y: 500 }, { x: 574, y: 500 });
+    expect(assessQuality(input({ landmarks: lm })).reasons).toEqual(["NOT_LOOKING"]);
   });
 });

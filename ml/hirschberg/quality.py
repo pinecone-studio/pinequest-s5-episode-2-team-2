@@ -17,6 +17,7 @@ from hirschberg.measure import Point
 # Face Landmarker indices: eye corners and lids for both eyes, cheek edges, nose tip, chin.
 EYES = (((33, 133), (159, 145)), ((263, 362), (386, 374)))
 CHEEKS = (234, 454)
+IRIS_CENTERS = (468, 473)
 NOSE_TIP = 1
 CHIN = 152
 # TODO(tune): nose tip height between the eye line and the chin on a level, frontal face.
@@ -37,6 +38,7 @@ class QualityConfig:
     min_exposure: float = 0.15
     max_exposure: float = 0.85
     max_clipped: float = 0.1
+    max_gaze_shift: float = 0.03
 
 
 DEFAULT_QUALITY_CONFIG = QualityConfig()
@@ -93,6 +95,27 @@ def eye_openness(lm: Sequence[Point]) -> tuple[float, float]:
         width = _dist(lm[corners[0]], lm[corners[1]])
         values.append(_dist(lm[lids[0]], lm[lids[1]]) / width if width > 0 else 0.0)
     return values[0], values[1]
+
+
+def gaze_shift(lm: Sequence[Point]) -> tuple[float, float]:
+    """Horizontal iris position in each eye over the eye width; see gazeShift in quality.ts."""
+    eyes = []
+    for corners, _ in EYES:
+        a, b = lm[corners[0]], lm[corners[1]]
+        eyes.append((Point((a.x + b.x) / 2, (a.y + b.y) / 2), _dist(a, b)))
+    eyes.sort(key=lambda e: e[0].x)
+    irises = [lm[i] for i in IRIS_CENTERS]
+    shifts = []
+    for mid, width in eyes:
+        iris = min(irises, key=lambda p: _dist(p, mid))
+        shifts.append((iris.x - mid.x) / width if width > 0 else 0.0)
+    return shifts[0], shifts[1]
+
+
+def looking_away(lm: Sequence[Point], max_shift: float) -> bool:
+    """True when both irises sit off-centre to the same side: a sideways look, not a squint."""
+    a, b = gaze_shift(lm)
+    return math.copysign(1, a) == math.copysign(1, b) and min(abs(a), abs(b)) > max_shift
 
 
 def head_pose(lm: Sequence[Point]) -> HeadPose:
@@ -162,6 +185,8 @@ def assess_quality(
         reasons.append("HEAD_TURNED")
     if any(o < config.min_eye_open for o in eye_openness(landmarks)):
         reasons.append("EYES_CLOSED")
+    if looking_away(landmarks, config.max_gaze_shift):
+        reasons.append("NOT_LOOKING")
 
     if iris_radii is None or reflex_found is None:
         reasons.append("EYE_NOT_FOUND")

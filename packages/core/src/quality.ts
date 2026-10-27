@@ -38,11 +38,18 @@ export interface QualityConfig {
   /** Mean eye crop luminance above which, or clipped fraction above which, it is overexposed. */
   maxExposure: number;
   maxClipped: number;
+  /**
+   * Horizontal iris shift from the middle of the eye, over the eye width, beyond which both
+   * eyes shifting the same way means the child is looking away from the camera.
+   */
+  maxGazeShift: number;
 }
 
 // TODO(tune): first guesses, to be set from recorded scans. The iris limits correspond to
 // roughly 50 cm and 20 cm on an iPhone main camera; the pose limits allow small head movement.
 // The pixel limits assume 128 px crops in 0..1; the reflex itself clips only a few percent.
+// The gaze limit is a small share of the eye width; looking away by only a few degrees
+// already raises the mirrored asymmetry above the refer threshold (docs/calibration-sheet.md).
 export const DEFAULT_QUALITY_CONFIG: QualityConfig = {
   minEyeOpen: 0.15,
   maxRollDeg: 10,
@@ -54,6 +61,7 @@ export const DEFAULT_QUALITY_CONFIG: QualityConfig = {
   minExposure: 0.15,
   maxExposure: 0.85,
   maxClipped: 0.1,
+  maxGazeShift: 0.03,
 };
 
 // Face Landmarker indices: eye corners and lids for both eyes, cheek edges, nose tip, chin.
@@ -62,6 +70,7 @@ const EYES = [
   { corners: [263, 362], lids: [386, 374] },
 ] as const;
 const CHEEKS = [234, 454] as const;
+const IRIS_CENTERS = [468, 473] as const;
 const NOSE_TIP = 1;
 const CHIN = 152;
 // TODO(tune): nose tip height between the eye line and the chin on a level, frontal face.
@@ -78,6 +87,30 @@ export function eyeOpenness(lm: Point[]): [number, number] {
     return width > 0 ? dist(lm[lids[0]]!, lm[lids[1]]!) / width : 0;
   });
   return [a!, b!];
+}
+
+/**
+ * Horizontal iris position in each eye: the iris centre's distance from the middle of the
+ * eye corners over the eye width, positive towards image right. [image-left eye, image-right
+ * eye]; each iris is matched to the nearer eye, so the landmark order does not matter.
+ */
+export function gazeShift(lm: Point[]): [number, number] {
+  const eyes = EYES.map(({ corners }) => {
+    const [a, b] = [lm[corners[0]]!, lm[corners[1]]!];
+    return { mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, width: dist(a, b) };
+  }).sort((u, v) => u.mid.x - v.mid.x);
+  const irises = IRIS_CENTERS.map((i) => lm[i]!);
+  const shifts = eyes.map(({ mid, width }) => {
+    const iris = irises.reduce((best, p) => (dist(p, mid) < dist(best, mid) ? p : best));
+    return width > 0 ? (iris.x - mid.x) / width : 0;
+  });
+  return [shifts[0]!, shifts[1]!];
+}
+
+/** True when both irises sit off-centre to the same side: a sideways look, not a squint. */
+export function lookingAway(lm: Point[], maxShift: number): boolean {
+  const [a, b] = gazeShift(lm);
+  return Math.sign(a) === Math.sign(b) && Math.min(Math.abs(a), Math.abs(b)) > maxShift;
 }
 
 /**
@@ -133,6 +166,7 @@ export function assessQuality(
     reasons.push("HEAD_TURNED");
   }
   if (eyeOpenness(lm).some((open) => open < config.minEyeOpen)) reasons.push("EYES_CLOSED");
+  if (lookingAway(lm, config.maxGazeShift)) reasons.push("NOT_LOOKING");
 
   if (!input.eyes) {
     reasons.push("EYE_NOT_FOUND");
