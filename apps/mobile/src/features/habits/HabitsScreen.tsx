@@ -9,10 +9,14 @@ import {
   setReminder,
   type HabitTotals,
 } from "../../storage/habits";
+import { getChild } from "../../storage/children";
+import { listSessions } from "../../storage/sessions";
 import { theme } from "../../theme";
 import { useActiveChildId } from "../children/useActiveChildId";
 import { habitsCopy as copy } from "./copy";
+import { syncChildReminders } from "./notify";
 import { DEFAULT_FORMS, toForm, toReminder, type ReminderForm } from "./reminderForm";
+import { planReminders } from "./reminderPlan";
 import type { ReminderKind } from "./schedule";
 
 const REMINDER_KINDS: ReminderKind[] = ["outdoor", "screen_break", "rescan"];
@@ -42,12 +46,15 @@ export default function HabitsScreen() {
     void reload();
   }, [reload]);
 
-  async function act(action: () => Promise<unknown>, success: string | null = null) {
+  async function act<T>(
+    action: () => Promise<T>,
+    success: (result: T) => string | null = () => null,
+  ) {
     setMessage(null);
     try {
-      await action();
+      const result = await action();
       await reload();
-      setMessage(success);
+      setMessage(success(result));
     } catch {
       setMessage(copy.failed);
     }
@@ -61,11 +68,28 @@ export default function HabitsScreen() {
     if (!childId) return;
     const reminders = REMINDER_KINDS.map((kind) => [kind, toReminder(kind, forms[kind])] as const);
     if (reminders.some(([, reminder]) => reminder === null)) return setMessage(copy.invalid);
-    void act(async () => {
-      for (const [kind, reminder] of reminders) {
-        if (reminder) await setReminder(db, childId, kind, reminder);
-      }
-    }, copy.saved);
+    void act(
+      async () => {
+        for (const [kind, reminder] of reminders) {
+          if (reminder) await setReminder(db, childId, kind, reminder);
+        }
+        const [child, sessions] = await Promise.all([
+          getChild(db, childId),
+          listSessions(db, childId),
+        ]);
+        const plan = planReminders(
+          childId,
+          Object.fromEntries(reminders),
+          sessions[0]?.createdAt ?? null,
+          new Date(),
+        );
+        const result = await syncChildReminders(childId, plan, (kind) =>
+          copy.notification(kind, child?.name ?? ""),
+        );
+        return result;
+      },
+      (result) => (result === "denied" ? copy.permissionDenied : copy.saved),
+    );
   }
 
   if (childId === undefined) return null;

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Alert, StyleSheet } from "react-native";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { deleteAllData } from "../../storage/deleteAllData";
+import { cancelAllReminders } from "../habits/notify";
 import { settingsCopy as copy } from "./copy";
 import { confirmWithAlert, runDeleteFlow } from "./deleteFlow";
 
@@ -27,7 +28,11 @@ export default function SettingsScreen() {
           cancel: copy.confirmCancel,
           confirm: copy.confirmDelete,
         }),
-      deleteData: () => deleteAllData(db),
+      deleteData: async () => {
+        await deleteAllData(db);
+        // No reminder about a deleted child may fire later.
+        await cancelAllReminders();
+      },
       onDeleted: () => {
         // Close every screen so nothing reachable still shows deleted data, then start over.
         if (router.canDismiss()) router.dismissAll();
