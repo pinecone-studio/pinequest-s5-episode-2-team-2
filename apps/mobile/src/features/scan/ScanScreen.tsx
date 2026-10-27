@@ -162,29 +162,23 @@ export default function ScanScreen() {
   return (
     <Screen>
       <Text variant="title" accessibilityRole="header">
-        TODO(copy): Нүдний шалгалт
+        Нүдний шалгалт
       </Text>
       <Text>{resultCopy.demo}</Text>
       {!hasPermission ? (
         <Card>
-          <Text>TODO(copy): Камер ашиглах зөвшөөрөл шаардлагатай.</Text>
+          <Text>Камер ашиглах зөвшөөрөл шаардлагатай.</Text>
           <Button
-            label={
-              canRequestPermission
-                ? "TODO(copy): Камерын зөвшөөрөл өгөх"
-                : "TODO(copy): Тохиргоо нээх"
-            }
+            label={canRequestPermission ? "Камерын зөвшөөрөл өгөх" : "Тохиргоо нээх"}
             onPress={() => void allowCamera()}
             disabled={requestingPermission}
           />
           {permissionError && (
-            <Text accessibilityRole="alert">
-              TODO(copy): Зөвшөөрөл нээж чадсангүй. Дахин оролдоно уу.
-            </Text>
+            <Text accessibilityRole="alert">Зөвшөөрөл нээж чадсангүй. Дахин оролдоно уу.</Text>
           )}
         </Card>
       ) : !device ? (
-        <Text>TODO(copy): Арын камер олдсонгүй.</Text>
+        <Text>Арын камер олдсонгүй.</Text>
       ) : (
         <>
           <View style={styles.preview}>
@@ -205,15 +199,13 @@ export default function ScanScreen() {
               pointerEvents="none"
               style={styles.guide}
               accessible
-              accessibilityLabel="TODO(copy): Нүүрээ хүрээнд байрлуулна уу"
+              accessibilityLabel="Нүүрээ хүрээнд байрлуулна уу"
             />
           </View>
-          {!device.hasTorch && (
-            <Text>TODO(copy): Энэ камер гэрэлгүй тул шалгалт эхлүүлэх боломжгүй.</Text>
-          )}
+          {!device.hasTorch && <Text>Энэ камер гэрэлгүй тул шалгалт эхлүүлэх боломжгүй.</Text>}
           {state.status === "idle" && (
             <Button
-              label="TODO(copy): Бэлтгэх"
+              label="Бэлтгэх"
               disabled={!active || !ready || !device.hasTorch}
               onPress={() => {
                 setResult(null);
@@ -223,9 +215,9 @@ export default function ScanScreen() {
           )}
           {state.status === "aligning" && (
             <>
-              <Text>TODO(copy): Нүүрээ хүрээнд байрлуулаад камераа хөдөлгөөнгүй барина уу.</Text>
+              <Text>Нүүрээ хүрээнд байрлуулаад камераа хөдөлгөөнгүй барина уу.</Text>
               <Button
-                label="TODO(copy): 3 секунд шалгах"
+                label="3 секунд шалгах"
                 disabled={!active || !ready || !device.hasTorch || childId === undefined}
                 onPress={beginScan}
               />
@@ -235,9 +227,9 @@ export default function ScanScreen() {
             <View
               accessibilityRole="progressbar"
               accessibilityValue={{ min: 0, max: 100, now: progress }}
-              accessibilityLabel="TODO(copy): Шалгалтын явц"
+              accessibilityLabel="Шалгалтын явц"
             >
-              <Text>TODO(copy): Шалгаж байна — {progress}%</Text>
+              <Text>Шалгаж байна — {progress}%</Text>
               <View style={styles.track}>
                 <View style={[styles.fill, { width: `${progress}%` }]} />
               </View>
@@ -246,18 +238,14 @@ export default function ScanScreen() {
           {state.status === "processing" && (
             <>
               <ActivityIndicator />
-              <Text accessibilityLiveRegion="polite">
-                TODO(copy): Үр дүнг боловсруулж, хадгалж байна.
-              </Text>
+              <Text accessibilityLiveRegion="polite">Үр дүнг боловсруулж, хадгалж байна.</Text>
             </>
           )}
           {state.status === "failed" && (
             <>
-              <Text accessibilityRole="alert">
-                TODO(copy): Шалгалт тасалдлаа. Дахин оролдоно уу.
-              </Text>
+              <Text accessibilityRole="alert">Шалгалт тасалдлаа. Дахин оролдоно уу.</Text>
               <Button
-                label="TODO(copy): Дахин оролдох"
+                label="Дахин оролдох"
                 onPress={() => {
                   setReady(false);
                   dispatch({ type: "RETRY" });
@@ -266,7 +254,7 @@ export default function ScanScreen() {
             </>
           )}
           {(busy || state.status === "aligning") && (
-            <Button label="TODO(copy): Цуцлах" onPress={() => dispatch({ type: "CANCEL" })} />
+            <Button label="Цуцлах" onPress={() => dispatch({ type: "CANCEL" })} />
           )}
         </>
       )}

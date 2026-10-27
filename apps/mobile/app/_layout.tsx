@@ -11,9 +11,9 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   return (
     <SafeAreaProvider>
       <Screen>
-        <Text variant="title">TODO(copy): Startup error</Text>
-        <Text>TODO(copy): Startup error description</Text>
-        <Button label="TODO(copy): Retry" onPress={retry} />
+        <Text variant="title">Апп нээхэд алдаа гарлаа</Text>
+        <Text>Хадгалсан мэдээллийг уншиж чадсангүй. Дахин оролдоно уу.</Text>
+        <Button label="Дахин оролдох" onPress={retry} />
       </Screen>
     </SafeAreaProvider>
   );

@@ -11,12 +11,11 @@ import { useActiveChildId } from "../children/useActiveChildId";
 import { outcomeCopy } from "../scan/resultCopy";
 import { daysSince } from "./daysSince";
 
-// Placeholders until the team writes the final Mongolian copy (CONTRIBUTING.md "App copy").
+// Mongolian app copy, approved by the team lead (CONTRIBUTING.md "App copy").
 const copy = {
-  noScan: "TODO(copy): No scan yet",
-  lastScan: (days: number) =>
-    days === 0 ? "TODO(copy): Last scan today" : `TODO(copy): Last scan ${days} days ago`,
-  history: "TODO(copy): Open history",
+  noScan: "Шалгалт хийгээгүй байна",
+  lastScan: (days: number) => (days === 0 ? "Өнөөдөр шалгасан" : `${days} өдрийн өмнө шалгасан`),
+  history: "Түүх харах",
 } as const;
 
 /** The selected child's most recent scan on the Home screen; nothing without a profile. */

@@ -8,12 +8,12 @@ import { saveSession } from "../../storage/sessions";
 import { useActiveChildId } from "../children/useActiveChildId";
 import { resultCopy } from "./resultCopy";
 
-// Placeholders until the team writes the final Mongolian copy (CONTRIBUTING.md "App copy").
+// Mongolian app copy, approved by the team lead (CONTRIBUTING.md "App copy").
 const copy = {
-  saved: "TODO(copy): Saved to history",
-  failed: "TODO(copy): Could not save. Try again.",
-  noChild: "TODO(copy): Add a child profile to save results",
-  mock: "TODO(copy): Example results are not saved",
+  saved: "Түүхэнд хадгалагдлаа",
+  failed: "Хадгалж чадсангүй. Дахин оролдоно уу.",
+  noChild: "Үр дүнг хадгалахын тулд хүүхдийн профайл нэмнэ үү",
+  mock: "Жишээ үр дүнг хадгалахгүй",
 } as const;
 
 type Status = "idle" | "saving" | "saved" | "failed";

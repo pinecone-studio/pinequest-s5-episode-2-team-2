@@ -56,7 +56,7 @@ test("says there is no scan yet", async () => {
   mockList.mockResolvedValue([]);
   await render();
   expect(text()).toContain("Номин");
-  expect(text()).toContain("No scan yet");
+  expect(text()).toContain("Шалгалт хийгээгүй байна");
 });
 
 test("shows the newest scan and opens the history", async () => {
@@ -67,9 +67,9 @@ test("shows the newest scan and opens the history", async () => {
   await render();
   expect(mockList).toHaveBeenCalledWith(mockDb, "c1");
   expect(text()).toContain(outcomeCopy.REFER.title);
-  expect(text()).toContain("Last scan today");
+  expect(text()).toContain("Өнөөдөр шалгасан");
   await act(async () =>
-    renderer.root.findAll((n) => n.props.label === "TODO(copy): Open history")[0]!.props.onPress(),
+    renderer.root.findAll((n) => n.props.label === "Түүх харах")[0]!.props.onPress(),
   );
   expect(mockNavigate).toHaveBeenCalledWith("/history");
 });

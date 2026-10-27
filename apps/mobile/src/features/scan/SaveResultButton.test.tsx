@@ -40,7 +40,7 @@ test("saves a real result to the selected child once", async () => {
   await render(real);
   await act(async () => button().props.onPress());
   expect(mockSave).toHaveBeenCalledWith(mockDb, { ...real, childId: "child-1" });
-  expect(text()).toContain("Saved to history");
+  expect(text()).toContain("Түүхэнд хадгалагдлаа");
   expect(button().props.disabled).toBe(true);
   await act(async () => button().props.onPress());
   expect(mockSave).toHaveBeenCalledTimes(1);
@@ -51,22 +51,22 @@ test("never saves a mock result", async () => {
   expect(button().props.disabled).toBe(true);
   await act(async () => button().props.onPress());
   expect(mockSave).not.toHaveBeenCalled();
-  expect(text()).toContain("Example results are not saved");
+  expect(text()).toContain("Жишээ үр дүнг хадгалахгүй");
 });
 
 test("asks for a child profile first", async () => {
   mockChildId = null;
   await render(real);
   expect(button().props.disabled).toBe(true);
-  expect(text()).toContain("Add a child profile");
+  expect(text()).toContain("хүүхдийн профайл нэмнэ үү");
 });
 
 test("lets the parent retry after a failed save", async () => {
   mockSave.mockRejectedValueOnce(new Error("db")).mockResolvedValue();
   await render(real);
   await act(async () => button().props.onPress());
-  expect(text()).toContain("Could not save");
+  expect(text()).toContain("Хадгалж чадсангүй");
   expect(button().props.disabled).toBe(false);
   await act(async () => button().props.onPress());
-  expect(text()).toContain("Saved to history");
+  expect(text()).toContain("Түүхэнд хадгалагдлаа");
 });
