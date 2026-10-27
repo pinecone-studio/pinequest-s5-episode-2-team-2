@@ -1,4 +1,5 @@
-import type { EyeSide, Point } from "@app/core";
+import { cropStats, lumaFromRgb } from "@app/core";
+import type { CropStats, EyeSide, Point } from "@app/core";
 import { cropPixels } from "./pixels";
 import type { PixelCrop, PixelSource } from "./pixels";
 import type { InferenceModel } from "./facePipeline";
@@ -13,6 +14,8 @@ export interface EyePrediction {
   reflex: Point | null;
   reflexVisibleProbability: number;
   crop: EyeRegion;
+  /** Scalar statistics from the exact RGB tensor supplied to the eye model. */
+  cropStats?: CropStats;
 }
 
 function roundEven(value: number) {
@@ -58,6 +61,8 @@ export function inferEyes(
   if (!regions) return null;
   const eyes = regions.map((region): EyePrediction => {
     const rgb = cropPixels(source, region);
+    const stats = cropStats({ width: 128, height: 128, luma: lumaFromRgb(rgb) });
+    if (!stats) throw new Error("Invalid eye crop statistics");
     const output = model.runSync([rgb.buffer]);
     if (output.length !== 1 || output[0]?.byteLength !== 24)
       throw new Error("Unexpected eye model output");
@@ -86,6 +91,7 @@ export function inferEyes(
     return {
       side: region.side,
       crop: region,
+      cropStats: stats,
       irisCenter: { x: region.x + x * region.size, y: region.y + y * region.size },
       irisRadius: radius * region.size,
       reflex:

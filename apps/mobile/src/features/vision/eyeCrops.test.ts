@@ -87,6 +87,11 @@ test("both eye tensors come from full 4K RGB and predictions map back to frame p
   expect(eyes[1].irisCenter).toEqual({ x: 2000, y: 1000 });
   expect(eyes[0].irisRadius).toBeCloseTo(40);
   expect(eyes[0].reflex!.x).toBeCloseTo(1020);
+  for (const eye of eyes) {
+    expect(eye.cropStats?.exposure).toBeCloseTo(128 / 255, 6);
+    expect(eye.cropStats?.sharpness).toBe(0);
+    expect(eye.cropStats?.clipped).toBe(0);
+  }
   runSync.mockReturnValueOnce([new Float32Array([0.5, 0.5, 0.2, -8, -8, 0.1]).buffer]);
   expect(inferEyes(source, landmarks(), { runSync })![0].reflex).toBeNull();
   runSync.mockReturnValueOnce([new Float32Array([NaN, 0.5, 0.2, 0.6, 0.5, 0.9]).buffer]);
