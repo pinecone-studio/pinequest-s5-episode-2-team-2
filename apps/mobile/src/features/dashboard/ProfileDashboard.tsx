@@ -8,6 +8,7 @@ import { ChildrenList } from "../children/ChildrenList";
 import { ageThisYear } from "../children/form";
 import { dashboardCopy as copy } from "./copy";
 import { loadDashboard, type Dashboard } from "./data";
+import { ScanCards } from "./ScanCards";
 
 type State = { status: "loading" } | { status: "failed" } | { status: "ready"; data: Dashboard };
 
@@ -44,7 +45,7 @@ export function ProfileDashboard() {
       </Card>
     );
 
-  const { child } = state.data;
+  const { child, details } = state.data;
   const age = child && ageThisYear(child.birthYear);
   return (
     <>
@@ -82,6 +83,7 @@ export function ProfileDashboard() {
           }}
         />
       )}
+      {details && <ScanCards details={details} />}
     </>
   );
 }

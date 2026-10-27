@@ -1,5 +1,9 @@
 // TODO(copy): Mongolian draft wording for team review; no diagnostic claims.
 export const dashboardCopy = {
+  open: "TODO(copy): Дэлгэрэнгүй",
+  scan: "TODO(copy): Сүүлийн нүдний шалгалт",
+  noScan: "TODO(copy): Хадгалсан нүдний шалгалт алга",
+  progress: "TODO(copy): Хэмжилтийн явц",
   title: "TODO(copy): Хүүхдийн хяналт",
   switchChild: "TODO(copy): Хүүхэд солих",
   manage: "TODO(copy): Хүүхдийн мэдээлэл",
