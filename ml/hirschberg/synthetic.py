@@ -52,6 +52,9 @@ class EyeScene:
     """Reflex spot radius in iris radii."""
     lid_opening: float = 1.05
     """Half-height of the lid opening in iris radii; below 1 the lids cover part of the iris."""
+    window: tuple[float, float, float] | None = None
+    """A second reflection (window, lamp): x and y from the iris centre and radius, all in
+    iris radii. None for only the torch reflex."""
     center_jitter: tuple[float, float] = (0.0, 0.0)
     """Sub-pixel shift of the iris centre from the image centre."""
     blur_sigma: float = 0.0
@@ -98,6 +101,9 @@ def render_eye(scene: EyeScene, rng: np.random.Generator | None = None) -> Synth
     big[(pupil > 0) & (lid > 0)] = PUPIL
     spot = np.zeros_like(big)
     cv2.circle(spot, (px(reflex.x), px(reflex.y)), max(1, px(scene.reflex_radius * r)), 1, -1)
+    if scene.window is not None:
+        wx, wy, wr = scene.window
+        cv2.circle(spot, (px(cx + wx * r), px(cy + wy * r)), max(1, px(wr * r)), 1, -1)
     big[(spot > 0) & (lid > 0)] = REFLEX
 
     image = cv2.resize(big, (size, size), interpolation=cv2.INTER_AREA)

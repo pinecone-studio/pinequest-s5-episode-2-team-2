@@ -56,6 +56,8 @@ CONDITIONS: dict[str, EyeScene] = {
     "far (iris 22 px)": EyeScene(iris_radius=22, noise_sigma=4),
     "close (iris 60 px)": EyeScene(iris_radius=60, noise_sigma=4),
     "lids over a third of the iris": EyeScene(lid_opening=0.65, noise_sigma=4),
+    "small window reflection": EyeScene(window=(-0.45, -0.4, 0.04), noise_sigma=4),
+    "large window reflection": EyeScene(window=(-0.45, -0.4, 0.12), noise_sigma=4),
     "hard (far, dark, blurred, noisy)": EyeScene(
         iris_radius=22, brightness=0.5, blur_sigma=1.5, noise_sigma=12
     ),
