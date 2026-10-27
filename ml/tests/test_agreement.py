@@ -36,6 +36,24 @@ def eye(cx=20, ex=28, reflex=(22, 19)):
     return result + ([point("reflex", *reflex)] if reflex else [])
 
 
+@pytest.mark.parametrize(
+    "first_unclear,second_unclear", [(True, False), (False, True), (True, True)]
+)
+def test_unclear_crops_do_not_contribute_leftover_point_errors(first_unclear, second_unclear):
+    first = eye() + ([unclear()] if first_unclear else [])
+    second = eye(cx=22, ex=30, reflex=(22, 23)) + ([unclear()] if second_unclear else [])
+    [pair] = pairs([task("a.png", annotation(1, first), annotation(2, second))])
+    assert pair.center is None
+    assert pair.radius is None
+    assert pair.reflex is None
+    assert pair.unclear_agrees == (first_unclear == second_unclear)
+    # Flag and presence agreement remain visible for every double-annotated crop.
+    assert pair.reflex_agrees
+    text = report([pair])
+    assert "1 double-annotated crops." in text
+    assert "| Iris centre distance | 0 | n/a | n/a |" in text
+
+
 def test_keeps_each_persons_latest_completed_annotation():
     tasks = [
         task(
