@@ -1,5 +1,12 @@
 // TODO(copy): Mongolian draft wording for team review; no diagnostic claims.
 export const dashboardCopy = {
+  vision: "TODO(copy): Сүүлийн харааны шалгалт",
+  noVision: "TODO(copy): Хадгалсан харааны шалгалт алга",
+  missingVision: "TODO(copy): Энэ хүүхдийн хадгалсан үр дүн олдсонгүй",
+  eyes: { right: "TODO(copy): Баруун нүд", left: "TODO(copy): Зүүн нүд" },
+  belowChart: "TODO(copy): Хүснэгтийн түвшин давж чадаагүй",
+  visionRefer: "TODO(copy): Нүдний эмчид хандахыг зөвлөж байна",
+  back: "TODO(copy): Буцах",
   treatment: "TODO(copy): Сүүлийн 7 өдрийн эмчилгээ",
   kinds: { patch: "TODO(copy): Нүдний наалт", glasses: "TODO(copy): Нүдний шил" },
   noTreatment: "TODO(copy): Энэ хугацаанд бүртгэл алга",
