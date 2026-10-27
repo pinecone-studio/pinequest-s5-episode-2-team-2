@@ -114,3 +114,11 @@ def test_device_table_only_with_several_devices():
     assert "| ip13 | 8 | 4 | 1.000 |" in rows
     assert "| ip15 | 2 | 1 | 0.000 |" in rows
     assert "| Device | Captures | People | AUC |" in report(mixed, too_poor=0)
+
+
+def test_report_states_the_app_threshold_operating_point():
+    text = report(separable(), too_poor=0)
+    assert "At the app's threshold 0.069: sensitivity 1.000" in text
+    assert "TP 4, FN 0, TN 4, FP 0." in text
+    high = report(separable(), too_poor=0, threshold=0.35)
+    assert "At the app's threshold 0.350: sensitivity 0.500" in high
