@@ -22,6 +22,7 @@ export const theme = {
     border: "#D6E2FF",
     notice: "#FFF6E0",
     onNotice: "#5C3D00",
+    danger: "#B91C1C",
   },
   spacing: { xs: 4, sm: 8, md: 16, lg: 20, xl: 32 },
   radius: { sm: 16, md: 24, pill: 999 },
