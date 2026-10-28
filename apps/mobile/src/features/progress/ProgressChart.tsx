@@ -23,13 +23,13 @@ export function ProgressChart({
 }) {
   const [width, setWidth] = useState(0);
   const series = progressSeries(sessions);
-  const inner = Math.max(0, width - DOT);
-  const { points, top } = chartPoints(series, inner, HEIGHT - DOT);
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
   // First and last scan day under the time axis; one centred date when they match (#236).
   const days = [
     ...new Set([series[0], series.at(-1)].flatMap((p) => (p ? [formatDay(p.time)] : []))),
   ];
+  const inner = Math.max(0, width - DOT);
+  const { points, top } = chartPoints(series, inner, HEIGHT - DOT);
+  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
     <View style={styles.container}>

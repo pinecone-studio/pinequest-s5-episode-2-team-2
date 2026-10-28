@@ -40,14 +40,6 @@ test("waits for two measured scans and always shows the notice", async () => {
   expect(plot()).toBeUndefined();
 });
 
-test("draws one dot per measured scan and one line between each pair", async () => {
-  await render([scan("c", 24, 0.3), scan("b", 22, null), scan("a", 20, 0.1), scan("d", 26, 0.2)]);
-  await act(async () => plot()!.props.onLayout({ nativeEvent: { layout: { width: 212 } } }));
-  const children = plot()!.children as ReactTestRenderer["root"][];
-  expect(children).toHaveLength(3 + 2);
-  expect(plot()!.props.accessibilityLabel).toBe(copy.summary(3, 0.3));
-});
-
 test("dates the first and last measured scans under the time axis (#236)", async () => {
   await render([scan("c", 24, 0.3), scan("b", 26, null), scan("a", 20, 0.1)]);
   const first = formatDay("2026-10-20T03:00:00.000Z");
@@ -62,4 +54,12 @@ test("shows one date when every measured scan is from the same day", async () =>
   await render([scan("a", 20, 0.1), scan("b", 20, 0.2)]);
   const day = formatDay("2026-10-20T03:00:00.000Z");
   expect(text().split(day)).toHaveLength(2);
+});
+
+test("draws one dot per measured scan and one line between each pair", async () => {
+  await render([scan("c", 24, 0.3), scan("b", 22, null), scan("a", 20, 0.1), scan("d", 26, 0.2)]);
+  await act(async () => plot()!.props.onLayout({ nativeEvent: { layout: { width: 212 } } }));
+  const children = plot()!.children as ReactTestRenderer["root"][];
+  expect(children).toHaveLength(3 + 2);
+  expect(plot()!.props.accessibilityLabel).toBe(copy.summary(3, 0.3));
 });
