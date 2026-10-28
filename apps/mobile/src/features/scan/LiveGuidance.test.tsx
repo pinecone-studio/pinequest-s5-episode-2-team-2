@@ -1,3 +1,4 @@
+import { mockFrameQuality } from "@app/core";
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import type { LandmarkFrame } from "../vision/facePipeline";
@@ -47,4 +48,25 @@ test("a lasting change replaces the instruction", async () => {
     await act(async () => renderer.update(<LiveGuidance frame={frame(2, i)} />));
   }
   expect(shown()).toBe(GUIDANCE.MULTIPLE_FACES);
+});
+
+test("still announces no face, head turned and closed eyes after moving below the preview", async () => {
+  await act(async () => {
+    renderer = create(<LiveGuidance frame={frame(0, 0)} />);
+  });
+  expect(shown()).toBe(GUIDANCE.NO_FACE);
+  let timestampMs = 1;
+  for (const reason of ["HEAD_TURNED", "EYES_CLOSED"] as const) {
+    for (let i = 0; i < 5; i++) {
+      const next = {
+        ...frame(1, timestampMs++),
+        quality: mockFrameQuality({ ok: false, reasons: [reason] }),
+      };
+      await act(async () => renderer.update(<LiveGuidance frame={next} />));
+    }
+    expect(shown()).toBe(GUIDANCE[reason]);
+    const text = renderer.root.findByType("Text" as never);
+    expect(text.props.accessibilityLiveRegion).toBe("polite");
+    expect(text.props.numberOfLines).toBeUndefined();
+  }
 });

@@ -7,6 +7,7 @@ import { Button, Card, Screen, Text } from "../../components/ui";
 import { theme } from "../../theme";
 import { useScanResult } from "./ScanResultContext";
 import { ScanCamera } from "./ScanCamera";
+import { ScanPreview } from "./ScanPreview";
 import { initialScanState, SCAN_DURATION_MS, scanReducer, torchEnabled } from "./state";
 import { useActiveChildId } from "../children/useActiveChildId";
 import type { LandmarkFrame } from "../vision/facePipeline";
@@ -181,27 +182,21 @@ export default function ScanScreen() {
         <Text>Арын камер олдсонгүй.</Text>
       ) : (
         <>
-          <View style={styles.preview}>
-            {showCamera && (
-              <ScanCamera
-                key={device.id}
-                device={device}
-                onFrame={record}
-                torchOn={torchEnabled(state, active, device.hasTorch)}
-                onReady={() => setReady(true)}
-                onFailure={() => {
-                  setReady(false);
-                  dispatch({ type: "FAIL" });
-                }}
-              />
-            )}
-            <View
-              pointerEvents="none"
-              style={styles.guide}
-              accessible
-              accessibilityLabel="Нүүрээ хүрээнд байрлуулна уу"
+          {showCamera ? (
+            <ScanCamera
+              key={device.id}
+              device={device}
+              onFrame={record}
+              torchOn={torchEnabled(state, active, device.hasTorch)}
+              onReady={() => setReady(true)}
+              onFailure={() => {
+                setReady(false);
+                dispatch({ type: "FAIL" });
+              }}
             />
-          </View>
+          ) : (
+            <ScanPreview />
+          )}
           {!device.hasTorch && <Text>Энэ камер гэрэлгүй тул шалгалт эхлүүлэх боломжгүй.</Text>}
           {state.status === "idle" && (
             <Button
@@ -263,21 +258,6 @@ export default function ScanScreen() {
 }
 
 const styles = StyleSheet.create({
-  preview: {
-    height: 320,
-    overflow: "hidden",
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.text,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  guide: {
-    width: "68%",
-    height: "80%",
-    borderWidth: 3,
-    borderColor: theme.colors.onPrimary,
-    borderRadius: 120,
-  },
   track: {
     height: 8,
     borderRadius: theme.radius.sm,

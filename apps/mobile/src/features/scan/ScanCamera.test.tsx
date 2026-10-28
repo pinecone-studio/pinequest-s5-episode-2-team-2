@@ -12,7 +12,10 @@ jest.mock("../vision/useLandmarks", () => ({
   },
 }));
 jest.mock("react-native-vision-camera", () => ({ Camera: "Camera" }));
-jest.mock("react-native", () => ({ StyleSheet: { absoluteFill: {} } }));
+jest.mock("react-native", () => ({
+  View: "View",
+  StyleSheet: { absoluteFill: {}, create: (styles: unknown) => styles },
+}));
 jest.mock("./LiveGuidance", () => ({ LiveGuidance: "LiveGuidance" }));
 jest.mock("../vision/LandmarkOverlay", () => ({ LandmarkOverlay: "LandmarkOverlay" }));
 jest.mock("../measurement/MeasurementOverlay", () => ({
