@@ -1,5 +1,6 @@
 import type { ScanResult } from "@app/core";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import type { ComponentRef } from "react";
 import { StyleSheet, View } from "react-native";
 import type { LayoutChangeEvent } from "react-native";
 import { Text } from "../../components/ui";
@@ -25,6 +26,13 @@ export function ProgressChart({
   const inner = Math.max(0, width - DOT);
   const { points, top } = chartPoints(series, inner, HEIGHT - DOT);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+  // The plot usually mounts after the sessions load, and iOS then never sends it an onLayout
+  // event, which left every dot at the left edge. Measure it once it exists.
+  const plot = useRef<ComponentRef<typeof View>>(null);
+  const hasPlot = series.length >= 2;
+  useLayoutEffect(() => {
+    if (hasPlot) plot.current?.measure((_x, _y, measured) => setWidth(measured));
+  }, [hasPlot]);
 
   return (
     <View style={styles.container}>
@@ -35,6 +43,7 @@ export function ProgressChart({
         </Text>
       ) : (
         <View
+          ref={plot}
           onLayout={onLayout}
           style={styles.plot}
           accessible
