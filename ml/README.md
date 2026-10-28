@@ -136,6 +136,15 @@ The command trains on the `train` split, evaluates on `test`, writes `runs/<run_
 and `metrics.json`, and prints a model vs heuristic table. Errors are normalized by the
 labelled iris radius. `runs/` and `data/` are git-ignored; share weights through the Drive.
 
+With few people one test split is too small to compare settings (#244). `keypoints.cv` ignores
+the manifest's splits, deals people into k folds, trains one model per fold on everyone else and
+reports the errors over all held-out crops, with intervals that resample whole people. It writes
+only `runs/<run_name>-cv<k>/cv.json`, no weights:
+
+```bash
+uv run python -m keypoints.cv configs/keypoints-baseline.toml --folds 4
+```
+
 The dataset builder writes `data/keypoints/manifest.jsonl`, one line per eye crop. Coordinates
 are crop pixels, paths are relative to the manifest, and the split must keep each `person_id`
 in a single split. `reflex` is `null` when no reflex is visible; `heuristic` is the

@@ -20,7 +20,7 @@ import timm
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from keypoints.data import EyeCrops, label_vector
 from keypoints.metrics import error_intervals, interval_table, keypoint_errors, markdown_table
@@ -76,6 +76,31 @@ def heuristic_vectors(manifest: Path, rows: list[dict]) -> tuple[np.ndarray, np.
     return np.array(preds).reshape(-1, 6), np.array(targets).reshape(-1, 6)
 
 
+def fit(cfg: dict, train: Dataset, device: torch.device) -> nn.Module:
+    """Trains a fresh model on `train` with the config's optimiser settings."""
+    loader = DataLoader(
+        train,
+        batch_size=cfg["batch_size"],
+        shuffle=True,
+        generator=torch.Generator().manual_seed(cfg["seed"]),
+    )
+    model = build_model(cfg["pretrained"]).to(device)
+    opt = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=cfg["weight_decay"])
+    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=cfg["epochs"])
+    for epoch in range(cfg["epochs"]):
+        model.train()
+        total = 0.0
+        for images, target in loader:
+            loss = loss_fn(model(images.to(device)), target.to(device))
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            total += loss.item() * len(images)
+        sched.step()
+        print(f"epoch {epoch + 1}/{cfg['epochs']} loss {total / len(train):.5f}", file=sys.stderr)
+    return model
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("config", type=Path)
@@ -95,28 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     if len(train) == 0 or len(test) == 0:
         print(f"Need train and test rows in {manifest}", file=sys.stderr)
         return 2
-    loader = DataLoader(
-        train,
-        batch_size=cfg["batch_size"],
-        shuffle=True,
-        generator=torch.Generator().manual_seed(cfg["seed"]),
-    )
-
-    model = build_model(cfg["pretrained"]).to(device)
-    opt = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=cfg["weight_decay"])
-    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=cfg["epochs"])
-    for epoch in range(cfg["epochs"]):
-        model.train()
-        total = 0.0
-        for images, target in loader:
-            loss = loss_fn(model(images.to(device)), target.to(device))
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
-            total += loss.item() * len(images)
-        sched.step()
-        print(f"epoch {epoch + 1}/{cfg['epochs']} loss {total / len(train):.5f}", file=sys.stderr)
-
+    model = fit(cfg, train, device)
     torch.save(model.state_dict(), out_dir / "model.pt")
     test_targets = np.stack([t.numpy() for _, t in test])
     model_pred = predict(model, DataLoader(test, 64), device)

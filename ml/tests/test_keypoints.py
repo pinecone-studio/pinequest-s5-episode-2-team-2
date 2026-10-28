@@ -6,6 +6,8 @@ import pytest
 
 pytest.importorskip("torch", reason="needs the train group: uv sync --group train")
 
+from keypoints.cv import main as cv_main  # noqa: E402
+from keypoints.cv import person_folds  # noqa: E402
 from keypoints.data import EyeCrops, hflip, label_vector  # noqa: E402
 from keypoints.metrics import keypoint_errors  # noqa: E402
 from keypoints.train import main  # noqa: E402
@@ -36,6 +38,7 @@ def manifest(tmp_path):
         rows.append(
             {
                 "crop": f"{i}.png",
+                "person_id": f"P{i // 4}",
                 "split": "test" if i >= 18 else "train",
                 **label,
                 "heuristic": {**label, "iris_radius": radius + 1},
@@ -87,4 +90,37 @@ def test_train_and_evaluate_from_config(manifest, tmp_path, capsys):
     assert metrics["test"]["model"]["n"] == 6
     assert metrics["test"]["heuristic"]["radius_median"] > 0
     assert (tmp_path / "runs/t/model.pt").is_file()
+    assert "| heuristic |" in capsys.readouterr().out
+
+
+def test_person_folds_hold_out_every_crop_once_and_never_split_a_person():
+    rows = [{"person_id": f"P{i // 3}"} for i in range(15)]
+    folds = person_folds(rows, 3, seed=0)
+    assert sorted(i for fold in folds for i in fold) == list(range(15))
+    for fold in folds:
+        held = {rows[i]["person_id"] for i in fold}
+        rest = {row["person_id"] for i, row in enumerate(rows) if i not in fold}
+        assert held and not held & rest
+
+
+def test_person_folds_need_people():
+    with pytest.raises(ValueError, match="person_id"):
+        person_folds([{"person_id": "P1"}, {}], 2, seed=0)
+    with pytest.raises(ValueError, match="cannot fill"):
+        person_folds([{"person_id": "P1"}, {"person_id": "P2"}], 3, seed=0)
+
+
+def test_cross_validation_reports_every_crop_without_weights(manifest, tmp_path, capsys):
+    config = tmp_path / "config.toml"
+    runs = (tmp_path / "runs").as_posix()
+    config.write_text(
+        f'manifest = "{manifest.as_posix()}"\nruns_dir = "{runs}"\nrun_name = "t"\nseed = 0\n'
+        "image_size = 64\nepochs = 1\nbatch_size = 8\nlr = 1e-3\nweight_decay = 0\n"
+        "pretrained = false\n"
+    )
+    assert cv_main([str(config), "--folds", "3"]) == 0
+    report = json.loads((tmp_path / "runs/t-cv3/cv.json").read_text())
+    assert report["test"]["model"]["n"] == 24 and sum(report["fold_sizes"]) == 24
+    assert report["people"] == 6 and report["test"]["heuristic"]["n"] == 24
+    assert not list((tmp_path / "runs").rglob("*.pt"))
     assert "| heuristic |" in capsys.readouterr().out
