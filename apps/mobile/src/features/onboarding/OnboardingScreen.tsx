@@ -1,13 +1,24 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { Button, Card, Screen, Text } from "../../components/ui";
-import { theme } from "../../theme";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Button, Text } from "../../components/ui";
+import { fonts, theme } from "../../theme";
 import { saveConsent } from "./consent";
 import { onboardingCopy as copy, onboardingPages as pages } from "./copy";
 
+const icons = [
+  "eye-outline",
+  "information-circle-outline",
+  "shield-checkmark-outline",
+  "camera-outline",
+] as const;
+
 export default function OnboardingScreen() {
+  const compact = useWindowDimensions().height < 700;
   const db = useSQLiteContext();
   const [index, setIndex] = useState(0);
   const [agreed, setAgreed] = useState(false);
@@ -30,49 +41,111 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <Screen>
-      <Text variant="caption" style={styles.step}>
-        {copy.step(index + 1, pages.length)}
-      </Text>
-      <Text variant="title" accessibilityRole="header">
-        {page.title}
-      </Text>
-      <Card>
-        <Text>{page.body}</Text>
-      </Card>
-
-      {isLast && (
-        <Pressable
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: agreed }}
-          onPress={() => setAgreed((value) => !value)}
-          style={styles.checkRow}
-        >
-          <View style={[styles.box, agreed && styles.boxChecked]}>
-            {agreed && <Text style={styles.tick}>✓</Text>}
+    <LinearGradient
+      colors={[theme.colors.primary, "#5F97F5", "#DCEBFF"]}
+      locations={[0, 0.55, 1]}
+      style={styles.fill}
+    >
+      <SafeAreaView style={styles.fill}>
+        <ScrollView contentContainerStyle={[styles.content, compact && styles.compactContent]}>
+          <View
+            accessible
+            accessibilityRole="progressbar"
+            accessibilityValue={{
+              min: 1,
+              max: pages.length,
+              now: index + 1,
+              text: copy.step(index + 1, pages.length),
+            }}
+            style={styles.dots}
+          >
+            {pages.map((item, position) => (
+              <View key={item.key} style={[styles.dot, position === index && styles.activeDot]} />
+            ))}
           </View>
-          <Text style={styles.checkLabel}>{copy.consent}</Text>
-        </Pressable>
-      )}
-
-      {failed && <Text accessibilityRole="alert">{copy.saveError}</Text>}
-
-      {isLast ? (
-        <Button label={copy.accept} disabled={!agreed || saving} onPress={accept} />
-      ) : (
-        <Button label={copy.next} onPress={() => setIndex(index + 1)} />
-      )}
-      {index > 0 && (
-        <Pressable accessibilityRole="button" onPress={() => setIndex(index - 1)}>
-          <Text style={styles.back}>{copy.back}</Text>
-        </Pressable>
-      )}
-    </Screen>
+          <View style={styles.intro}>
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={[styles.hero, compact && styles.compactHero]}
+            >
+              <Ionicons name={icons[index]} size={compact ? 80 : 112} color="#FFFFFF" />
+            </View>
+            <Text variant="title" accessibilityRole="header" style={styles.title}>
+              {page.title}
+            </Text>
+            <Text style={styles.body}>{page.body}</Text>
+          </View>
+          <View style={styles.actions}>
+            {isLast && (
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: agreed, disabled: saving }}
+                disabled={saving}
+                onPress={() => setAgreed((value) => !value)}
+                style={styles.checkRow}
+              >
+                <View style={[styles.box, agreed && styles.boxChecked]}>
+                  {agreed && <Text style={styles.tick}>✓</Text>}
+                </View>
+                <Text style={styles.checkLabel}>{copy.consent}</Text>
+              </Pressable>
+            )}
+            {failed && <Text accessibilityRole="alert">{copy.saveError}</Text>}
+            {isLast ? (
+              <Button label={copy.accept} disabled={!agreed || saving} onPress={accept} />
+            ) : (
+              <Button label={copy.next} onPress={() => setIndex(index + 1)} />
+            )}
+            {index > 0 && (
+              <Button
+                label={copy.back}
+                variant="secondary"
+                disabled={saving}
+                onPress={() => setIndex(index - 1)}
+              />
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  step: { color: theme.colors.muted },
+  fill: { flex: 1 },
+  content: { flexGrow: 1, padding: theme.spacing.lg, gap: 24 },
+  compactContent: { gap: 12 },
+  dots: { flexDirection: "row", justifyContent: "center", gap: 8, paddingVertical: 12 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.45)" },
+  activeDot: { width: 24, backgroundColor: "#FFFFFF" },
+  intro: { flex: 1, alignItems: "center", justifyContent: "center", gap: 20 },
+  hero: {
+    width: 208,
+    height: 208,
+    borderRadius: 104,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.22)",
+  },
+  compactHero: { width: 144, height: 144, borderRadius: 72 },
+  title: {
+    fontFamily: fonts.black,
+    fontWeight: "900",
+    fontSize: 32,
+    lineHeight: 40,
+    color: theme.colors.text,
+    textAlign: "center",
+  },
+  body: {
+    textAlign: "center",
+    color: theme.colors.text,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    borderRadius: theme.radius.md,
+    padding: 20,
+    alignSelf: "stretch",
+  },
+  actions: { gap: 12 },
   checkRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.md },
   box: {
     width: 28,
@@ -86,5 +159,4 @@ const styles = StyleSheet.create({
   boxChecked: { backgroundColor: theme.colors.primary },
   tick: { color: theme.colors.onPrimary, fontWeight: "700" },
   checkLabel: { flex: 1 },
-  back: { color: theme.colors.primary, textAlign: "center", padding: theme.spacing.sm },
 });
