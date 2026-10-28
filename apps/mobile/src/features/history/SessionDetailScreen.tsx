@@ -93,7 +93,7 @@ export default function SessionDetailScreen() {
             {resultCopy.notice}
           </Text>
           {error && <Text style={styles.error}>{error}</Text>}
-          <Button label={copy.delete} onPress={confirmDelete} style={styles.delete} />
+          <Button label={copy.delete} onPress={confirmDelete} variant="danger" />
         </>
       )}
     </Screen>
@@ -106,5 +106,4 @@ const styles = StyleSheet.create({
   outcomeTitle: { fontSize: 20, fontWeight: "700" },
   heading: { fontWeight: "600" },
   error: { color: theme.colors.text, fontWeight: "600" },
-  delete: { backgroundColor: theme.colors.muted },
 });

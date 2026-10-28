@@ -103,8 +103,8 @@ export default function ChildFormScreen() {
         {failed && <Text accessibilityRole="alert">{copy.errors.failed}</Text>}
         <Button label={copy.save} onPress={() => void save()} />
       </Card>
-      <Button label={copy.cancel} onPress={() => router.back()} style={styles.secondary} />
-      {!isNew && <Button label={copy.delete} onPress={confirmDelete} style={styles.secondary} />}
+      <Button label={copy.cancel} onPress={() => router.back()} variant="link" />
+      {!isNew && <Button label={copy.delete} onPress={confirmDelete} variant="danger" />}
     </Screen>
   );
 }
@@ -118,5 +118,4 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: theme.colors.text,
   },
-  secondary: { backgroundColor: theme.colors.muted },
 });

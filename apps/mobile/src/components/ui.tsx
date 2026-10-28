@@ -41,7 +41,7 @@ export function Card({ style, ...props }: ViewProps) {
   return <View {...props} style={[styles.card, style]} />;
 }
 
-export type ButtonVariant = "primary" | "secondary" | "outline" | "link";
+export type ButtonVariant = "primary" | "secondary" | "outline" | "link" | "danger";
 
 export function Button({
   label,
@@ -65,10 +65,13 @@ export function Button({
         typeof style === "function" ? style(state) : style,
       ]}
     >
-      <Text style={[styles.buttonLabel, variant === "primary" && styles.onPrimary]}>{label}</Text>
+      <Text style={[styles.buttonLabel, filled.has(variant) && styles.onPrimary]}>{label}</Text>
     </Pressable>
   );
 }
+
+/** Variants with a coloured fill, which take a white label. */
+const filled = new Set<ButtonVariant>(["primary", "danger"]);
 
 // The web demo's verdict borders; retake and not-assessed share the amber one.
 const VERDICT_BORDER: Record<Outcome, string> = {
@@ -165,6 +168,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   outline: { borderWidth: 2, borderColor: theme.colors.primary },
+  // Deletes and other actions that cannot be undone.
+  danger: { backgroundColor: theme.colors.danger },
   link: { minHeight: 44 },
   pressed: { opacity: 0.7 },
   disabled: { opacity: 0.5, shadowOpacity: 0 },

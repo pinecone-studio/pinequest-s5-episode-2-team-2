@@ -2,7 +2,7 @@ import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useState } from "react";
-import { Alert, StyleSheet } from "react-native";
+import { Alert } from "react-native";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { deleteAllData } from "../../storage/deleteAllData";
 import { cancelAllReminders } from "../habits/notify";
@@ -72,13 +72,9 @@ export default function SettingsScreen() {
           label={copy.deleteButton}
           disabled={busy}
           onPress={() => void onDelete()}
-          style={styles.danger}
+          variant="danger"
         />
       </Card>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  danger: { backgroundColor: "#B91C1C" },
-});
