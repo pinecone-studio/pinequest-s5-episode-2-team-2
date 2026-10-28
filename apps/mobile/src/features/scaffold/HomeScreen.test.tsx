@@ -8,7 +8,9 @@ jest.mock("expo-linear-gradient", () => ({ LinearGradient: "LinearGradient" }));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 jest.mock("../history/LatestScanCard", () => ({ LatestScanCard: "LatestScanCard" }));
 jest.mock("../../components/ui", () => ({ Button: "Button", Text: "Text" }));
+jest.mock("../../../assets/splash-icon.png", () => 1);
 jest.mock("react-native", () => ({
+  Image: "Image",
   View: "View",
   ScrollView: "ScrollView",
   StyleSheet: { create: (styles: unknown) => styles },
