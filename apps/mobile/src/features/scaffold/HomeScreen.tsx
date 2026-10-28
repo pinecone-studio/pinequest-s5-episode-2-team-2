@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Text } from "../../components/ui";
-import { fonts } from "../../theme";
+import { fonts, theme } from "../../theme";
 import { LatestScanCard } from "../history/LatestScanCard";
 import { tipsCopy } from "../tips/content";
 import { EyeHero } from "./EyeHero";
@@ -23,15 +23,16 @@ const copy = {
 export default function HomeScreen() {
   return (
     <LinearGradient
-      colors={["#3D7BF0", "#7FB0FA", "#DCEBFF"]}
-      locations={[0, 0.48, 1]}
+      // Darker top than the web demo so the white text reaches WCAG contrast (#238).
+      colors={[theme.colors.primary, "#5F97F5", "#DCEBFF"]}
+      locations={[0, 0.55, 1]}
       style={styles.fill}
     >
       <SafeAreaView edges={["top", "left", "right"]} style={styles.fill}>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.head}>
             <Text style={styles.badge}>{copy.badge.toUpperCase()}</Text>
-            <Text accessibilityRole="header" style={styles.title}>
+            <Text accessibilityRole="header" maxFontSizeMultiplier={1.2} style={styles.title}>
               {copy.title}
             </Text>
             <Text style={styles.tagline}>{copy.tagline}</Text>
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 1,
     color: "#FFFFFF",
-    backgroundColor: "rgba(255,255,255,0.22)",
+    backgroundColor: "rgba(29,43,79,0.28)",
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 999,
@@ -100,5 +101,5 @@ const styles = StyleSheet.create({
   },
   hero: { flex: 1, minHeight: 240, alignItems: "center", justifyContent: "center" },
   actions: { gap: 10 },
-  footnote: { color: "#4A6A9C", textAlign: "center" },
+  footnote: { color: "#3E5A86", textAlign: "center" },
 });

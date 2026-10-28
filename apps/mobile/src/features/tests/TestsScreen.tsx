@@ -43,8 +43,17 @@ export default function TestsScreen() {
         return (
           <Card key={id}>
             <View style={styles.head}>
-              <View style={[styles.icon, { backgroundColor: ICON[id].background }]}>
-                <Text style={[styles.iconGlyph, { color: ICON[id].color }]}>{ICON[id].glyph}</Text>
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={[styles.icon, { backgroundColor: ICON[id].background }]}
+              >
+                <Text
+                  maxFontSizeMultiplier={1}
+                  style={[styles.iconGlyph, { color: ICON[id].color }]}
+                >
+                  {ICON[id].glyph}
+                </Text>
               </View>
               <View style={styles.headText}>
                 <Text style={styles.name}>{check.title}</Text>

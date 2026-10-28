@@ -69,10 +69,10 @@ export function OutcomeFilter({
 const styles = StyleSheet.create({
   row: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
   chip: {
-    minHeight: 36,
+    minHeight: 44,
     justifyContent: "center",
     paddingHorizontal: theme.spacing.md,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
