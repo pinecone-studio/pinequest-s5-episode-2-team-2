@@ -14,7 +14,11 @@ export function CareCards({ details }: { details: Details }) {
   const { outdoor, screen_break: breaks } = details.habits;
   return (
     <>
-      <DashboardCard title={copy.treatment} onPress={() => open("/treatment")}>
+      <DashboardCard
+        title={copy.treatment}
+        icon="medkit-outline"
+        onPress={() => open("/treatment")}
+      >
         {(["patch", "glasses"] as const).map((kind) => (
           <View key={kind} style={{ gap: theme.spacing.sm }}>
             <Text style={{ fontWeight: "600" }}>{copy.kinds[kind]}</Text>
@@ -29,7 +33,7 @@ export function CareCards({ details }: { details: Details }) {
           </View>
         ))}
       </DashboardCard>
-      <DashboardCard title={copy.habits} onPress={() => open("/habits")}>
+      <DashboardCard title={copy.habits} icon="sunny-outline" onPress={() => open("/habits")}>
         {outdoor === 0 && breaks === 0 ? (
           <Text>{copy.noHabits}</Text>
         ) : (

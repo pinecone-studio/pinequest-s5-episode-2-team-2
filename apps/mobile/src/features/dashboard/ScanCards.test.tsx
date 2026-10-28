@@ -1,3 +1,4 @@
+jest.mock("@expo/vector-icons/Ionicons", () => "Ionicons");
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { mockScanResult, type Outcome } from "@app/core";
@@ -11,6 +12,7 @@ jest.mock("../../components/ui", () => ({ Text: "Text", Card: "Card" }));
 jest.mock("../progress/ProgressChart", () => ({ ProgressChart: "ProgressChart" }));
 jest.mock("react-native", () => ({
   Pressable: "Pressable",
+  View: "View",
   StyleSheet: { create: (s: unknown) => s },
 }));
 let renderer: ReactTestRenderer;

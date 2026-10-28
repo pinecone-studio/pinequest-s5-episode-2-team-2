@@ -1,3 +1,4 @@
+jest.mock("@expo/vector-icons/Ionicons", () => "Ionicons");
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import type { AcuityResult } from "../../storage/acuity";
@@ -9,6 +10,7 @@ jest.mock("expo-router", () => ({ router: { push: (...args: unknown[]) => mockPu
 jest.mock("../../components/ui", () => ({ Text: "Text", Card: "Card" }));
 jest.mock("react-native", () => ({
   Pressable: "Pressable",
+  View: "View",
   StyleSheet: { create: (s: unknown) => s },
 }));
 let renderer: ReactTestRenderer;

@@ -19,6 +19,7 @@ export function ScanCards({
     <>
       <DashboardCard
         title={copy.scan}
+        icon="scan-outline"
         onPress={() =>
           latest
             ? router.push({ pathname: "/session/[id]", params: { id: latest.id } })
@@ -48,6 +49,7 @@ export function ScanCards({
       </DashboardCard>
       <DashboardCard
         title={copy.progress}
+        icon="stats-chart-outline"
         onPress={() => router.push({ pathname: "/history", params: { childId: details.childId } })}
       >
         <ProgressChart sessions={details.sessions} showTitle={false} />

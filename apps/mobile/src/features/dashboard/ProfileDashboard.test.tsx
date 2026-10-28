@@ -1,3 +1,4 @@
+jest.mock("@expo/vector-icons/Ionicons", () => "Ionicons");
 import { act } from "react";
 import type * as React from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";

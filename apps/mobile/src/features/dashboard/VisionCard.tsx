@@ -14,6 +14,7 @@ export function VisionCard({
   return (
     <DashboardCard
       title={copy.vision}
+      icon="eye-outline"
       onPress={() =>
         result
           ? router.push({
