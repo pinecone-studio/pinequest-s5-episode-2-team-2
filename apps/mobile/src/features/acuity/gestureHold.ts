@@ -1,7 +1,7 @@
 import type { Direction } from "./acuity";
 
-export type Gesture = Direction | "cant" | "ready" | "fist" | "none" | "noBody" | "other";
-export type GestureAnswer = Direction | "cant" | "ready";
+export type Gesture = Direction | "ready" | "palm" | "none" | "noBody" | "other";
+export type GestureAnswer = Direction | "ready";
 export interface Hold {
   armed: boolean;
   candidate: GestureAnswer | null;
@@ -33,11 +33,11 @@ export function holdGesture(
   if (
     cover
       ? gesture !== "ready"
-      : gesture === "fist" || (hold.absentSince !== null && now - hold.absentSince >= 400)
+      : gesture === "palm" || (hold.absentSince !== null && now - hold.absentSince >= 400)
   )
     hold.armed = true;
   const candidate =
-    hold.armed && (cover ? gesture === "ready" : typeof gesture === "number" || gesture === "cant")
+    hold.armed && (cover ? gesture === "ready" : typeof gesture === "number")
       ? (gesture as GestureAnswer)
       : null;
   if (candidate !== hold.candidate) {

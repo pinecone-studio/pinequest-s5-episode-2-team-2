@@ -159,8 +159,8 @@ test("camera answers share practice feedback, thumbs-up readiness and silent tes
   expect(all("GestureInput")[0]!.props.cover).toBe(true);
   gesture("ready");
   mockPlay.mockClear();
-  gesture("cant");
-  gesture("cant");
+  gesture(wrongOf(shown()));
+  gesture(wrongOf(shown()));
   expect(mockPlay).not.toHaveBeenCalled();
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
   jest.useRealTimers();

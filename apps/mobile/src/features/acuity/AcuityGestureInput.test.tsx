@@ -5,6 +5,7 @@ import { acuityCopy as copy } from "./copy";
 import type { GestureFrame } from "./useGestureFrames";
 const mockAnswer = jest.fn(),
   mockRequest = jest.fn();
+let mockPalm = false;
 let mockPermission = true,
   mockFocused = true,
   round = "practice-1";
@@ -39,8 +40,7 @@ jest.mock("./useGestureFrames", () => ({
   },
 }));
 jest.mock("./gestures", () => ({
-  fist: () => false,
-  openPalm: () => false,
+  openPalm: () => mockPalm,
   pointing: () => 0,
   thumbsUp: () => false,
 }));
@@ -76,6 +76,7 @@ beforeEach(async () => {
   mockAnswer.mockReset();
   mockRequest.mockReset();
   mockPermission = true;
+  mockPalm = false;
   mockFocused = true;
   round = "practice-1";
   await act(async () => {
@@ -139,4 +140,50 @@ test("preview-ready observations submit once, then a new round needs a fresh rel
   await act(async () => cameras()[0]!.props.onInterruptionStarted());
   expect(cameras()).toHaveLength(0);
   expect(JSON.stringify(renderer.toJSON())).toContain("touch controls");
+});
+
+test("an open palm rearms without answering; only the preview is mirrored", async () => {
+  await press(copy.gesture.enable);
+  const camera = cameras()[0]!;
+  expect(camera.props.mirrorMode).toBe("off");
+  expect(camera.props.style).toEqual(expect.arrayContaining([{ transform: [{ scaleX: -1 }] }]));
+  await act(async () => {
+    camera.props.onStarted();
+    camera.props.onPreviewStarted();
+  });
+  mockPalm = true;
+  await act(async () => {
+    mockReport(frame(0));
+    mockReport(frame(600));
+  });
+  expect(mockAnswer).not.toHaveBeenCalled();
+  mockPalm = false;
+  await act(async () => {
+    mockReport(frame(700));
+    mockReport(frame(1400));
+  });
+  expect(mockAnswer).toHaveBeenCalledWith(0);
+  expect(mockAnswer).toHaveBeenCalledTimes(1);
+});
+
+test("30 seconds without progressing pauses capture, while a new round renews the limit", async () => {
+  jest.useFakeTimers();
+  await press(copy.gesture.enable);
+  const oldReport = mockReport;
+  await act(async () => jest.advanceTimersByTime(29_000));
+  round = "practice-2";
+  await act(async () => renderer.update(<Harness />));
+  await act(async () => jest.advanceTimersByTime(29_999));
+  expect(cameras()).toHaveLength(1);
+  await act(async () => jest.advanceTimersByTime(1));
+  expect(cameras()).toHaveLength(0);
+  expect(JSON.stringify(renderer.toJSON())).toContain("touch controls");
+  act(() => {
+    oldReport(frame(0, false));
+    oldReport(frame(400, false));
+    oldReport(frame(500));
+    oldReport(frame(1100));
+  });
+  expect(mockAnswer).not.toHaveBeenCalled();
+  jest.useRealTimers();
 });

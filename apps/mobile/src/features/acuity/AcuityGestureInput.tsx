@@ -9,7 +9,7 @@ import {
 } from "react-native-vision-camera";
 import { Button, Text } from "../../components/ui";
 import { acuityCopy as copy } from "./copy";
-import { fist, openPalm, pointing, thumbsUp } from "./gestures";
+import { openPalm, pointing, thumbsUp } from "./gestures";
 import { emptyHold, holdGesture, type Gesture, type GestureAnswer } from "./gestureHold";
 import { useGestureFrames, type GestureFrame } from "./useGestureFrames";
 
@@ -34,6 +34,12 @@ export function AcuityGestureInput(props: Props) {
     const listener = AppState.addEventListener("change", setState);
     return () => listener.remove();
   }, []);
+  // Avoid unattended inference when a hand is not being recognised. Each answer renews it.
+  useEffect(() => {
+    if (!running) return;
+    const timer = setTimeout(() => setFailed(true), 30_000);
+    return () => clearTimeout(timer);
+  }, [running, props.round]);
   const fail = useCallback(() => setFailed(true), []);
   async function enable() {
     if (requesting) return;
@@ -121,11 +127,9 @@ function GestureCamera({
             ? thumbsUp(hand, 256, 256)
               ? "ready"
               : "none"
-            : fist(hand, 256, 256)
-              ? "fist"
-              : openPalm(hand, 256, 256)
-                ? "cant"
-                : (pointing(hand, 256, 256) ?? "other");
+            : openPalm(hand, 256, 256)
+              ? "palm"
+              : (pointing(hand, 256, 256) ?? "other");
       setGesture(value);
       const step = holdGesture(hold.current, value, frame.timestampMs, cover);
       hold.current = step.hold;
@@ -150,16 +154,14 @@ function GestureCamera({
       ? ({ 0: "→", 90: "↓", 180: "←", 270: "↑" } as const)[gesture]
       : gesture === "ready"
         ? "👍"
-        : gesture === "cant"
+        : gesture === "palm"
           ? "✋"
-          : gesture === "fist"
-            ? "✊"
-            : "·";
+          : "·";
   return (
     <View style={styles.panel}>
       <View style={styles.preview}>
         <Camera
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, styles.mirrorPreview]}
           device={device}
           isActive
           mirrorMode="off"
@@ -194,6 +196,7 @@ function GestureCamera({
   );
 }
 const styles = StyleSheet.create({
+  mirrorPreview: { transform: [{ scaleX: -1 }] },
   input: { gap: 4 },
   panel: { flexDirection: "row", gap: 12, alignItems: "center" },
   preview: { width: 72, height: 96, overflow: "hidden", borderRadius: 12, backgroundColor: "#111" },

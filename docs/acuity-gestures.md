@@ -7,8 +7,8 @@ The practice keeps its existing correct/incorrect tones; the test stays silent.
 
 The worker resizes the upright, unmirrored frame to a 512-square letterbox for pose inference.
 It selects a visible raised wrist away from the eyes, samples a 256-square hand crop from
-the native full-resolution NV12 planes, then runs palm and 21-point hand inference. Preview
-mirroring is explicitly off. Gesture directions follow the person's view, as in the web demo.
+the native full-resolution NV12 planes, then runs palm and 21-point hand inference. The preview is mirrored as requested by the owner; the native frame output remains
+unmirrored. Gesture directions follow the person's view, as in the web demo.
 
 The four checksum-pinned models load sequentially through a private AssetLoader. A bounded
 model-only cache avoids reloading when changing eyes/stages. RN serialises use of the cached
@@ -16,17 +16,20 @@ interpreters across camera remounts; only one frame may await RN per camera. Bus
 frames and resized buffers are released. No image, landmark or gesture history is saved.
 Optional development logs contain only counts, gesture labels, timestamps and latency.
 
-As in the web demo, a direction or open palm holds for at least 600 ms; a thumbs-up holds
-for 800 ms on the cover screen. An initially held answer cannot submit until a fist or a
+A pointing direction holds for at least 600 ms; a thumbs-up holds
+for 800 ms on the cover screen. An initially held answer cannot submit until an open palm or a
 lowered hand rearms input (400 ms absent-hand observation). A thumb must drop once after
 entering the cover screen. Missing body, a changed candidate, non-monotonic timestamps and
 observation gaps over two seconds reset the hold. The two-second gap guard accommodates
 the roughly one-second native callback cadence observed in the initial CPU check; it remains
-a UI tuning limit, not a clinical threshold. The same pose cannot answer the next letter.
+a UI tuning limit, not a clinical threshold. The same pose cannot answer the next letter. At the owner's request, an open palm is neutral
+and does not mean cannot-see; the cannot-see button is always available in the test.
 
 Round identities accompany worker results. Changing letter/stage discards old results;
 disabling input, losing focus, backgrounding, interruption or unmount tears down capture
 and suppresses late answers. A failed camera can be retried without losing touch controls.
+Thirty seconds without progressing to another letter/stage also pauses capture, preventing
+unattended inference when recognition is not working. A new round renews that deadline.
 
 ## Limits and device checks
 
@@ -36,7 +39,7 @@ Pose heatmap refinement, tracking and smoothing remain outside this implementati
 Physical 3 m reliability and thermal behavior must be recorded separately from unit tests.
 
 On a consented participant, use Xcode Run with Device Hub closed. Check first that preview
-stays visible; then verify each pointing direction, open palm, fist/release, two practice
+stays visible; then verify each pointing direction, open-palm/release rearm, two practice
 answers and tones, thumbs-up readiness and a silent test. A held pose must submit once.
 Switch to touch mode, background/foreground, interrupt and navigate away during a pending
 frame: no stale answer may appear. Deny permission and verify touch fallback/retry.

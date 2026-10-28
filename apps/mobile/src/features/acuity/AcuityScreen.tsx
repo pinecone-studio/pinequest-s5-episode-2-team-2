@@ -100,11 +100,8 @@ export default function AcuityScreen() {
         setEnabled={setGestureEnabled}
         onAnswer={(shown) => {
           if (shown === "ready") setSession((current) => (current ? beginEye(current) : current));
-          else if (session.stage === "practice") practiceAnswer(shown === "cant" ? null : shown);
-          else
-            setSession((current) =>
-              current ? respond(current, shown === "cant" ? null : shown, Math.random) : current,
-            );
+          else if (session.stage === "practice") practiceAnswer(shown);
+          else setSession((current) => (current ? respond(current, shown, Math.random) : current));
         }}
         manual={manual}
       />
@@ -252,12 +249,8 @@ export default function AcuityScreen() {
       <View style={styles.letter}>
         <Optotype size={letter} direction={session.direction} crowded={crowded} />
       </View>
-      {input(
-        <>
-          <ArrowPad onAnswer={answer} />
-          <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />
-        </>,
-      )}
+      {input(<ArrowPad onAnswer={answer} />)}
+      <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />
     </SafeAreaView>
   );
 }
