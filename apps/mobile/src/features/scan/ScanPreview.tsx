@@ -3,21 +3,31 @@ import { StyleSheet, View } from "react-native";
 import { theme } from "../../theme";
 
 /** Keep the camera and face guide in the same coordinate space. */
-export function ScanPreview({ children }: { children?: ReactNode }) {
+export function ScanPreview({
+  children,
+  guidance,
+}: {
+  children?: ReactNode;
+  guidance?: ReactNode;
+}) {
   return (
-    <View style={styles.preview}>
-      {children}
-      <View
-        pointerEvents="none"
-        style={styles.guide}
-        accessible
-        accessibilityLabel="Нүүрээ хүрээнд байрлуулна уу"
-      />
+    <View style={styles.stack}>
+      <View style={styles.preview}>
+        {children}
+        <View
+          pointerEvents="none"
+          style={styles.guide}
+          accessible
+          accessibilityLabel="Нүүрээ хүрээнд байрлуулна уу"
+        />
+      </View>
+      {guidance}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  stack: { gap: theme.spacing.sm },
   preview: {
     height: 320,
     overflow: "hidden",

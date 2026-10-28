@@ -182,21 +182,21 @@ export default function ScanScreen() {
         <Text>Арын камер олдсонгүй.</Text>
       ) : (
         <>
-          <ScanPreview>
-            {showCamera && (
-              <ScanCamera
-                key={device.id}
-                device={device}
-                onFrame={record}
-                torchOn={torchEnabled(state, active, device.hasTorch)}
-                onReady={() => setReady(true)}
-                onFailure={() => {
-                  setReady(false);
-                  dispatch({ type: "FAIL" });
-                }}
-              />
-            )}
-          </ScanPreview>
+          {showCamera ? (
+            <ScanCamera
+              key={device.id}
+              device={device}
+              onFrame={record}
+              torchOn={torchEnabled(state, active, device.hasTorch)}
+              onReady={() => setReady(true)}
+              onFailure={() => {
+                setReady(false);
+                dispatch({ type: "FAIL" });
+              }}
+            />
+          ) : (
+            <ScanPreview />
+          )}
           {!device.hasTorch && <Text>Энэ камер гэрэлгүй тул шалгалт эхлүүлэх боломжгүй.</Text>}
           {state.status === "idle" && (
             <Button

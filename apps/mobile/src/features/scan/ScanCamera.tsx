@@ -8,6 +8,7 @@ import { MeasurementOverlay } from "../measurement/MeasurementOverlay";
 import { measurementDebugEnabled, measurementOverlayProps } from "../measurement/debug";
 import type { LandmarkFrame } from "../vision/facePipeline";
 import { LiveGuidance } from "./LiveGuidance";
+import { ScanPreview } from "./ScanPreview";
 
 export function ScanCamera({
   device,
@@ -61,7 +62,7 @@ export function ScanCamera({
     if (started && previewStarted && ready && live.current) onReady();
   }, [started, previewStarted, ready, onReady]);
   return (
-    <>
+    <ScanPreview guidance={<LiveGuidance frame={frame} />}>
       <Camera
         style={StyleSheet.absoluteFill}
         device={device}
@@ -79,13 +80,12 @@ export function ScanCamera({
         onError={fail}
         onInterruptionStarted={fail}
       />
-      <LiveGuidance frame={frame} />
       {__DEV__ && process.env.EXPO_PUBLIC_LANDMARK_DEBUG === "1" && (
         <LandmarkOverlay frame={frame} />
       )}
       {measurementDebugEnabled() && frame && (
         <MeasurementOverlay {...measurementOverlayProps(frame)} />
       )}
-    </>
+    </ScanPreview>
   );
 }
