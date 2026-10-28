@@ -41,6 +41,10 @@ test("offers All and one chip per outcome present, with counts", async () => {
     `${outcomeCopy.RETAKE.title}: 2`,
   ]);
   expect(tabs().map((t) => t.props.accessibilityState.selected)).toEqual([true, false, false]);
+  // Sighted parents see a word next to the symbol, not just "! 1" (#236).
+  const shown = JSON.stringify(renderer.toJSON());
+  expect(shown).toContain(`${outcomeCopy.REFER.icon} ${copy.chips.REFER} 1`);
+  expect(shown).toContain(`${outcomeCopy.RETAKE.icon} ${copy.chips.RETAKE} 2`);
   await act(async () => tabs()[2]!.props.onPress());
   expect(onSelect).toHaveBeenCalledWith("RETAKE");
 });

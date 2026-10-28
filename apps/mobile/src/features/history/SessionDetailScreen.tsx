@@ -1,8 +1,9 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ScanResult } from "@app/core";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useEffect, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { deleteSession, getSession } from "../../storage/sessions";
 import { theme } from "../../theme";
@@ -19,6 +20,7 @@ export default function SessionDetailScreen() {
   // undefined while loading, null when the scan does not exist.
   const [session, setSession] = useState<ScanResult | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  const [technical, setTechnical] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -81,12 +83,30 @@ export default function SessionDetailScreen() {
               ))}
             </Card>
           )}
+          {/* Measurement details are for the team, so they stay folded away (#236). */}
           <Card>
-            <Text>{copy.frames(session.summary.framesUsed, session.summary.framesTotal)}</Text>
-            {session.summary.asymmetryScore !== null && (
-              <Text>
-                {copy.score}: {session.summary.asymmetryScore.toFixed(3)}
-              </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: technical }}
+              onPress={() => setTechnical((open) => !open)}
+              style={styles.toggle}
+            >
+              <Text style={styles.heading}>{copy.technical}</Text>
+              <Ionicons
+                name={technical ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={theme.colors.muted}
+              />
+            </Pressable>
+            {technical && (
+              <>
+                <Text>{copy.frames(session.summary.framesUsed, session.summary.framesTotal)}</Text>
+                {session.summary.asymmetryScore !== null && (
+                  <Text>
+                    {copy.score}: {session.summary.asymmetryScore.toFixed(3)}
+                  </Text>
+                )}
+              </>
             )}
           </Card>
           <Text variant="caption" style={styles.muted}>
@@ -105,5 +125,11 @@ const styles = StyleSheet.create({
   outcome: { borderRadius: theme.radius.md, padding: theme.spacing.lg, gap: theme.spacing.sm },
   outcomeTitle: { fontSize: 20, fontWeight: "700" },
   heading: { fontWeight: "600" },
+  toggle: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   error: { color: theme.colors.text, fontWeight: "600" },
 });

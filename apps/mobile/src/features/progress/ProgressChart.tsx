@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import type { LayoutChangeEvent } from "react-native";
 import { Text } from "../../components/ui";
 import { theme } from "../../theme";
+import { formatDay } from "../history/format";
 import { outcomeCopy } from "../scan/resultCopy";
 import { progressCopy as copy } from "./copy";
 import { segments } from "./segments";
@@ -25,6 +26,10 @@ export function ProgressChart({
   const inner = Math.max(0, width - DOT);
   const { points, top } = chartPoints(series, inner, HEIGHT - DOT);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+  // First and last scan day under the time axis; one centred date when they match (#236).
+  const days = [
+    ...new Set([series[0], series.at(-1)].flatMap((p) => (p ? [formatDay(p.time)] : []))),
+  ];
 
   return (
     <View style={styles.container}>
@@ -65,6 +70,15 @@ export function ProgressChart({
           ))}
         </View>
       )}
+      {series.length >= 2 && (
+        <View style={[styles.days, days.length === 1 && styles.oneDay]}>
+          {days.map((day) => (
+            <Text key={day} variant="caption" style={styles.muted}>
+              {day}
+            </Text>
+          ))}
+        </View>
+      )}
       <Text variant="caption" style={styles.muted}>
         {copy.notice}
       </Text>
@@ -82,6 +96,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: theme.colors.border,
   },
+  days: { flexDirection: "row", justifyContent: "space-between" },
+  oneDay: { justifyContent: "center" },
   line: { position: "absolute", height: 2, backgroundColor: theme.colors.border },
   dot: { position: "absolute", width: DOT, height: DOT, borderRadius: DOT / 2 },
 });

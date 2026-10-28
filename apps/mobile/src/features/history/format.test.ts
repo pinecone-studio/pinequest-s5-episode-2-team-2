@@ -1,5 +1,5 @@
 import { mockScanResult } from "@app/core";
-import { dayKey, formatScanTime, groupByDay, summarizeHistory } from "./format";
+import { dayKey, formatDay, formatScanTime, groupByDay, summarizeHistory } from "./format";
 
 // Built from local time so the tests pass in any time zone.
 const at = (day: number, hour: number, minute = 0) =>
@@ -8,6 +8,8 @@ const at = (day: number, hour: number, minute = 0) =>
 test("formats local days and times with zero padding", () => {
   expect(dayKey(at(5, 9))).toBe("2026-10-05");
   expect(formatScanTime(at(5, 9, 7))).toBe("2026.10.05 09:07");
+  expect(formatDay(at(5, 9))).toBe("2026.10.05");
+  expect(formatDay(Date.parse(at(5, 23, 59)))).toBe("2026.10.05");
 });
 
 test("groups newest-first sessions by local day", () => {

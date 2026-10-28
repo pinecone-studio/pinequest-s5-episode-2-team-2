@@ -31,7 +31,7 @@ export function OutcomeFilter({
     { outcome: null, label: copy.all(total) },
     ...OUTCOMES.filter((o) => counts[o] > 0).map((o) => ({
       outcome: o,
-      label: `${outcomeCopy[o].icon} ${counts[o]}`,
+      label: `${outcomeCopy[o].icon} ${copy.chips[o]} ${counts[o]}`,
     })),
   ];
   return (
