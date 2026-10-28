@@ -1,6 +1,7 @@
 import {
   answer,
   decimalAcuity,
+  minusRange,
   fittingLevels,
   iPhonePointsPerMm,
   LEVELS,
@@ -78,4 +79,11 @@ test("decimal acuity matches the web demo", () => {
   expect(decimalAcuity(1.0)).toBe("0.1");
   expect(decimalAcuity(0.3)).toBe("0.5");
   expect(decimalAcuity(0.0)).toBe("1.0");
+});
+
+test("rough minus range follows the web demo: none at full acuity, below when nothing passed", () => {
+  expect(minusRange(0.0)).toBeNull();
+  expect(minusRange(0.3)).toBe("−0.5 … −1.0");
+  expect(minusRange(1.0)).toBe("−2.0 … −3.0");
+  expect(minusRange(null)).toBe("below");
 });

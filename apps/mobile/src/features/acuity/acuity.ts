@@ -101,3 +101,24 @@ export function needsReferral(results: Record<Eye, number | null>, group: AgeGro
 export function decimalAcuity(logMar: number): string {
   return (10 ** -logMar).toFixed(logMar >= 0.95 ? 1 : 2).replace(/0$/, "");
 }
+
+// TODO(verify): rough estimate from the web demo, no cited source. Myopic (minus) range per
+// passed level, assuming poor distance vision comes from myopia alone. Not a prescription.
+const MINUS_RANGE: Record<string, string> = {
+  "0.1": "−0.25 … −0.5",
+  "0.2": "−0.5 … −0.75",
+  "0.3": "−0.5 … −1.0",
+  "0.4": "−0.75 … −1.25",
+  "0.5": "−1.0 … −1.5",
+  "0.7": "−1.5 … −2.0",
+  "1": "−2.0 … −3.0",
+};
+
+/**
+ * Rough minus range for an eye's result: null at full acuity (logMAR 0.0), "below" when no
+ * level was passed, otherwise the range for the passed level.
+ */
+export function minusRange(logMar: number | null): string | "below" | null {
+  if (logMar === null) return "below";
+  return MINUS_RANGE[String(Number(logMar.toFixed(1)))] ?? null;
+}
