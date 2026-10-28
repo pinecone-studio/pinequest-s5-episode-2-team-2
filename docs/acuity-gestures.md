@@ -44,3 +44,20 @@ answers and tones, thumbs-up readiness and a silent test. A held pose must submi
 Switch to touch mode, background/foreground, interrupt and navigate away during a pending
 frame: no stale answer may appear. Deny permission and verify touch fallback/retry.
 Keep raw recordings, screenshots containing participants and model weights outside git.
+
+### Initial device follow-up (2026-10-28)
+
+Xcode 27.1 Debug on iPhone 12 Pro Max / iOS 27.0.1, with Device Hub closed: initial
+thermal state 0, Low Power Mode off. The owner confirmed consent. After a missing worklet
+helper annotation was fixed, the owner confirmed a stable preview. A bounded inspector
+sample contained 20 scalar frame records: all had a body, 17 had 21 hand points, and
+directions 270/180 were observed. Worker latency median was 516.568 ms, p95 541.906 ms;
+this is not a sustained benchmark. The roughly 1.06 s cadence exposed the one-second
+hold reset, now widened to two seconds and regression-tested.
+
+The owner still reported no submitted answer, and requested palm rearming and preview
+mirroring. Those changes, the stable native output and idle timeout are implemented;
+their physical acceptance remains pending. A later thermal reading was 2 (serious), so
+the app was stopped through Xcode and the owner was asked to cool the phone. Do not
+count landmarks alone as successful gesture input or claim reduced thermal load without
+a repeat check. Keep #254 open for the remaining native matrix.
