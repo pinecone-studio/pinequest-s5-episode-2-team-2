@@ -1,10 +1,12 @@
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { EmptyState, Loading } from "../../components/EmptyState";
 import { Button, Card, Text } from "../../components/ui";
 import { theme } from "../../theme";
 import { ChildrenList } from "../children/ChildrenList";
+import { childrenCopy } from "../children/copy";
 import { ageThisYear } from "../children/form";
 import { dashboardCopy as copy } from "./copy";
 import { loadDashboard, type Dashboard } from "./data";
@@ -37,8 +39,7 @@ export function ProfileDashboard() {
     }, [reload]),
   );
 
-  if (state.status === "loading")
-    return <Text accessibilityLiveRegion="polite">{copy.loading}</Text>;
+  if (state.status === "loading") return <Loading label={copy.loading} />;
   if (state.status === "failed")
     return (
       <Card>
@@ -48,36 +49,44 @@ export function ProfileDashboard() {
     );
 
   const { child, details } = state.data;
-  const age = child && ageThisYear(child.birthYear);
+  // Without an active child there are no children at all (data.ts falls back to the first).
+  if (!child)
+    return (
+      <EmptyState
+        icon="person-add-outline"
+        message={copy.noChild}
+        action={{
+          label: childrenCopy.add,
+          onPress: () => router.push({ pathname: "/child/[id]", params: { id: "new" } }),
+        }}
+      />
+    );
+  const age = ageThisYear(child.birthYear);
   return (
     <>
       <Card>
-        {child ? (
-          <View style={styles.row}>
-            <View style={styles.avatar} accessible={false}>
-              <Text variant="title">{[...child.name][0]}</Text>
-            </View>
-            <View style={styles.name}>
-              <Text style={styles.heading} accessibilityRole="header">
-                {child.name}
-              </Text>
-              {age !== null && <Text variant="caption">{copy.age(age)}</Text>}
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={copy.switchChild}
-              accessibilityState={{ expanded: choosing }}
-              onPress={() => setChoosing(!choosing)}
-              style={styles.switch}
-            >
-              <Text style={styles.link}>{copy.switchChild} ▾</Text>
-            </Pressable>
+        <View style={styles.row}>
+          <View style={styles.avatar} accessible={false}>
+            <Text variant="title">{[...child.name][0]}</Text>
           </View>
-        ) : (
-          <Text>{copy.noChild}</Text>
-        )}
+          <View style={styles.name}>
+            <Text style={styles.heading} accessibilityRole="header">
+              {child.name}
+            </Text>
+            {age !== null && <Text variant="caption">{copy.age(age)}</Text>}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={copy.switchChild}
+            accessibilityState={{ expanded: choosing }}
+            onPress={() => setChoosing(!choosing)}
+            style={styles.switch}
+          >
+            <Text style={styles.link}>{copy.switchChild} ▾</Text>
+          </Pressable>
+        </View>
       </Card>
-      {(choosing || !child) && (
+      {choosing && (
         <ChildrenList
           onSelect={() => {
             setChoosing(false);

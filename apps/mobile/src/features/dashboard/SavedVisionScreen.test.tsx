@@ -6,16 +6,18 @@ import { VisionSummary } from "./VisionSummary";
 import { listAcuityResults, type AcuityResult } from "../../storage/acuity";
 import { dashboardCopy as copy } from "./copy";
 const mockParams: { id?: string; childId?: string } = {};
+const mockPush = jest.fn();
 jest.mock("../../storage/acuity", () => ({ listAcuityResults: jest.fn() }));
 jest.mock("expo-sqlite", () => ({ useSQLiteContext: () => "db" }));
 jest.mock("expo-router", () => {
   const { useEffect } = jest.requireActual<typeof React>("react");
   return {
-    router: { back: jest.fn() },
+    router: { back: jest.fn(), push: (...args: unknown[]) => mockPush(...args) },
     useLocalSearchParams: () => mockParams,
     useFocusEffect: (effect: () => void) => useEffect(effect, [effect]),
   };
 });
+jest.mock("../../components/EmptyState", () => ({ EmptyState: "EmptyState", Loading: "Loading" }));
 jest.mock("../../components/ui", () => ({
   Text: "Text",
   Card: "Card",
@@ -50,6 +52,10 @@ test("the saved ID must also belong to the requested child", async () => {
   await render();
   expect(listAcuityResults).toHaveBeenCalledWith("db", "b");
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.missingVision);
+  // The empty state offers a new vision check for the same child (#237).
+  const empty = renderer.root.findByType("EmptyState" as never);
+  await act(async () => empty.props.action.onPress());
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/acuity", params: { childId: "b" } });
 });
 test("a missing child never loads unassigned vision checks", async () => {
   delete mockParams.childId;

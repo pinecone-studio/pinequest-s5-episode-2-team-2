@@ -1,8 +1,10 @@
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useState } from "react";
+import { EmptyState, Loading } from "../../components/EmptyState";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { listAcuityResults, type AcuityResult } from "../../storage/acuity";
+import { acuityCopy } from "../acuity/copy";
 import { dashboardCopy as copy } from "./copy";
 import { VisionSummary } from "./VisionSummary";
 
@@ -44,20 +46,25 @@ export default function SavedVisionScreen() {
         {copy.vision}
       </Text>
       {!state || state.key !== key ? (
-        <Text>{copy.loading}</Text>
+        <Loading label={copy.loading} />
       ) : state.failed ? (
         <Card>
           <Text accessibilityRole="alert">{copy.failed}</Text>
           <Button label={copy.retry} onPress={() => setRetry((n) => n + 1)} />
         </Card>
-      ) : (
+      ) : state.result ? (
         <Card>
-          {state.result ? (
-            <VisionSummary result={state.result} />
-          ) : (
-            <Text>{copy.missingVision}</Text>
-          )}
+          <VisionSummary result={state.result} />
         </Card>
+      ) : (
+        <EmptyState
+          icon="eye-outline"
+          message={copy.missingVision}
+          action={{
+            label: acuityCopy.title,
+            onPress: () => router.push({ pathname: "/acuity", params: childId ? { childId } : {} }),
+          }}
+        />
       )}
     </Screen>
   );
