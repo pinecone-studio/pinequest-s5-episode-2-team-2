@@ -39,8 +39,11 @@ Further live camera checks should keep Device Hub closed.
 The saved session had no child profile. History previously hid it behind the add-profile
 prompt despite the successful database write. The History fix above addresses that gap.
 Regression tests cover opening an unassigned scan, omitting its progress chart, waiting
-for profile resolution and hiding the previous profile's rows during a change. Native
-confirmation of the updated History screen remains pending.
+for profile resolution and hiding the previous profile's rows during a change. On October
+28 the updated `Nuedniigerel` workspace built, installed and launched through Xcode Run
+on the same physical iPhone, with the existing bundle identifier retained. Native
+confirmation of the updated History screen remains pending: the development launcher
+was still trying a cached Metro address after the Mac's network address changed.
 
 Windows integration tests do not establish screening validity or native acceptance. Keep
 #78 open until an Xcode Run on a physical iPhone demonstrates measured results and saved
