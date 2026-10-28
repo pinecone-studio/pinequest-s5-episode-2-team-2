@@ -12,8 +12,11 @@ import { withFrameQuality } from "../vision/frameQuality";
 export function useReplayAnalysis() {
   const detector = useTensorflowModel(detectorAsset, []);
   const mesh = useTensorflowModel(meshAsset, []);
+  // Load after the face models; see useLandmarks.
   const { model: eyeModel, error: eyeModelError } = useEyeModel(
-    process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI,
+    detector.state === "loaded" && mesh.state === "loaded"
+      ? process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI
+      : undefined,
   );
   const runner = useAsyncRunner();
   const detectorModel = detector.model,

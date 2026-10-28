@@ -1,10 +1,22 @@
 import { useEffect, useState } from "react";
+import { File, Paths } from "expo-file-system";
 import { loadTensorflowModel } from "react-native-fast-tflite";
 import type { TfliteModel } from "react-native-fast-tflite";
 
-export function useEyeModel(uri: string | undefined) {
+/**
+ * A bare file name means a model copied into the app's Documents folder. iOS can move that
+ * folder when the app is reinstalled, so a full `file://` path copied earlier goes stale.
+ */
+export function resolveModelUri(source: string | undefined): string | undefined {
+  if (!source || source.startsWith("file://")) return source;
+  if (/^[\w.-]+\.tflite$/.test(source)) return new File(Paths.document, source).uri;
+  return source;
+}
+
+export function useEyeModel(source: string | undefined) {
   const [model, setModel] = useState<TfliteModel>();
   const [error, setError] = useState(false);
+  const uri = resolveModelUri(source);
   useEffect(() => {
     let live = true;
     setModel(undefined);

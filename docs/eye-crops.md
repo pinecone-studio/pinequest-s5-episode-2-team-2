@@ -18,8 +18,13 @@ real eye data, physical-device colour/coordinate checks and latency measurements
 required before this work can be called validated. No weights or images belong in git.
 
 For device testing, copy the released model into the app's private Documents container and
-set `EXPO_PUBLIC_KEYPOINT_MODEL_URI` to its `file://` URI before starting Metro. Remote
-model URLs are not accepted by this developer hook. It validates the tensor contract
+set `EXPO_PUBLIC_KEYPOINT_MODEL_URI` to its file name (for example `keypoints.tflite`)
+before starting Metro. The app resolves the name against its current Documents folder; iOS
+can move that folder when Xcode reinstalls the app, so a copied `file://` path goes stale
+(a full `file://` URI is still accepted). Names containing a path are rejected, and remote
+model URLs are not accepted by this developer hook. The eye model loads only after both
+face models have loaded: on an iPhone 12 Pro Max, loading all three at once handed the face
+detector's bytes to the eye-model request and the face model failed to load. The hook validates the tensor contract
 before publishing the model. Without weights, frame metadata reports `MODEL_UNAVAILABLE`;
 the face preview remains usable and completed scans return `NOT_ASSESSED` with an explicit
 [unvalidated-demo notice](real-scan-results.md).

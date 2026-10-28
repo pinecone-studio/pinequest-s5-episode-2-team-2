@@ -7,6 +7,15 @@ const mockLoad = jest.fn();
 jest.mock("react-native-fast-tflite", () => ({
   loadTensorflowModel: (...args: unknown[]) => mockLoad(...args),
 }));
+jest.mock("expo-file-system", () => ({
+  Paths: { document: { uri: "file:///container-a/Documents/" } },
+  File: class {
+    uri: string;
+    constructor(directory: { uri: string }, name: string) {
+      this.uri = directory.uri + name;
+    }
+  },
+}));
 let uri: string | undefined;
 let latest: ReturnType<typeof useEyeModel>;
 function Harness() {
@@ -58,6 +67,25 @@ test("loads a local CPU model only after validating the six-output contract", as
   expect(latest.model).toBeUndefined();
   expect(latest.error).toBe(true);
   expect(wrong.dispose).toHaveBeenCalledTimes(1);
+});
+
+test("a bare file name loads from the app's current Documents folder", async () => {
+  const ready = model();
+  mockLoad.mockResolvedValue(ready);
+  uri = "keypoints.tflite";
+  await act(async () => renderer.update(<Harness />));
+  expect(mockLoad).toHaveBeenCalledWith(
+    { url: "file:///container-a/Documents/keypoints.tflite" },
+    [],
+  );
+  expect(latest.model).toBe(ready);
+});
+
+test("names with a path are not resolved into Documents", async () => {
+  uri = "../keypoints.tflite";
+  await act(async () => renderer.update(<Harness />));
+  expect(latest.error).toBe(true);
+  expect(mockLoad).not.toHaveBeenCalled();
 });
 
 test("a failed file load is reported without crashing", async () => {
