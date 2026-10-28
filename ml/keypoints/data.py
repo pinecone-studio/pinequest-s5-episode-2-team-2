@@ -24,10 +24,11 @@ IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], np.float32)
 IMAGENET_STD = np.array([0.229, 0.224, 0.225], np.float32)
 
 
-def read_manifest(path: Path, split: str) -> list[dict]:
+def read_manifest(path: Path, split: str | None = None) -> list[dict]:
+    """Rows of one split, or every row without `split`."""
     with open(path) as f:
         rows = [json.loads(line) for line in f if line.strip()]
-    return [r for r in rows if r["split"] == split]
+    return [r for r in rows if split is None or r["split"] == split]
 
 
 def label_vector(label: dict, width: int, height: int) -> np.ndarray:
@@ -58,9 +59,17 @@ def hflip(image: np.ndarray, target: np.ndarray) -> tuple[np.ndarray, np.ndarray
 
 
 class EyeCrops(Dataset):
-    def __init__(self, manifest: Path, split: str, size: int, augment: bool = False):
+    def __init__(
+        self,
+        manifest: Path,
+        split: str,
+        size: int,
+        augment: bool = False,
+        rows: list[dict] | None = None,
+    ):
+        """Crops of one manifest split, or the given `rows` of it (e.g. a cross-validation fold)."""
         self.root = manifest.parent
-        self.rows = read_manifest(manifest, split)
+        self.rows = read_manifest(manifest, split) if rows is None else rows
         self.size = size
         self.augment = augment
 
