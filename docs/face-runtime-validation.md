@@ -162,3 +162,34 @@ and 20 independent double annotations for #34 are also still unavailable here.
 The teammate's later #137 records a separate Release spike-app model parity and
 latency check. It is useful model evidence, but does not exercise this app's Scan
 camera path and is not counted as this session's native eye-crop acceptance.
+
+## Live face tracking — 2026-10-28
+
+Same iPhone 12 Pro Max (iOS 27.0.1), Xcode 27.1 Debug build launched with Xcode Run,
+latest main `429a83a`, `EXPO_PUBLIC_LANDMARK_DEBUG=1`. Device Hub stayed closed; the
+earlier black preview did not recur. The owner pointed the rear camera at their own face
+and watched the screen in a mirror. No frame, still or screenshot of the face was saved.
+
+The owner confirmed that the eye landmark overlay appeared on their face and followed it
+live. Both MediaPipe models loaded; frames were 2160 × 3840 (and 3840 × 2160 once the phone
+was turned).
+
+| Start | Callbacks | With one face | Median worker latency (face) | p95 worker latency (face) |
+| ----- | --------: | ------------: | ---------------------------: | ------------------------: |
+| 11:12 |       390 |            73 |                    201.45 ms |                 221.61 ms |
+| 11:57 |       546 |            50 |                    202.01 ms |                 229.30 ms |
+
+No-face callbacks in the same runs had a median of about 45 ms, matching the earlier
+initial collection. p95 uses nearest rank. Most callbacks had no face because the owner
+was moving the phone and changing pose between checks; the share is not a detection-rate
+measurement. Eye-keypoint weights were absent, so these timings cover face detection and
+mesh only, not eye inference. The debugger was attached and USB power was present. The
+thermal state was not read: an LLDB attach to a launch without Xcode ended the process.
+The owner reported the phone cool and not warming. An attempt between the two
+runs logged nothing: the app's JS had disconnected from Metro, and an Xcode Stop + Run
+restored logging.
+
+The "Done when" items for #11 now stand as follows. Live tracking on an iPhone is observed.
+Per-frame latency with a face is reported above. Mapping to the full 4K frame on a still is
+still unchecked: it needs a signed consent form (`docs/consent-form.md`) before any still
+is taken. Keep #11 open until that check is done.

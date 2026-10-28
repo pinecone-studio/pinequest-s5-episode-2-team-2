@@ -32,3 +32,24 @@ Physical-device guidance checks, approved Mongolian copy, calibrated limits, tra
 and approved inputs remain pending. Synthetic tests do not establish those results. The
 camera runtime fix and initial quality adapter have merged in #81/#80; usable-preview and
 full-pipeline validation are still required before #11/#13 can close.
+
+## Device check — 2026-10-28
+
+On the iPhone 12 Pro Max Xcode Debug run recorded in
+[runtime validation](face-runtime-validation.md#live-face-tracking--2026-10-28), the owner
+watched the preview in a mirror with no eye-keypoint weights installed:
+
+| Situation                   | Shown text                              | Reason code       |
+| --------------------------- | --------------------------------------- | ----------------- |
+| No face (object in view)    | "Нүүрээ хүрээнд байрлуулна уу."         | `NO_FACE`         |
+| Face, looking at the camera | "Туршилтын хэмжилт бэлэн биш байна."    | model unavailable |
+| Head turned to one side     | "Толгойгоо эгцлээд камер руу харна уу." | `HEAD_TURNED`     |
+| Eyes closed                 | "Нүдээ нээнэ үү."                       | `EYES_CLOSED`     |
+
+The face-based guidance therefore works on device. Distance (`TOO_FAR`/`TOO_CLOSE`) and
+light (`TOO_DARK`/`OVEREXPOSED`/`BLUR`) need eye measurements and crop statistics, which
+come from the eye-keypoint model (#12), so they could not be checked. The full scan ended
+as `NOT_ASSESSED` for the same reason. The oval face guide's white border crosses the
+guidance card text; this is a layout issue outside these checks.
+
+Keep #13 open until distance and light guidance are checked with trained weights.
