@@ -16,16 +16,20 @@ import { filterSessions, OutcomeFilter } from "./OutcomeFilter";
 export default function HistoryScreen() {
   const db = useSQLiteContext();
   const childId = useActiveChildId();
-  const [sessions, setSessions] = useState<ScanResult[] | null>(null);
+  const [loaded, setLoaded] = useState<{
+    childId: string | null;
+    sessions: ScanResult[];
+  } | null>(null);
+  const sessions = loaded && loaded.childId === childId ? loaded.sessions : null;
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(() => {
-    if (!childId) return;
+    if (childId === undefined) return;
     let active = true;
     setFailed(false);
     listSessions(db, childId).then(
-      (rows) => active && setSessions(rows),
+      (rows) => active && setLoaded({ childId, sessions: rows }),
       () => active && setFailed(true),
     );
     return () => {
@@ -41,24 +45,26 @@ export default function HistoryScreen() {
       <Text variant="title" accessibilityRole="header">
         {copy.title}
       </Text>
-      {childId === null ? (
-        <Card>
-          <Text>{copy.noChild}</Text>
-        </Card>
-      ) : failed ? (
+      {failed ? (
         <Card>
           <Text>{copy.failed}</Text>
           <Button label={copy.retry} onPress={load} />
         </Card>
       ) : sessions === null ? null : sessions.length === 0 ? (
         <Card>
-          <Text>{copy.empty}</Text>
+          <Text>{childId === null ? copy.noChild : copy.empty}</Text>
         </Card>
       ) : (
         <>
-          <Card>
-            <ProgressChart sessions={sessions} />
-          </Card>
+          {childId === null ? (
+            <Card>
+              <Text>{copy.unassigned}</Text>
+            </Card>
+          ) : (
+            <Card>
+              <ProgressChart sessions={sessions} />
+            </Card>
+          )}
           <OutcomeFilter sessions={sessions} selected={outcome} onSelect={setOutcome} />
           {filterSessions(sessions, outcome).length === 0 && (
             <Text style={styles.muted}>{copy.noneWithOutcome}</Text>

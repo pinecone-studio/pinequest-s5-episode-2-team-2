@@ -16,6 +16,32 @@ false`. Scan and Result display an explicit unvalidated-demo notice. The local k
 weights have no release version yet, so model metadata says `keypoints-local-unversioned`.
 No images, landmarks, model files or representative eyes are persisted with the session.
 
+When no child profile exists, History lists sessions saved with `childId: null` and opens
+their saved details. These unassigned sessions do not appear in a progress chart, since
+they need not represent the same person. Selecting a child continues to show only that
+child's sessions. History hides the previous profile's rows while the next query loads.
+
+### Device follow-up (2026-10-27/28)
+
+An Xcode Debug Run on an iPhone 12 Pro Max (iOS 27.0.1, Xcode 27.1) completed an
+object-only three-second scan on October 27. The result was `RETAKE`, with `NO_FACE` and
+`TOO_FEW_FRAMES`. A read of the app's local SQLite metadata after stopping the app
+confirmed 18 delivered frames, 0 usable frames, a 3000 ms duration and null asymmetry.
+That run used `demo-unvalidated-v1` and `keypoints-local-unversioned`; it does not prove
+eye-model inference. No images or database files are included in this repository.
+
+The camera preview was black during that run. On October 28, the owner reported that
+both this app and Apple's Camera preview went black while Device Hub was connected,
+and that Apple's rear-camera preview recovered after Device Hub quit, with USB still
+connected. This is an observed association, not an established OS-level root cause.
+Further live camera checks should keep Device Hub closed.
+
+The saved session had no child profile. History previously hid it behind the add-profile
+prompt despite the successful database write. The History fix above addresses that gap.
+Regression tests cover opening an unassigned scan, omitting its progress chart, waiting
+for profile resolution and hiding the previous profile's rows during a change. Native
+confirmation of the updated History screen remains pending.
+
 Windows integration tests do not establish screening validity or native acceptance. Keep
 #78 open until an Xcode Run on a physical iPhone demonstrates measured results and saved
 sessions. The black camera feed in [runtime validation](face-runtime-validation.md), trained

@@ -8,7 +8,7 @@ import { progressCopy } from "../progress/copy";
 import { outcomeCopy } from "../scan/resultCopy";
 
 let mockChildId: string | null | undefined;
-const mockList = jest.fn<Promise<ScanResult[]>, [unknown, string]>();
+const mockList = jest.fn<Promise<ScanResult[]>, [unknown, string | null]>();
 const mockPush = jest.fn();
 const mockDb = {};
 jest.mock("expo-sqlite", () => ({ useSQLiteContext: () => mockDb }));
@@ -21,7 +21,7 @@ jest.mock("expo-router", () => {
 });
 jest.mock("../children/useActiveChildId", () => ({ useActiveChildId: () => mockChildId }));
 jest.mock("../../storage/sessions", () => ({
-  listSessions: (...args: [unknown, string]) => mockList(...args),
+  listSessions: (...args: [unknown, string | null]) => mockList(...args),
 }));
 jest.mock("../../components/ui", () => ({
   Button: "Button",
@@ -52,11 +52,49 @@ afterEach(async () => {
   await act(async () => renderer?.unmount());
 });
 
-test("asks for a child profile when there is none", async () => {
+test("asks for a child profile when there are no unassigned scans", async () => {
   mockChildId = null;
+  mockList.mockResolvedValue([]);
   await render();
   expect(text()).toContain(copy.noChild);
+  expect(mockList).toHaveBeenCalledWith(mockDb, null);
+});
+
+test("waits for the active profile before loading history", async () => {
+  mockChildId = undefined;
+  await render();
   expect(mockList).not.toHaveBeenCalled();
+});
+
+test("opens a saved scan without a profile and does not combine it into progress", async () => {
+  mockChildId = null;
+  mockList.mockResolvedValue([mockScanResult("RETAKE", { id: "unassigned", childId: null })]);
+  await render();
+  expect(mockList).toHaveBeenCalledWith(mockDb, null);
+  expect(text()).toContain(outcomeCopy.RETAKE.title);
+  expect(text()).not.toContain(copy.noChild);
+  expect(text()).not.toContain(progressCopy.notice);
+  const rows = nodes("Pressable").filter((n) => n.props.accessibilityRole === "button");
+  expect(rows).toHaveLength(1);
+  await act(async () => rows[0]!.props.onPress());
+  expect(mockPush).toHaveBeenCalledWith({
+    pathname: "/session/[id]",
+    params: { id: "unassigned" },
+  });
+});
+
+test("hides the previous profile's rows while unassigned history is loading", async () => {
+  mockList.mockResolvedValueOnce([mockScanResult("REFER", { id: "child-scan" })]);
+  await render();
+  expect(text()).toContain(outcomeCopy.REFER.title);
+  let resolve!: (rows: ScanResult[]) => void;
+  mockList.mockImplementationOnce(() => new Promise((done) => (resolve = done)));
+  mockChildId = null;
+  await act(async () => renderer.update(<HistoryScreen />));
+  expect(text()).not.toContain(outcomeCopy.REFER.title);
+  await act(async () => resolve([mockScanResult("RETAKE", { childId: null })]));
+  expect(text()).toContain(outcomeCopy.RETAKE.title);
+  expect(text()).not.toContain(outcomeCopy.REFER.title);
 });
 
 test("shows the empty state", async () => {
