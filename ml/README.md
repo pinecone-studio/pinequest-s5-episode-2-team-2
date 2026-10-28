@@ -145,6 +145,11 @@ only `runs/<run_name>-cv<k>/cv.json`, no weights:
 uv run python -m keypoints.cv configs/keypoints-baseline.toml --folds 4
 ```
 
+Training crops are flipped, brightened and blurred. With `extra_augment = true` in the config
+(`configs/keypoints-augment.toml`) they are also shifted, scaled and rotated, with the labels
+moved along, and get contrast and noise changes (#245): crops are always cut around the
+Face Landmarker iris, while on the phone the landmarks jitter.
+
 The dataset builder writes `data/keypoints/manifest.jsonl`, one line per eye crop. Coordinates
 are crop pixels, paths are relative to the manifest, and the split must keep each `person_id`
 in a single split. `reflex` is `null` when no reflex is visible; `heuristic` is the

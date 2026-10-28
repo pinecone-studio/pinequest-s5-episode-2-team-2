@@ -1,4 +1,5 @@
 import json
+import random
 
 import cv2
 import numpy as np
@@ -8,7 +9,7 @@ pytest.importorskip("torch", reason="needs the train group: uv sync --group trai
 
 from keypoints.cv import main as cv_main  # noqa: E402
 from keypoints.cv import person_folds  # noqa: E402
-from keypoints.data import EyeCrops, hflip, label_vector  # noqa: E402
+from keypoints.data import EyeCrops, affine, contrast_and_noise, hflip, label_vector  # noqa: E402
 from keypoints.metrics import keypoint_errors  # noqa: E402
 from keypoints.train import main  # noqa: E402
 
@@ -124,3 +125,66 @@ def test_cross_validation_reports_every_crop_without_weights(manifest, tmp_path,
     assert report["people"] == 6 and report["test"]["heuristic"]["n"] == 24
     assert not list((tmp_path / "runs").rglob("*.pt"))
     assert "| heuristic |" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_affine_moves_labels_with_pixels(seed):
+    size, iris, radius, reflex = 128, (60.0, 70.0), 18.0, (66.0, 64.0)
+    image = np.full((size, size, 3), 0.75, np.float32)
+    # Shapes drawn at 1/16 pixel precision so their centroids match the float labels.
+    cv2.circle(
+        image,
+        (round(iris[0] * 16), round(iris[1] * 16)),
+        round(radius * 16),
+        (0.2,) * 3,
+        -1,
+        cv2.LINE_AA,
+        shift=4,
+    )
+    cv2.circle(
+        image,
+        (round(reflex[0] * 16), round(reflex[1] * 16)),
+        3 * 16,
+        (1.0,) * 3,
+        -1,
+        cv2.LINE_AA,
+        shift=4,
+    )
+    target = np.array(
+        [*(np.array(iris) + 0.5) / size, radius / size, *(np.array(reflex) + 0.5) / size, 1],
+        np.float32,
+    )
+    random.seed(seed)
+    out, moved = affine(image, target)
+
+    def centroid(mask):
+        ys, xs = np.nonzero(mask)
+        return np.array([xs.mean() + 0.5, ys.mean() + 0.5]) / size
+
+    gray = out[..., 0]
+    dark = gray < 0.5
+    assert np.abs(centroid(dark) - moved[:2]).max() * size < 1.0
+    assert np.abs(centroid(gray > 0.95) - moved[3:5]).max() * size < 1.0
+    assert np.sqrt(dark.sum() / np.pi) / size == pytest.approx(moved[2], rel=0.05)
+    assert moved[5] == 1
+
+
+def test_affine_leaves_an_invisible_reflex_alone():
+    target = np.array([0.5, 0.5, 0.1, 0, 0, 0], np.float32)
+    random.seed(0)
+    _, moved = affine(np.zeros((32, 32, 3), np.float32), target)
+    assert moved[3:].tolist() == [0, 0, 0]
+
+
+def test_contrast_and_noise_stay_in_range():
+    random.seed(0)
+    np.random.seed(0)
+    image = np.random.rand(16, 16, 3).astype(np.float32)
+    for _ in range(10):
+        out = contrast_and_noise(image)
+        assert out.dtype == np.float32 and out.min() >= 0 and out.max() <= 1
+
+
+def test_dataset_with_extra_augmentation(manifest):
+    image, target = EyeCrops(manifest, "train", 64, augment=True, extra=True)[0]
+    assert image.shape == (3, 64, 64) and target.shape == (6,)

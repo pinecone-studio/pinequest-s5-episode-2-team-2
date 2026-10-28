@@ -115,7 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     torch.manual_seed(cfg["seed"])
     device = pick_device()
     size = cfg["image_size"]
-    train = EyeCrops(manifest, "train", size, augment=True)
+    train = EyeCrops(manifest, "train", size, augment=True, extra=cfg.get("extra_augment", False))
     test = EyeCrops(manifest, "test", size)
     if len(train) == 0 or len(test) == 0:
         print(f"Need train and test rows in {manifest}", file=sys.stderr)

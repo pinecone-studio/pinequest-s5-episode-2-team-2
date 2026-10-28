@@ -68,7 +68,8 @@ def main(argv: list[str] | None = None) -> int:
     for f, held in enumerate(folds):
         held_set = set(held)
         train_rows = [row for i, row in enumerate(rows) if i not in held_set]
-        train = EyeCrops(manifest, "train", size, augment=True, rows=train_rows)
+        extra = cfg.get("extra_augment", False)
+        train = EyeCrops(manifest, "train", size, augment=True, rows=train_rows, extra=extra)
         test = EyeCrops(manifest, "test", size, rows=[rows[i] for i in held])
         model = fit(cfg, train, device)
         preds[held] = predict(model, DataLoader(test, 64), device)
