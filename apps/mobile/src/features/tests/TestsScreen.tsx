@@ -43,8 +43,17 @@ export default function TestsScreen() {
         return (
           <Card key={id}>
             <View style={styles.head}>
-              <View style={[styles.icon, { backgroundColor: ICON[id].background }]}>
-                <Text style={[styles.iconGlyph, { color: ICON[id].color }]}>{ICON[id].glyph}</Text>
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={[styles.icon, { backgroundColor: ICON[id].background }]}
+              >
+                <Text
+                  maxFontSizeMultiplier={1}
+                  style={[styles.iconGlyph, { color: ICON[id].color }]}
+                >
+                  {ICON[id].glyph}
+                </Text>
               </View>
               <View style={styles.headText}>
                 <Text style={styles.name}>{check.title}</Text>
@@ -87,6 +96,13 @@ const styles = StyleSheet.create({
   headText: { flex: 1, gap: 2 },
   name: { fontFamily: fonts.black, fontWeight: "900", fontSize: 18, lineHeight: 24 },
   muted: { color: theme.colors.muted },
-  latest: { flexDirection: "row", alignItems: "center", gap: 8 },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: theme.colors.primary },
+  // The dot stays on the first line when large text wraps the line (#238).
+  latest: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 4,
+    backgroundColor: theme.colors.primary,
+  },
 });

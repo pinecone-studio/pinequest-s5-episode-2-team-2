@@ -1,7 +1,7 @@
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { HeaderHeightContext } from "expo-router/react-navigation";
-import { Screen } from "./ui";
+import { Screen, Text } from "./ui";
 
 jest.mock("expo-router/react-navigation", () => ({
   HeaderHeightContext: jest.requireActual("react").createContext(undefined),
@@ -37,5 +37,25 @@ describe("Screen", () => {
 
   it("leaves the top inset to the stack header (#163)", () => {
     expect(edges(116)).toEqual(["left", "right"]);
+  });
+});
+
+describe("Text", () => {
+  function maxScale(element: React.ReactElement) {
+    let renderer!: ReactTestRenderer;
+    act(() => {
+      renderer = create(element);
+    });
+    return renderer.root.findByType("Text" as never).props.maxFontSizeMultiplier;
+  }
+
+  it("caps how far the iOS text size grows it, less for titles (#238)", () => {
+    expect(maxScale(<Text>Нүд</Text>)).toBe(2);
+    expect(maxScale(<Text variant="caption">Нүд</Text>)).toBe(2);
+    expect(maxScale(<Text variant="title">Нүд</Text>)).toBe(1.4);
+  });
+
+  it("lets a screen fix the size of text inside a fixed box", () => {
+    expect(maxScale(<Text maxFontSizeMultiplier={1}>!</Text>)).toBe(1);
   });
 });

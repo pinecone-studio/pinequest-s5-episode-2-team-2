@@ -7,6 +7,14 @@ import { useContext } from "react";
 import type { ReactNode } from "react";
 import { fonts, outcomeColors, theme } from "../theme";
 
+// Text follows the iOS text size up to these limits (#238): beyond them long Mongolian words
+// break in the middle and titles fill the screen. Titles start large, so they grow less.
+const MAX_SCALE: Record<keyof typeof theme.typography, number> = {
+  title: 1.4,
+  body: 2,
+  caption: 2,
+};
+
 export function Text({
   variant = "body",
   style,
@@ -14,6 +22,7 @@ export function Text({
 }: TextProps & { variant?: keyof typeof theme.typography }) {
   return (
     <NativeText
+      maxFontSizeMultiplier={MAX_SCALE[variant]}
       {...props}
       style={[{ color: theme.colors.text }, theme.typography[variant], style]}
     />
@@ -107,7 +116,7 @@ export function Verdict({
     >
       <View style={[icon ? styles.badge : styles.dot, { backgroundColor: colors.foreground }]}>
         {icon && (
-          <Text accessible={false} style={styles.badgeIcon}>
+          <Text accessible={false} maxFontSizeMultiplier={1} style={styles.badgeIcon}>
             {icon}
           </Text>
         )}

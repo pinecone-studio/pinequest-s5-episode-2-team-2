@@ -114,7 +114,11 @@ function SessionRow({ session }: { session: ScanResult }) {
         { backgroundColor: outcome.background, opacity: pressed ? 0.8 : 1 },
       ]}
     >
-      <Text accessible={false} style={[styles.icon, { color: outcome.color }]}>
+      <Text
+        accessible={false}
+        maxFontSizeMultiplier={1}
+        style={[styles.icon, { color: outcome.color }]}
+      >
         {outcome.icon}
       </Text>
       <View style={styles.rowText}>
