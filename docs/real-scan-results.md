@@ -41,9 +41,11 @@ prompt despite the successful database write. The History fix above addresses th
 Regression tests cover opening an unassigned scan, omitting its progress chart, waiting
 for profile resolution and hiding the previous profile's rows during a change. On October
 28 the updated `Nuedniigerel` workspace built, installed and launched through Xcode Run
-on the same physical iPhone, with the existing bundle identifier retained. Native
-confirmation of the updated History screen remains pending: the development launcher
-was still trying a cached Metro address after the Mac's network address changed.
+on the same physical iPhone, with the existing bundle identifier retained. With no child
+profile selected, History listed the October 27 15:06 scan, and its detail showed
+`RETAKE`, both reason codes and "Ашигласан кадр: 0 / 18", matching the stored metadata.
+This confirms that saved unassigned sessions can be reopened; it does not validate camera
+preview or eye inference.
 
 Windows integration tests do not establish screening validity or native acceptance. Keep
 #78 open until an Xcode Run on a physical iPhone demonstrates measured results and saved
