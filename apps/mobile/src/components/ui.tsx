@@ -1,7 +1,9 @@
 import { Pressable, ScrollView, StyleSheet, Text as NativeText, View } from "react-native";
 import type { PressableProps, TextProps, ViewProps } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { HeaderHeightContext } from "expo-router/react-navigation";
 import type { Outcome } from "@app/core";
+import { useContext } from "react";
 import type { ReactNode } from "react";
 import { fonts, outcomeColors, theme } from "../theme";
 
@@ -19,8 +21,13 @@ export function Text({
 }
 
 export function Screen({ children, style, ...props }: ViewProps) {
+  // Below a stack header the header already clears the status bar (#163).
+  const hasHeader = (useContext(HeaderHeightContext) ?? 0) > 0;
   return (
-    <SafeAreaView edges={["top", "left", "right"]} style={styles.screen}>
+    <SafeAreaView
+      edges={hasHeader ? ["left", "right"] : ["top", "left", "right"]}
+      style={styles.screen}
+    >
       <ScrollView contentContainerStyle={styles.content}>
         <View {...props} style={[styles.stack, style]}>
           {children}

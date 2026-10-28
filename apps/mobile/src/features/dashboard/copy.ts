@@ -6,7 +6,6 @@ export const dashboardCopy = {
   eyes: { right: "Баруун нүд", left: "Зүүн нүд" },
   belowChart: "Хүснэгтийн түвшин давж чадаагүй",
   visionRefer: "Нүдний эмчид хандахыг зөвлөж байна",
-  back: "Буцах",
   treatment: "Сүүлийн 7 өдрийн эмчилгээ",
   kinds: { patch: "Нүдний наалт", glasses: "Нүдний шил" },
   noTreatment: "Энэ хугацаанд бүртгэл алга",

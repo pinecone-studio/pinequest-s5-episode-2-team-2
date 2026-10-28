@@ -1,4 +1,4 @@
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useState } from "react";
 import { Button, Card, Screen, Text } from "../../components/ui";
@@ -59,7 +59,6 @@ export default function SavedVisionScreen() {
           )}
         </Card>
       )}
-      <Button label={copy.back} onPress={() => router.back()} />
     </Screen>
   );
 }

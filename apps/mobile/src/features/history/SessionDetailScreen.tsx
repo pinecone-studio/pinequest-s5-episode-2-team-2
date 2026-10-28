@@ -96,7 +96,6 @@ export default function SessionDetailScreen() {
           <Button label={copy.delete} onPress={confirmDelete} style={styles.delete} />
         </>
       )}
-      <Button label={copy.back} onPress={() => router.back()} />
     </Screen>
   );
 }
