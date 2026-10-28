@@ -59,6 +59,36 @@ test("start shows the first step, then counts through rounds to the end", async 
   expect(button(eyeRestCopy.again)).toHaveLength(1);
 });
 
+test("a running exercise takes the whole screen with a big countdown and progress", async () => {
+  await act(async () => button(eyeRestCopy.start)[blinkIndex]!.props.onPress());
+  // The other exercises, their start buttons and source links are hidden while it runs.
+  expect(button(eyeRestCopy.start)).toHaveLength(0);
+  for (const other of exercises.filter((exercise) => exercise !== blink)) {
+    expect(text()).not.toContain(other.title);
+  }
+  expect(text()).toContain(blink.title);
+  expect(text()).toContain(eyeRestCopy.secondsUnit);
+  const bar = () => renderer.root.find((node) => node.props.accessibilityRole === "progressbar");
+  expect(bar().props.accessibilityValue).toEqual({ min: 0, max: 100, now: 0 });
+
+  await act(async () => jest.advanceTimersByTime(10_000));
+  expect(bar().props.accessibilityValue.now).toBe(50);
+  expect(button(eyeRestCopy.stop)).toHaveLength(1);
+});
+
+test("after the end, again restarts and back returns to the list", async () => {
+  await act(async () => button(eyeRestCopy.start)[0]!.props.onPress());
+  await act(async () => jest.advanceTimersByTime(exercises[0]!.steps[0]!.seconds * 1000));
+  expect(text()).toContain(eyeRestCopy.done);
+
+  await act(async () => button(eyeRestCopy.again)[0]!.props.onPress());
+  expect(text()).toContain(exercises[0]!.steps[0]!.text);
+
+  await act(async () => jest.advanceTimersByTime(exercises[0]!.steps[0]!.seconds * 1000));
+  await act(async () => button(eyeRestCopy.back)[0]!.props.onPress());
+  expect(button(eyeRestCopy.start)).toHaveLength(exercises.length);
+});
+
 test("stop goes back to the start buttons", async () => {
   await act(async () => button(eyeRestCopy.start)[0]!.props.onPress());
   await act(async () => button(eyeRestCopy.stop)[0]!.props.onPress());
