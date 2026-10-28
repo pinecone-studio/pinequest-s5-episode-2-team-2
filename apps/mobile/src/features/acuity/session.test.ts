@@ -1,13 +1,31 @@
 import { LEVELS, type Direction } from "./acuity";
-import { beginEye, respond, startSession, type Session } from "./session";
+import { beginEye, endPractice, practise, respond, startSession, type Session } from "./session";
 
 const random = () => 0.4;
 // Answer every letter correctly (follow the shown direction) or wrongly.
 const right = (s: Session) => respond(s, s.direction, random);
 const wrong = (s: Session) => respond(s, ((s.direction + 90) % 360) as Direction, random);
+// Sessions begin with practice; most tests skip it.
+const started = (...args: Parameters<typeof startSession>) => endPractice(startSession(...args));
+
+test("practice needs two correct answers, records nothing and then covers the left eye", () => {
+  let s = startSession("child4", LEVELS, random);
+  expect(s).toMatchObject({ stage: "practice", practiceCorrect: 0 });
+  // Test answers are ignored during practice.
+  expect(respond(s, s.direction, random)).toBe(s);
+  s = practise(s, ((s.direction + 90) % 360) as Direction, random);
+  expect(s.practiceCorrect).toBe(0);
+  s = practise(s, s.direction, random);
+  expect(s.practiceCorrect).toBe(1);
+  s = practise(s, s.direction, random);
+  expect(s).toMatchObject({ stage: "practice", practiceCorrect: 2, results: {} });
+  // Further practice answers change nothing until the practice ends.
+  expect(practise(s, s.direction, random)).toBe(s);
+  expect(endPractice(s).stage).toBe("cover");
+});
 
 test("starts with the right eye, waiting for the left eye to be covered", () => {
-  const s = startSession("child4", LEVELS, random);
+  const s = started("child4", LEVELS, random);
   expect(s).toMatchObject({ eye: "right", stage: "cover", results: {} });
   // Answers before the eye is covered are ignored.
   expect(respond(s, s.direction, random)).toBe(s);
@@ -15,7 +33,7 @@ test("starts with the right eye, waiting for the left eye to be covered", () => 
 });
 
 test("moves to the left eye after the right eye finishes, then to the result", () => {
-  let s = beginEye(startSession("adult", [0.3, 0.2], random));
+  let s = beginEye(started("adult", [0.3, 0.2], random));
   s = right(right(s));
   expect(s).toMatchObject({ eye: "left", stage: "cover", results: { right: 0.2 } });
   s = beginEye(s);
@@ -26,13 +44,13 @@ test("moves to the left eye after the right eye finishes, then to the result", (
 });
 
 test("can't see counts as a wrong answer", () => {
-  let s = beginEye(startSession("child3", [1.0, 0.7], random));
+  let s = beginEye(started("child3", [1.0, 0.7], random));
   s = respond(respond(s, null, random), null, random);
   expect(s).toMatchObject({ eye: "left", results: { right: null } });
 });
 
 test("the next letter turns after every answer", () => {
-  let s = beginEye(startSession("adult", LEVELS, Math.random));
+  let s = beginEye(started("adult", LEVELS, Math.random));
   for (let i = 0; i < 20 && s.stage === "test"; i++) {
     const before = s.direction;
     s = respond(s, null, Math.random);

@@ -8,6 +8,15 @@ const mockBack = jest.fn();
 jest.mock("expo-router", () => ({ router: { back: () => mockBack() } }));
 jest.mock("./SaveAcuityButton", () => ({ SaveAcuityButton: "SaveAcuityButton" }));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
+const mockPlay = jest.fn();
+jest.mock("expo-audio", () => ({
+  useAudioPlayer: (source: number) => ({
+    play: () => mockPlay(source === 3 ? "correct" : "wrong"),
+    seekTo: jest.fn(),
+  }),
+}));
+jest.mock("../../../assets/sounds/correct.wav", () => 3, { virtual: true });
+jest.mock("../../../assets/sounds/wrong.wav", () => 4, { virtual: true });
 jest.mock("../../components/ui", () => ({
   Button: "Button",
   Card: "Card",
@@ -37,7 +46,10 @@ const press = (label: string) =>
       )
       .props.onPress(),
   );
-beforeEach(() => Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }));
+beforeEach(() => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  mockPlay.mockReset();
+});
 afterEach(() => act(() => renderer?.unmount()));
 
 test("the E has four strokes, plus four bars when crowded, and turns with direction", () => {
@@ -64,6 +76,8 @@ test("runs both eyes from age group to result", () => {
   // Four age-group choices.
   expect(all("Pressable")).toHaveLength(4);
   press(copy.groups.adult);
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.practice.intro);
+  press(copy.practice.skip);
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("right"));
   press(copy.ready);
   // Four arrows and "can't see"; two misses finish the right eye.
@@ -76,7 +90,8 @@ test("runs both eyes from age group to result", () => {
   press(copy.cantSee);
   const text = JSON.stringify(renderer.toJSON());
   expect(text).toContain(copy.belowChart);
-  expect(text).toContain(copy.refer);
+  expect(text).toContain(copy.refer.title);
+  expect(text).toContain(copy.minusBelow);
   expect(text).toContain(copy.notice);
   expect(all("SaveAcuityButton")[0]!.props.check).toEqual({
     group: "adult",
@@ -86,4 +101,40 @@ test("runs both eyes from age group to result", () => {
   });
   press(copy.done);
   expect(mockBack).toHaveBeenCalled();
+});
+
+const labels = { 0: copy.right, 90: copy.down, 180: copy.left, 270: copy.up } as const;
+const shown = () => renderer.root.findByType(Optotype).props.direction as keyof typeof labels;
+const wrongOf = (d: keyof typeof labels) => ([0, 90, 180, 270] as const).find((x) => x !== d)!;
+
+test("practice gives a high tone and Зөв! when right, a low tone when wrong, then starts", () => {
+  jest.useFakeTimers();
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.child4);
+  press(labels[wrongOf(shown())]);
+  expect(mockPlay).toHaveBeenLastCalledWith("wrong");
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.practice.wrong);
+  press(labels[shown()]);
+  expect(mockPlay).toHaveBeenLastCalledWith("correct");
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.practice.correct);
+  press(labels[shown()]);
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.practice.great);
+  act(() => jest.advanceTimersByTime(1500));
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("right"));
+  jest.useRealTimers();
+});
+
+test("the test itself plays no tone, so it does not reveal correct answers", () => {
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.adult);
+  press(copy.practice.skip);
+  press(copy.ready);
+  press(labels[shown()]);
+  press(labels[wrongOf(shown())]);
+  press(copy.cantSee);
+  expect(mockPlay).not.toHaveBeenCalled();
 });
