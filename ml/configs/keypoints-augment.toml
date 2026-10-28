@@ -1,0 +1,11 @@
+# Baseline plus shift, scale, rotation, contrast and noise (#245). Paths are relative to ml/.
+manifest = "data/keypoints/manifest.jsonl"
+run_name = "keypoints-augment"
+seed = 0
+image_size = 128
+epochs = 60
+batch_size = 64
+lr = 1e-3
+weight_decay = 1e-4
+pretrained = true
+extra_augment = true
