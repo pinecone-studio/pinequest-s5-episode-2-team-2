@@ -18,6 +18,8 @@ let inFlight = false;
 const releaseModels = () => {
   inFlight = false;
 };
+// V5 useFrameOutput memoises by object identity; do not rebuild its native thread on render.
+const resolution = { width: 3840, height: 2160 };
 export function useGestureFrames(
   round: string,
   onFrame: (frame: GestureFrame) => void,
@@ -128,7 +130,7 @@ export function useGestureFrames(
     [live, epoch, models, resizer, runner, pending, next, report, fail],
   );
   const output = useFrameOutput({
-    targetResolution: { width: 3840, height: 2160 },
+    targetResolution: resolution,
     pixelFormat: "yuv",
     enablePhysicalBufferRotation: true,
     dropFramesWhileBusy: true,

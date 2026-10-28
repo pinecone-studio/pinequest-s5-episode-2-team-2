@@ -10,6 +10,7 @@ const mockResize = jest.fn();
 const mockRun = jest.fn();
 const mockInfer = jest.fn();
 const mockSchedule = jest.fn();
+const mockCreateOutput = jest.fn(() => ({}));
 let mockPlatform = "ios";
 jest.mock("react-native", () => ({
   Platform: {
@@ -29,9 +30,9 @@ jest.mock("./gestureFrame", () => ({
 }));
 jest.mock("react-native-vision-camera", () => ({
   useAsyncRunner: () => ({ runAsync: mockRun }),
-  useFrameOutput: (props: { onFrame: typeof handle }) => {
+  useFrameOutput: (props: { onFrame: typeof handle; targetResolution: object }) => {
     handle = props.onFrame;
-    return {};
+    return jest.requireActual("react").useMemo(() => mockCreateOutput(), [props.targetResolution]);
   },
 }));
 jest.mock("react-native-worklets", () => ({
@@ -248,4 +249,11 @@ test("a remounted camera cannot use cached interpreters while an older worker is
   expect(mockRun).toHaveBeenCalledTimes(1);
   work();
   await act(async () => second.unmount());
+});
+
+test("model-ready and round renders preserve one native frame output/thread", async () => {
+  expect(mockCreateOutput).toHaveBeenCalledTimes(1);
+  round = "cover-left";
+  await act(async () => renderer.update(<Harness />));
+  expect(mockCreateOutput).toHaveBeenCalledTimes(1);
 });

@@ -141,6 +141,8 @@ function GestureCamera({
           body: frame.body,
           handPoints: hand.length,
           gesture: value,
+          armed: step.hold.armed,
+          answer: step.answer,
         });
     },
     [cover],
@@ -150,13 +152,15 @@ function GestureCamera({
     accepting.current = started && preview && ready;
   }, [started, preview, ready]);
   const icon =
-    typeof gesture === "number"
-      ? ({ 0: "→", 90: "↓", 180: "←", 270: "↑" } as const)[gesture]
-      : gesture === "ready"
-        ? "👍"
-        : gesture === "palm"
-          ? "✋"
-          : "·";
+    !cover && !hold.current.armed
+      ? "✋"
+      : typeof gesture === "number"
+        ? ({ 0: "→", 90: "↓", 180: "←", 270: "↑" } as const)[gesture]
+        : gesture === "ready"
+          ? "👍"
+          : gesture === "palm"
+            ? "✋"
+            : "·";
   return (
     <View style={styles.panel}>
       <View style={styles.preview}>
