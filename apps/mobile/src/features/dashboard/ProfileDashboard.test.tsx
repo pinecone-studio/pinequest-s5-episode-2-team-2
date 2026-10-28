@@ -23,7 +23,12 @@ jest.mock("expo-router", () => {
 });
 jest.mock("../children/ChildrenList", () => ({ ChildrenList: "ChildrenList" }));
 jest.mock("../../components/EmptyState", () => ({ EmptyState: "EmptyState", Loading: "Loading" }));
-jest.mock("../../components/ui", () => ({ Button: "Button", Card: "Card", Text: "Text" }));
+jest.mock("../../components/ui", () => ({
+  Button: "Button",
+  Card: "Card",
+  Text: "Text",
+  Verdict: "Verdict",
+}));
 jest.mock("react-native", () => ({
   Pressable: "Pressable",
   View: "View",

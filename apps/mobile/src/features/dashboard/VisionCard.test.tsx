@@ -4,10 +4,11 @@ import { create, type ReactTestRenderer } from "react-test-renderer";
 import type { AcuityResult } from "../../storage/acuity";
 import { VisionCard } from "./VisionCard";
 import { dashboardCopy as copy } from "./copy";
+import { acuityCopy } from "../acuity/copy";
 import { resultCopy } from "../scan/resultCopy";
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
-jest.mock("../../components/ui", () => ({ Text: "Text", Card: "Card" }));
+jest.mock("../../components/ui", () => ({ Text: "Text", Card: "Card", Verdict: "Verdict" }));
 jest.mock("react-native", () => ({
   Pressable: "Pressable",
   View: "View",
@@ -39,6 +40,12 @@ test.each([null, result, { ...result, refer: false }])(
     const text = JSON.stringify(renderer.toJSON());
     if (latestVision) {
       expect(text).toContain(copy.belowChart);
+      expect(renderer.root.findByType("Verdict" as never).props.outcome).toBe(
+        latestVision.refer ? "REFER" : "NO_VISIBLE_SIGN",
+      );
+      expect(renderer.root.findByType("Verdict" as never).props.title).toBe(
+        latestVision.refer ? copy.visionRefer : acuityCopy.noSign.title,
+      );
       if (latestVision.refer) expect(text).toContain(copy.visionRefer);
       else expect(text).not.toContain(copy.visionRefer);
       expect(text).toContain("1.0");
