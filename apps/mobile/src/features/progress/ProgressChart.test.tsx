@@ -46,3 +46,19 @@ test("draws one dot per measured scan and one line between each pair", async () 
   expect(children).toHaveLength(3 + 2);
   expect(plot()!.props.accessibilityLabel).toBe(copy.summary(3, 0.3));
 });
+
+test("measures the plot when no layout event arrives (#239)", async () => {
+  // The plot mounts after the sessions load and iOS may never send it onLayout.
+  const measure = (cb: (x: number, y: number, width: number, height: number) => void) =>
+    cb(0, 0, 212, 160);
+  await act(async () => {
+    renderer = create(<ProgressChart sessions={[scan("a", 20, 0.1), scan("b", 24, 0.3)]} />, {
+      createNodeMock: () => ({ measure }),
+    });
+  });
+  const lefts = renderer.root
+    .findAll((node) => (node.type as unknown) === "View" && node.props.style?.[1]?.backgroundColor)
+    .map((dot) => dot.props.style[1].left);
+  // 212 wide minus the 12 point dot: first scan at the left edge, last at the right.
+  expect(lefts).toEqual([0, 200]);
+});
