@@ -15,7 +15,6 @@ export const historyCopy = {
     missing: "Энэ шалгалт устсан байна",
     frames: (used: number, total: number) => `Ашигласан кадр: ${used} / ${total}`,
     score: "Тэгш бус байдлын үзүүлэлт (хэмжилт, онош биш)",
-    back: "Буцах",
     delete: "Шалгалтыг устгах",
     confirmTitle: "Энэ шалгалтыг устгах уу?",
     confirmBody: "Устгасны дараа сэргээх боломжгүй.",
