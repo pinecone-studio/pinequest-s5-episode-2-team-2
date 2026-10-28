@@ -27,7 +27,10 @@ const anchors = (grids: number[], counts: number[]) =>
   );
 const POSE = anchors([28, 14, 7], [2, 2, 6]);
 const PALM = anchors([24, 12], [2, 6]);
-const sigmoid = (x: number) => 1 / (1 + Math.exp(-Math.max(-100, Math.min(100, x))));
+const sigmoid = (x: number) => {
+  "worklet";
+  return 1 / (1 + Math.exp(-Math.max(-100, Math.min(100, x))));
+};
 
 function tensors(output: ArrayBuffer[], sizes: number[]) {
   "worklet";
