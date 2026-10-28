@@ -143,6 +143,7 @@ function GestureCamera({
           gesture: value,
           armed: step.hold.armed,
           answer: step.answer,
+          ...frame.diagnostics,
         });
     },
     [cover],

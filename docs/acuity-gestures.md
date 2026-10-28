@@ -61,3 +61,17 @@ their physical acceptance remains pending. A later thermal reading was 2 (seriou
 the app was stopped through Xcode and the owner was asked to cool the phone. Do not
 count landmarks alone as successful gesture input or claim reduced thermal load without
 a repeat check. Keep #254 open for the remaining native matrix.
+
+After cooling, a fresh Xcode Run read thermal state 0 before capture and again after the
+first short test. The owner confirmed correct mirrored preview, practice gesture feedback
+and audio, thumbs-up readiness, a silent test, background/foreground without a stale answer,
+touch fallback, swipe-back teardown and Camera OFF → Settings → ON recovery. Scalar events
+confirmed accepted 270/180 directions, then `ready`, then 0/90 directions. These observations
+were at **close range**, as explicitly confirmed by the owner, and do not establish 3 m use.
+
+A separate approximately 3 m attempt failed: body detections arrived but hand points stayed
+at zero. The pose-index visibility gate could discard a region even with a visible wrist;
+the crop now falls back to that wrist when the index is uncertain. Palm/hand models must
+still independently confirm a hand. Debug-only crop/palm status counts distinguish a
+missing region from rejected palm/hand inference, without logging landmark coordinates.
+The revised 3 m check is pending; keep #254 open and do not claim distance reliability.

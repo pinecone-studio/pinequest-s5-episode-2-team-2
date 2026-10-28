@@ -163,13 +163,22 @@ export function inferPose(
 }
 
 /** RGB [0,1], square 256 hand crop; output is normalised to that same crop, unmirrored. */
+export interface HandDiagnostics {
+  palmFound: boolean;
+  handPresent: boolean;
+}
 export function inferHand(
   rgb: Float32Array,
   detector: InferenceModel,
   model: InferenceModel,
+  diagnostics?: HandDiagnostics,
 ): GesturePoint[] {
   "worklet";
   const detection = detect(rgb, 256, detector, false);
+  if (diagnostics) {
+    diagnostics.palmFound = !!detection;
+    diagnostics.handPresent = false;
+  }
   if (!detection) return [];
   const roi = region(detection, false);
   if (!roi) return [];
@@ -178,6 +187,7 @@ export function inferHand(
   if (!Number.isFinite(presence![0]) || !points!.every(Number.isFinite))
     throw new Error("Invalid hand output");
   if (presence![0]! < 0.5) return [];
+  if (diagnostics) diagnostics.handPresent = true;
   return Array.from({ length: 21 }, (_, i) => {
     const p = cropPoint({ x: points![i * 3]!, y: points![i * 3 + 1]! }, roi, 224);
     return { x: p.x / 256, y: p.y / 256 };

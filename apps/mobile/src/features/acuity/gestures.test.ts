@@ -116,3 +116,12 @@ test("an occluded shoulder or wrist cannot locate an answering hand", () => {
   p[15]!.visibility = 0;
   expect(handRegion(p, W, H)).toBeNull();
 });
+
+test("an uncertain pose index falls back to the visible raised wrist for palm detection", () => {
+  const p = pose({ x: 0.3, y: 0.3 }, { x: 0.47, y: 0.2 });
+  p[19]!.visibility = 0.1; // unreliable index appears near an eye
+  const region = handRegion(p, W, H)!;
+  expect(region).not.toBeNull();
+  expect(region.x + region.size / 2).toBeCloseTo(0.3 * W);
+  expect(region.y + region.size / 2).toBeCloseTo(0.3 * H);
+});

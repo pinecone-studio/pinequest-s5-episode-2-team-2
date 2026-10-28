@@ -50,12 +50,17 @@ test("hand inference gets a 256 crop of native NV12 pixels with original row str
     256,
     true,
   );
-  expect(mockHand).toHaveBeenCalledWith(mockCrop.mock.results[0]!.value, models.palm, models.hand);
+  expect(mockHand).toHaveBeenCalledWith(
+    mockCrop.mock.results[0]!.value,
+    models.palm,
+    models.hand,
+    expect.objectContaining({ cropFound: true }),
+  );
 });
 test("no raised hand skips full-frame pixel reads and hand inference", () => {
   const input = frame();
   mockRegion.mockReturnValue(null);
-  expect(analyzeGestureFrame(input as unknown as Frame, rgb, models)).toEqual({
+  expect(analyzeGestureFrame(input as unknown as Frame, rgb, models)).toMatchObject({
     body: true,
     hand: [],
   });

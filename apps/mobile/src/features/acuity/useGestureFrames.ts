@@ -12,6 +12,14 @@ export interface GestureFrame {
   hand: GesturePoint[];
   timestampMs: number;
   latencyMs: number;
+  diagnostics?: {
+    cropFound: boolean;
+    cropSizePx: number;
+    visibleWrists: number;
+    visibleIndices: number;
+    palmFound: boolean;
+    handPresent: boolean;
+  };
 }
 // All camera instances share cached interpreters: RN serialises access across remounts.
 let inFlight = false;

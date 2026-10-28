@@ -149,15 +149,8 @@ export function handRegion(pose: Landmark[], w: number, h: number) {
     const s = pose[arm.shoulder];
     const wr = pose[arm.wrist];
     const ix = pose[arm.index];
-    if (
-      !s ||
-      !wr ||
-      !ix ||
-      (wr.visibility ?? 1) < 0.5 ||
-      (ix.visibility ?? 1) < 0.5 ||
-      onEye(wr) ||
-      onEye(ix)
-    )
+    const indexVisible = !!ix && (ix.visibility ?? 1) >= 0.5;
+    if (!s || !wr || !ix || (wr.visibility ?? 1) < 0.5 || onEye(wr) || (indexVisible && onEye(ix)))
       continue;
     // Only a raised hand answers: a hanging hand has its fingers down and would read as "down".
     const hip = pose[arm.hip];
@@ -167,7 +160,11 @@ export function handRegion(pose: Landmark[], w: number, h: number) {
     const reach = Math.hypot((wr.x - s.x) * w, (wr.y - s.y) * h);
     if (reach > bestReach) {
       bestReach = reach;
-      best = { x: ((wr.x + ix.x) / 2) * w, y: ((wr.y + ix.y) / 2) * h };
+      // Pose finger points become uncertain at distance; the visible wrist still locates a
+      // hand-sized region. The palm/hand models must independently confirm a hand inside it.
+      best = indexVisible
+        ? { x: ((wr.x + ix.x) / 2) * w, y: ((wr.y + ix.y) / 2) * h }
+        : { x: wr.x * w, y: wr.y * h };
     }
   }
   if (!best || shoulders < 10) return null;

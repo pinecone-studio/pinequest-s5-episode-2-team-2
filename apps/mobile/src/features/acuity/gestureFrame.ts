@@ -18,7 +18,15 @@ export function analyzeGestureFrame(frame: Frame, rgb: Float32Array, models: Ges
     throw new Error("Unsupported gesture orientation");
   const pose = inferPose(rgb, models.poseDetector, models.pose, frame.width, frame.height);
   const region = handRegion(pose, frame.width, frame.height);
-  if (!region) return { body: pose.length > 0, hand: [] };
+  const diagnostics = {
+    cropFound: !!region,
+    cropSizePx: region?.size ?? 0,
+    visibleWrists: [15, 16].filter((i) => (pose[i]?.visibility ?? 0) >= 0.5).length,
+    visibleIndices: [19, 20].filter((i) => (pose[i]?.visibility ?? 0) >= 0.5).length,
+    palmFound: false,
+    handPresent: false,
+  };
+  if (!region) return { body: pose.length > 0, hand: [], diagnostics };
   const planes = frame.getPlanes(),
     [y, uv] = planes;
   if (
@@ -46,5 +54,6 @@ export function analyzeGestureFrame(frame: Frame, rgb: Float32Array, models: Ges
     256,
     true,
   );
-  return { body: true, hand: inferHand(crop, models.palm, models.hand) };
+  const hand = inferHand(crop, models.palm, models.hand, diagnostics);
+  return { body: true, hand, diagnostics };
 }
