@@ -21,6 +21,7 @@ import {
 } from "./acuity";
 import { acuityCopy as copy } from "./copy";
 import { CROWDED_UNITS, Optotype } from "./Optotype";
+import { AcuityGestureInput } from "./AcuityGestureInput";
 import { SaveAcuityButton } from "./SaveAcuityButton";
 import {
   beginEye,
@@ -49,6 +50,7 @@ export default function AcuityScreen() {
   const pointsPerMm = iPhonePointsPerMm(PixelRatio.get());
   const maxPoints = Math.min(width - 40, height * 0.5);
   const [session, setSession] = useState<Session | null>(null);
+  const [gestureEnabled, setGestureEnabled] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   // As in the web demo: a high tone for a correct practice answer, a low one for a wrong one.
   // The test itself stays silent, so it does not tell the child which answers were right.
@@ -63,6 +65,47 @@ export default function AcuityScreen() {
     void tone.seekTo(0);
     tone.play();
   };
+
+  const practiceAnswer = (shown: Direction | null) => {
+    if (!session || session.stage !== "practice" || session.practiceCorrect >= PRACTICE_CORRECT)
+      return;
+    const next = practise(session, shown, Math.random);
+    if (shown === session.direction) {
+      play(correctTone);
+      if (next.practiceCorrect >= PRACTICE_CORRECT) {
+        setFeedback(copy.practice.great);
+        later(() => {
+          setFeedback(null);
+          setSession((current) =>
+            current?.stage === "practice" && current.practiceCorrect >= PRACTICE_CORRECT
+              ? endPractice(current)
+              : current,
+          );
+        }, 1500);
+      } else {
+        setFeedback(copy.practice.correct);
+      }
+    } else {
+      play(wrongTone);
+      setFeedback(copy.practice.wrong);
+    }
+    setSession(next);
+  };
+  const input = (manual: React.ReactNode) =>
+    session && (
+      <AcuityGestureInput
+        round={`${session.stage}:${session.eye}:${session.direction}:${session.practiceCorrect}:${session.test.level}:${session.test.shown}`}
+        cover={session.stage === "cover"}
+        enabled={gestureEnabled}
+        setEnabled={setGestureEnabled}
+        onAnswer={(shown) => {
+          if (shown === "ready") setSession((current) => (current ? beginEye(current) : current));
+          else if (session.stage === "practice") practiceAnswer(shown);
+          else setSession((current) => (current ? respond(current, shown, Math.random) : current));
+        }}
+        manual={manual}
+      />
+    );
 
   if (!session) {
     return (
@@ -96,27 +139,7 @@ export default function AcuityScreen() {
   if (session.stage === "practice") {
     // The largest letter that fits; practice is about answering, not the size.
     const size = Math.min(width - 40, height * 0.3, optotypeSize(LEVELS[0], pointsPerMm));
-    const finished = session.practiceCorrect >= PRACTICE_CORRECT;
-    const practiceAnswer = (shown: Direction) => {
-      if (finished) return;
-      const next = practise(session, shown, Math.random);
-      if (shown === session.direction) {
-        play(correctTone);
-        if (next.practiceCorrect >= PRACTICE_CORRECT) {
-          setFeedback(copy.practice.great);
-          later(() => {
-            setFeedback(null);
-            setSession((current) => (current ? endPractice(current) : current));
-          }, 1500);
-        } else {
-          setFeedback(copy.practice.correct);
-        }
-      } else {
-        play(wrongTone);
-        setFeedback(copy.practice.wrong);
-      }
-      setSession(next);
-    };
+
     return (
       <SafeAreaView edges={["top", "bottom"]} style={styles.test}>
         <View style={styles.top}>
@@ -129,7 +152,7 @@ export default function AcuityScreen() {
         <Text accessibilityLiveRegion="polite" style={styles.feedback}>
           {feedback ?? " "}
         </Text>
-        <ArrowPad onAnswer={practiceAnswer} />
+        {input(<ArrowPad onAnswer={practiceAnswer} />)}
         <Button
           label={copy.practice.skip}
           variant="link"
@@ -151,7 +174,7 @@ export default function AcuityScreen() {
         <Card>
           <Text style={styles.coverText}>{copy.cover(session.eye)}</Text>
           <Text>{copy.coverHow}</Text>
-          <Button label={copy.ready} onPress={() => setSession(beginEye(session))} />
+          {input(<Button label={copy.ready} onPress={() => setSession(beginEye(session))} />)}
         </Card>
       </Screen>
     );
@@ -226,7 +249,7 @@ export default function AcuityScreen() {
       <View style={styles.letter}>
         <Optotype size={letter} direction={session.direction} crowded={crowded} />
       </View>
-      <ArrowPad onAnswer={answer} />
+      {input(<ArrowPad onAnswer={answer} />)}
       <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />
     </SafeAreaView>
   );

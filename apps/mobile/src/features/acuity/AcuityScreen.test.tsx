@@ -1,12 +1,17 @@
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import AcuityScreen from "./AcuityScreen";
 import { acuityCopy as copy } from "./copy";
 import { Optotype } from "./Optotype";
+import type { GestureAnswer } from "./gestureHold";
 
 const mockBack = jest.fn();
 jest.mock("expo-router", () => ({ router: { back: () => mockBack() } }));
 jest.mock("./SaveAcuityButton", () => ({ SaveAcuityButton: "SaveAcuityButton" }));
+jest.mock("./AcuityGestureInput", () => ({
+  AcuityGestureInput: ({ manual, ...props }: { manual: ReactNode }) =>
+    jest.requireActual("react").createElement("GestureInput", props, manual),
+}));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 const mockPlay = jest.fn();
 jest.mock("expo-audio", () => ({
@@ -137,4 +142,26 @@ test("the test itself plays no tone, so it does not reveal correct answers", () 
   press(labels[wrongOf(shown())]);
   press(copy.cantSee);
   expect(mockPlay).not.toHaveBeenCalled();
+});
+
+test("camera answers share practice feedback, thumbs-up readiness and silent test decisions", () => {
+  jest.useFakeTimers();
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.adult);
+  const gesture = (value: GestureAnswer) =>
+    act(() => all("GestureInput")[0]!.props.onAnswer(value));
+  gesture(shown());
+  expect(mockPlay).toHaveBeenLastCalledWith("correct");
+  gesture(shown());
+  act(() => jest.advanceTimersByTime(1500));
+  expect(all("GestureInput")[0]!.props.cover).toBe(true);
+  gesture("ready");
+  mockPlay.mockClear();
+  gesture(wrongOf(shown()));
+  gesture(wrongOf(shown()));
+  expect(mockPlay).not.toHaveBeenCalled();
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
+  jest.useRealTimers();
 });

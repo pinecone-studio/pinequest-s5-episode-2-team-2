@@ -13,20 +13,24 @@ export interface Landmark {
 
 type Pt = { x: number; y: number };
 const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y);
-const valid = (lm: Landmark[], count: number, w: number, h: number) =>
-  Number.isFinite(w) &&
-  w > 0 &&
-  Number.isFinite(h) &&
-  h > 0 &&
-  lm.length === count &&
-  Array.from(lm).every(
-    (p) =>
-      p &&
-      Number.isFinite(p.x) &&
-      Number.isFinite(p.y) &&
-      (p.visibility === undefined ||
-        (Number.isFinite(p.visibility) && p.visibility >= 0 && p.visibility <= 1)),
+const valid = (lm: Landmark[], count: number, w: number, h: number) => {
+  "worklet";
+  return (
+    Number.isFinite(w) &&
+    w > 0 &&
+    Number.isFinite(h) &&
+    h > 0 &&
+    lm.length === count &&
+    Array.from(lm).every(
+      (p) =>
+        p &&
+        Number.isFinite(p.x) &&
+        Number.isFinite(p.y) &&
+        (p.visibility === undefined ||
+          (Number.isFinite(p.visibility) && p.visibility >= 0 && p.visibility <= 1)),
+    )
   );
+};
 // Fingertip and middle joint of the index, middle, ring and little fingers.
 const FINGERS = [
   [8, 6],
@@ -125,6 +129,7 @@ const ARMS = [
 
 /** Square region around the pointing hand, in image pixels; null when no hand is raised. */
 export function handRegion(pose: Landmark[], w: number, h: number) {
+  "worklet";
   if (!valid(pose, 33, w, h)) return null;
   const l = pose[11];
   const r = pose[12];
@@ -144,15 +149,8 @@ export function handRegion(pose: Landmark[], w: number, h: number) {
     const s = pose[arm.shoulder];
     const wr = pose[arm.wrist];
     const ix = pose[arm.index];
-    if (
-      !s ||
-      !wr ||
-      !ix ||
-      (wr.visibility ?? 1) < 0.5 ||
-      (ix.visibility ?? 1) < 0.5 ||
-      onEye(wr) ||
-      onEye(ix)
-    )
+    const indexVisible = !!ix && (ix.visibility ?? 1) >= 0.5;
+    if (!s || !wr || !ix || (wr.visibility ?? 1) < 0.5 || onEye(wr) || (indexVisible && onEye(ix)))
       continue;
     // Only a raised hand answers: a hanging hand has its fingers down and would read as "down".
     const hip = pose[arm.hip];
@@ -162,7 +160,11 @@ export function handRegion(pose: Landmark[], w: number, h: number) {
     const reach = Math.hypot((wr.x - s.x) * w, (wr.y - s.y) * h);
     if (reach > bestReach) {
       bestReach = reach;
-      best = { x: ((wr.x + ix.x) / 2) * w, y: ((wr.y + ix.y) / 2) * h };
+      // Pose finger points become uncertain at distance; the visible wrist still locates a
+      // hand-sized region. The palm/hand models must independently confirm a hand inside it.
+      best = indexVisible
+        ? { x: ((wr.x + ix.x) / 2) * w, y: ((wr.y + ix.y) / 2) * h }
+        : { x: wr.x * w, y: wr.y * h };
     }
   }
   if (!best || shoulders < 10) return null;

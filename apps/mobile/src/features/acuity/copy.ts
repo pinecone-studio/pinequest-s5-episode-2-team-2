@@ -2,7 +2,7 @@ import type { AgeGroup, Eye } from "./acuity";
 
 // Mongolian app copy, approved by the team lead (CONTRIBUTING.md "App copy"). Wording follows
 // the web demo (demo/web-poc, apps/web-demo/src/strings.ts) except where the app differs: it
-// has no gesture answers yet, so a helper presses the arrows.
+// touch mode lets a helper press arrows. Gesture copy approved by the owner on 2026-10-28.
 export const acuityCopy = {
   title: "Харааны шалгалт",
   who: "Хэнийг шалгах вэ?",
@@ -15,6 +15,18 @@ export const acuityCopy = {
   setup:
     "Утсаа хүүхдийн нүдний түвшинд, 3 метр орчим зайд барина уу. Хүүхэд Е үсгийн хөл аль зүг рүү харж байгааг гараараа заана, та тэр сумыг дарна.",
   under3: "Энэ шалгалт 3 ба түүнээс дээш насныханд зориулагдсан.",
+  // Camera-control copy approved by the owner on 2026-10-28.
+  gesture: {
+    enable: "Камераар хариулах",
+    touch: "Сумаар хариулах",
+    retry: "Камерыг дахин нээх",
+    loading: "Камер бэлдэж байна…",
+    unavailable: "Камер ашиглах боломжгүй. Сум дарж үргэлжлүүлж болно.",
+    noBody: "Урд камерт бие болон хариулах гараа харуулаарай.",
+    thumb: "Бэлэн бол эрхий хуруугаа өргөж 0.8 секунд бариарай.",
+    point:
+      "Эхлээд алгаа дэлгээд, сумыг зааж 0.6 секунд бариарай. Хариулт бүрийн дараа алгаа дэлгэнэ. Харагдахгүй бол товчийг дарна.",
+  },
   practice: {
     title: "Дасгал",
     intro: "Эхлээд хоёр нүдээ нээлттэй байлгаад хоёр удаа дасгал хийе.",
