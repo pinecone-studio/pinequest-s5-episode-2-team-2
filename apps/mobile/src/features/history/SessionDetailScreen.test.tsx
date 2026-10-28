@@ -27,8 +27,10 @@ jest.mock("../../components/ui", () => ({
   Screen: "Screen",
   Text: "Text",
 }));
+jest.mock("@expo/vector-icons/Ionicons", () => "Ionicons");
 jest.mock("react-native", () => ({
   Alert: { alert: (...args: unknown[]) => mockAlert(...args) },
+  Pressable: "Pressable",
   View: "View",
   StyleSheet: { create: (styles: unknown) => styles },
 }));
@@ -56,14 +58,21 @@ afterEach(async () => {
   await act(async () => renderer?.unmount());
 });
 
-test("shows the outcome, reasons and frame counts of the saved scan", async () => {
+test("shows the outcome and reasons, with frame counts folded under technical details", async () => {
   mockGet.mockResolvedValue(mockScanResult("RETAKE", { reasons: ["BLUR", "TOO_FEW_FRAMES"] }));
   await render();
   expect(mockGet).toHaveBeenCalledWith(mockDb, "scan-1");
   for (const expected of [outcomeCopy.RETAKE.title, reasonCopy.BLUR, reasonCopy.TOO_FEW_FRAMES]) {
     expect(text()).toContain(expected);
   }
+  const toggle = () => nodes("Pressable")[0]!;
+  expect(text()).toContain(copy.technical);
+  expect(text()).not.toContain("Ашигласан кадр");
+  expect(toggle().props.accessibilityState).toEqual({ expanded: false });
+
+  await act(async () => toggle().props.onPress());
   expect(text()).toContain("Ашигласан кадр");
+  expect(toggle().props.accessibilityState).toEqual({ expanded: true });
 });
 
 test("says when the scan no longer exists", async () => {

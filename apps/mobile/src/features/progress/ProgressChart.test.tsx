@@ -1,6 +1,7 @@
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { mockScanResult, type ScanResult } from "@app/core";
+import { formatDay } from "../history/format";
 import { ProgressChart } from "./ProgressChart";
 import { progressCopy as copy } from "./copy";
 
@@ -37,6 +38,22 @@ test("waits for two measured scans and always shows the notice", async () => {
   expect(text()).toContain(copy.notEnough);
   expect(text()).toContain(copy.notice);
   expect(plot()).toBeUndefined();
+});
+
+test("dates the first and last measured scans under the time axis (#236)", async () => {
+  await render([scan("c", 24, 0.3), scan("b", 26, null), scan("a", 20, 0.1)]);
+  const first = formatDay("2026-10-20T03:00:00.000Z");
+  const last = formatDay("2026-10-24T03:00:00.000Z");
+  expect(text()).toContain(first);
+  expect(text()).toContain(last);
+  // The unmeasured scan on the 26th is not on the chart, so its day is not either.
+  expect(text()).not.toContain(formatDay("2026-10-26T03:00:00.000Z"));
+});
+
+test("shows one date when every measured scan is from the same day", async () => {
+  await render([scan("a", 20, 0.1), scan("b", 20, 0.2)]);
+  const day = formatDay("2026-10-20T03:00:00.000Z");
+  expect(text().split(day)).toHaveLength(2);
 });
 
 test("draws one dot per measured scan and one line between each pair", async () => {

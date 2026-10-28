@@ -8,10 +8,16 @@ export function dayKey(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** Local date, "2026.10.26", from an ISO string or epoch milliseconds. */
+export function formatDay(time: string | number): string {
+  const d = new Date(time);
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+}
+
 /** Local date and time, "2026.10.26 14:05". */
 export function formatScanTime(iso: string): string {
   const d = new Date(iso);
-  return `${dayKey(iso).replaceAll("-", ".")} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${formatDay(iso)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export type HistorySection = { day: string; sessions: ScanResult[] };
