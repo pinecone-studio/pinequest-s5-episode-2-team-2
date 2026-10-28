@@ -6,7 +6,13 @@ import { resultCopy } from "../scan/resultCopy";
 import { dashboardCopy as copy } from "./copy";
 
 /** Render the recorded values; do not recalculate a diagnosis or replace null with zero. */
-export function VisionSummary({ result }: { result: AcuityResult }) {
+export function VisionSummary({
+  result,
+  showRecommendation = true,
+}: {
+  result: AcuityResult;
+  showRecommendation?: boolean;
+}) {
   return (
     <>
       <Text variant="caption">{formatScanTime(result.createdAt)}</Text>
@@ -15,7 +21,7 @@ export function VisionSummary({ result }: { result: AcuityResult }) {
           {copy.eyes[eye]}: {result[eye] === null ? copy.belowChart : decimalAcuity(result[eye])}
         </Text>
       ))}
-      {result.refer && <Text>{copy.visionRefer}</Text>}
+      {showRecommendation && result.refer && <Text>{copy.visionRefer}</Text>}
       <Text variant="caption">{resultCopy.notice}</Text>
     </>
   );

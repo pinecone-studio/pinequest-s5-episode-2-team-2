@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Text } from "../../components/ui";
+import { Text, Verdict } from "../../components/ui";
 import { formatScanTime } from "../history/format";
 import { ProgressChart } from "../progress/ProgressChart";
 import { outcomeCopy, resultCopy } from "../scan/resultCopy";
@@ -19,6 +19,7 @@ export function ScanCards({
     <>
       <DashboardCard
         title={copy.scan}
+        icon="scan-outline"
         onPress={() =>
           latest
             ? router.push({ pathname: "/session/[id]", params: { id: latest.id } })
@@ -27,16 +28,7 @@ export function ScanCards({
       >
         {latest && outcome ? (
           <>
-            <Text
-              style={{
-                color: outcome.color,
-                backgroundColor: outcome.background,
-                padding: theme.spacing.md,
-                borderRadius: theme.radius.sm,
-              }}
-            >
-              {outcome.icon} {outcome.title}
-            </Text>
+            <Verdict outcome={latest.outcome} title={outcome.title} icon={outcome.icon} />
             <Text variant="caption">{formatScanTime(latest.createdAt)}</Text>
           </>
         ) : (
@@ -48,6 +40,7 @@ export function ScanCards({
       </DashboardCard>
       <DashboardCard
         title={copy.progress}
+        icon="stats-chart-outline"
         onPress={() => router.push({ pathname: "/history", params: { childId: details.childId } })}
       >
         <ProgressChart sessions={details.sessions} showTitle={false} />
