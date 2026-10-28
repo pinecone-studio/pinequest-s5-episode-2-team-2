@@ -22,8 +22,16 @@ jest.mock("react-native", () => ({
 let handle!: (input: ReturnType<typeof frame>) => void;
 jest.mock("../../../assets/models/face_detector.tflite", () => 1, { virtual: true });
 jest.mock("../../../assets/models/face_landmarks_detector.tflite", () => 2, { virtual: true });
+let mockModelState = "loaded";
+const mockEyeModel = jest.fn();
 jest.mock("react-native-fast-tflite", () => ({
-  useTensorflowModel: () => ({ model: {}, state: "loaded" }),
+  useTensorflowModel: () => ({ model: {}, state: mockModelState }),
+}));
+jest.mock("./useEyeModel", () => ({
+  useEyeModel: (source: string | undefined) => {
+    mockEyeModel(source);
+    return { model: undefined, error: false };
+  },
 }));
 jest.mock("react-native-vision-camera-resizer", () => ({
   useResizer: () => ({ resizer: { resize: mockResize } }),
@@ -71,6 +79,8 @@ beforeEach(async () => {
     callback(...args),
   );
   mockPlatform = "ios";
+  mockModelState = "loaded";
+  process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI = "keypoints.tflite";
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   mockResize.mockReturnValue({
     getPixelBuffer: () => new Float32Array(512 * 512 * 3).buffer,
@@ -87,6 +97,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await act(async () => renderer.unmount());
+  delete process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI;
 });
 
 test("converts seconds to milliseconds, releases buffers and throttles subsequent frames", () => {
@@ -211,4 +222,13 @@ test("failed RN dispatch releases the frame and allows another attempt", () => {
   expect(mockError).toHaveBeenCalledTimes(1);
   handle(frame(2));
   expect(mockRun).toHaveBeenCalledTimes(1);
+});
+
+test("the eye model starts loading only after both face models have loaded", async () => {
+  mockModelState = "loading";
+  await act(async () => renderer.update(<Harness />));
+  expect(mockEyeModel).toHaveBeenLastCalledWith(undefined);
+  mockModelState = "loaded";
+  await act(async () => renderer.update(<Harness />));
+  expect(mockEyeModel).toHaveBeenLastCalledWith("keypoints.tflite");
 });

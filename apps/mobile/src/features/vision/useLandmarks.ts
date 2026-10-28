@@ -17,11 +17,14 @@ const resolution = { width: 3840, height: 2160 };
 
 export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError: () => void) {
   const timestampScale = Platform.OS === "android" ? 1 / 1_000_000 : 1000;
-  const { model: eyeModel, error: eyeModelError } = useEyeModel(
-    process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI,
-  );
   const detector = useTensorflowModel(detectorAsset, []);
   const mesh = useTensorflowModel(meshAsset, []);
+  // Concurrent fast-tflite loads were seen on iPhone to hand one model's bytes to another.
+  const { model: eyeModel, error: eyeModelError } = useEyeModel(
+    detector.state === "loaded" && mesh.state === "loaded"
+      ? process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI
+      : undefined,
+  );
   const { resizer, error } = useResizer({
     width: 512,
     height: 512,
