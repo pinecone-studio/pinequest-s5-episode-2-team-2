@@ -8,7 +8,7 @@ import { outcomeCopy, resultCopy } from "../scan/resultCopy";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
-jest.mock("../../components/ui", () => ({ Text: "Text", Card: "Card" }));
+jest.mock("../../components/ui", () => ({ Text: "Text", Card: "Card", Verdict: "Verdict" }));
 jest.mock("../progress/ProgressChart", () => ({ ProgressChart: "ProgressChart" }));
 jest.mock("react-native", () => ({
   Pressable: "Pressable",
@@ -41,6 +41,7 @@ test.each<Outcome>(["REFER", "RETAKE", "NOT_ASSESSED", "NO_VISIBLE_SIGN"])(
     const text = JSON.stringify(renderer.toJSON());
     expect(text).toContain(outcomeCopy[outcome].title);
     expect(text).toContain(resultCopy.notice);
+    expect(renderer.root.findByType("Verdict" as never).props.outcome).toBe(outcome);
     renderer.root.findByProps({ accessibilityLabel: `${copy.scan}: ${copy.open}` }).props.onPress();
     expect(mockPush).toHaveBeenCalledWith({ pathname: "/session/[id]", params: { id: "saved" } });
   },

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Text } from "../../components/ui";
+import { Text, Verdict } from "../../components/ui";
 import { formatScanTime } from "../history/format";
 import { ProgressChart } from "../progress/ProgressChart";
 import { outcomeCopy, resultCopy } from "../scan/resultCopy";
@@ -28,16 +28,7 @@ export function ScanCards({
       >
         {latest && outcome ? (
           <>
-            <Text
-              style={{
-                color: outcome.color,
-                backgroundColor: outcome.background,
-                padding: theme.spacing.md,
-                borderRadius: theme.radius.sm,
-              }}
-            >
-              {outcome.icon} {outcome.title}
-            </Text>
+            <Verdict outcome={latest.outcome} title={outcome.title} icon={outcome.icon} />
             <Text variant="caption">{formatScanTime(latest.createdAt)}</Text>
           </>
         ) : (
