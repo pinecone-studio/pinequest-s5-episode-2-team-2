@@ -3,9 +3,11 @@ import { router, useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { EmptyState } from "../../components/EmptyState";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { listSessions } from "../../storage/sessions";
 import { theme } from "../../theme";
+import { childrenCopy } from "../children/copy";
 import { useActiveChildId } from "../children/useActiveChildId";
 import { ProgressChart } from "../progress/ProgressChart";
 import { outcomeCopy } from "../scan/resultCopy";
@@ -51,9 +53,22 @@ export default function HistoryScreen() {
           <Button label={copy.retry} onPress={load} />
         </Card>
       ) : sessions === null ? null : sessions.length === 0 ? (
-        <Card>
-          <Text>{childId === null ? copy.noChild : copy.empty}</Text>
-        </Card>
+        childId === null ? (
+          <EmptyState
+            icon="person-add-outline"
+            message={copy.noChild}
+            action={{
+              label: childrenCopy.add,
+              onPress: () => router.push({ pathname: "/child/[id]", params: { id: "new" } }),
+            }}
+          />
+        ) : (
+          <EmptyState
+            icon="time-outline"
+            message={copy.empty}
+            action={{ label: copy.startScan, onPress: () => router.push("/scan") }}
+          />
+        )
       ) : (
         <>
           {childId === null ? (

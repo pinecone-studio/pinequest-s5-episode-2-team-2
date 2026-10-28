@@ -1,6 +1,8 @@
+import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Switch, TextInput, View } from "react-native";
+import { EmptyState } from "../../components/EmptyState";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import {
   addHabit,
@@ -12,6 +14,7 @@ import {
 import { getChild } from "../../storage/children";
 import { listSessions } from "../../storage/sessions";
 import { theme } from "../../theme";
+import { childrenCopy } from "../children/copy";
 import { useActiveChildId } from "../children/useActiveChildId";
 import { habitsCopy as copy } from "./copy";
 import { syncChildReminders } from "./notify";
@@ -97,9 +100,14 @@ export default function HabitsScreen() {
     return (
       <Screen>
         <Text variant="title">{copy.title}</Text>
-        <Card>
-          <Text>{copy.noChild}</Text>
-        </Card>
+        <EmptyState
+          icon="person-add-outline"
+          message={copy.noChild}
+          action={{
+            label: childrenCopy.add,
+            onPress: () => router.push({ pathname: "/child/[id]", params: { id: "new" } }),
+          }}
+        />
       </Screen>
     );
   }

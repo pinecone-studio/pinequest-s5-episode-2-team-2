@@ -5,6 +5,7 @@ export const historyCopy = {
   // TODO(copy): team approval pending for this new label.
   unassigned: "TODO(copy): Профайлд холбоогүй шалгалтууд",
   empty: "Хадгалсан шалгалт алга байна",
+  startScan: "Шалгаж эхлэх",
   failed: "Түүхийг ачаалж чадсангүй. Дахин оролдоно уу.",
   retry: "Дахин оролдох",
   open: "Шалгалтын дэлгэрэнгүй",

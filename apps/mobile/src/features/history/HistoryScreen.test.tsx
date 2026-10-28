@@ -4,6 +4,7 @@ import { create, type ReactTestRenderer } from "react-test-renderer";
 import { mockScanResult, type ScanResult } from "@app/core";
 import HistoryScreen from "./HistoryScreen";
 import { historyCopy as copy } from "./copy";
+import { childrenCopy } from "../children/copy";
 import { progressCopy } from "../progress/copy";
 import { outcomeCopy } from "../scan/resultCopy";
 
@@ -23,6 +24,7 @@ jest.mock("../children/useActiveChildId", () => ({ useActiveChildId: () => mockC
 jest.mock("../../storage/sessions", () => ({
   listSessions: (...args: [unknown, string | null]) => mockList(...args),
 }));
+jest.mock("../../components/EmptyState", () => ({ EmptyState: "EmptyState", Loading: "Loading" }));
 jest.mock("../../components/ui", () => ({
   Button: "Button",
   Card: "Card",
@@ -58,6 +60,11 @@ test("asks for a child profile when there are no unassigned scans", async () => 
   await render();
   expect(text()).toContain(copy.noChild);
   expect(mockList).toHaveBeenCalledWith(mockDb, null);
+  // The empty state leads to adding a child (#237).
+  const empty = renderer.root.findByType("EmptyState" as never);
+  expect(empty.props.action.label).toBe(childrenCopy.add);
+  await act(async () => empty.props.action.onPress());
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/child/[id]", params: { id: "new" } });
 });
 
 test("waits for the active profile before loading history", async () => {
@@ -102,6 +109,9 @@ test("shows the empty state", async () => {
   await render();
   expect(mockList).toHaveBeenCalledWith({}, "child-1");
   expect(text()).toContain(copy.empty);
+  const empty = renderer.root.findByType("EmptyState" as never);
+  await act(async () => empty.props.action.onPress());
+  expect(mockPush).toHaveBeenCalledWith("/scan");
 });
 
 test("lists sessions by day and opens one", async () => {

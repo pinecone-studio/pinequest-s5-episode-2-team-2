@@ -3,14 +3,17 @@ import type * as React from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { ProfileDashboard } from "./ProfileDashboard";
 import { dashboardCopy as copy } from "./copy";
+import { childrenCopy } from "../children/copy";
 import { loadDashboard, type Dashboard } from "./data";
 
 jest.mock("./data", () => ({ loadDashboard: jest.fn() }));
 jest.mock("expo-sqlite", () => ({ useSQLiteContext: () => "db" }));
 let mockFocus!: () => void;
+const mockPush = jest.fn();
 jest.mock("expo-router", () => {
   const { useEffect } = jest.requireActual<typeof React>("react");
   return {
+    router: { push: (...args: unknown[]) => mockPush(...args) },
     useFocusEffect: (effect: () => void) => {
       mockFocus = effect;
       useEffect(effect, [effect]);
@@ -18,6 +21,7 @@ jest.mock("expo-router", () => {
   };
 });
 jest.mock("../children/ChildrenList", () => ({ ChildrenList: "ChildrenList" }));
+jest.mock("../../components/EmptyState", () => ({ EmptyState: "EmptyState", Loading: "Loading" }));
 jest.mock("../../components/ui", () => ({ Button: "Button", Card: "Card", Text: "Text" }));
 jest.mock("react-native", () => ({
   Pressable: "Pressable",
@@ -84,11 +88,15 @@ test("selection hides the old snapshot and reloads all child data", async () => 
   expect(text()).not.toContain(copy.age(0));
 });
 
-test("empty profiles expose profile management rather than unassigned results", async () => {
+test("without profiles, one empty state leads to adding a child (#237)", async () => {
   jest.mocked(loadDashboard).mockResolvedValue({ children: [], child: null, details: null });
   await render();
-  expect(text()).toContain(copy.noChild);
-  expect(renderer.root.findAllByType("ChildrenList" as never)).toHaveLength(1);
+  const empty = renderer.root.findByType("EmptyState" as never);
+  expect(empty.props.message).toBe(copy.noChild);
+  expect(empty.props.action.label).toBe(childrenCopy.add);
+  await act(async () => empty.props.action.onPress());
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/child/[id]", params: { id: "new" } });
+  expect(renderer.root.findAllByType("ChildrenList" as never)).toHaveLength(0);
 });
 
 test("failed reads show a retry and can recover", async () => {
