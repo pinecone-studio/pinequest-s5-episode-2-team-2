@@ -142,6 +142,20 @@ export const migrations: readonly Migration[] = [
         );
       `),
   },
+  {
+    // Нүдхэний ертөнц: small per-child game progress (garden plots, the mascot's outfit) as JSON.
+    version: 9,
+    up: (db) =>
+      db.execAsync(`
+        CREATE TABLE play_state (
+          child_id TEXT NOT NULL REFERENCES children (id) ON DELETE CASCADE,
+          key TEXT NOT NULL CHECK (length(trim(key)) > 0),
+          value TEXT NOT NULL CHECK (json_valid(value)),
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (child_id, key)
+        );
+      `),
+  },
 ];
 
 type MigrationDatabase = {
