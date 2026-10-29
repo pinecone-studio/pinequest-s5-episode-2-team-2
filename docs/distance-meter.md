@@ -58,5 +58,9 @@ bounds or clinical tolerances. No screening thresholds or optotype sizes change.
 
 Regression tests cover jitter, isolated spikes, real movement, stale and non-monotonic
 samples, target-hold reset, face-loss races, cue repetition/cancellation and audio failure.
-The earlier iPhone evidence predates these changes: native stability, green state and tone
-need a fresh Xcode Run. Known-distance accuracy still needs a physical reference.
+A fresh Xcode Run on 2026-10-29 started at thermal state 0. The owner confirmed the revised
+number was stable at close range and disappeared when their face left the camera. An
+approximately 3 m attempt failed: valid face targets were lost and the display returned to
+its unknown state. No ready event was recorded, so the green/tone native check remains
+unverified. The debug session later showed Finished running; no post-check thermal reading
+was obtained. Known-distance accuracy still needs a physical reference.
