@@ -2,7 +2,7 @@ import { Stack, useSegments } from "expo-router";
 import { stackHeader } from "../../../src/components/stackHeader";
 
 // The Шалгах tab (#263) opens on the test chooser; the scan is pushed on top of it, so it has a way back.
-export const unstable_settings = { initialRouteName: "tests" };
+export const unstable_settings = { anchor: "tests" };
 
 export default function CheckLayout() {
   const segments = useSegments();
