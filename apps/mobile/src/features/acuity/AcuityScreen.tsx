@@ -1,6 +1,13 @@
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { PixelRatio, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  PixelRatio,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Mascot } from "../../components/Mascot";
 import { mascotCopy } from "../../components/mascotCopy";
@@ -49,6 +56,8 @@ const GAP = 6;
 export default function AcuityScreen() {
   const { width, height } = useWindowDimensions();
   const pointsPerMm = iPhonePointsPerMm(PixelRatio.get());
+  // The letter's square: levels that do not fit are skipped, and the test keeps this space for
+  // the letter alone, so neither camera nor touch controls can push into it.
   const maxPoints = Math.min(width - 40, height * 0.5);
   const [session, setSession] = useState<Session | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -174,21 +183,23 @@ export default function AcuityScreen() {
           <Text style={styles.topText}>{copy.practice.title}</Text>
         </View>
         <Text>{copy.practice.intro}</Text>
-        <View style={styles.letter}>
+        <View style={[styles.letter, { height: size }]}>
           <Optotype size={size} direction={session.direction} crowded={false} />
         </View>
         <Text accessibilityLiveRegion="polite" style={styles.feedback}>
           {feedback ?? " "}
         </Text>
-        {input(<ArrowPad onAnswer={practiceAnswer} />)}
-        <Button
-          label={copy.practice.skip}
-          variant="link"
-          onPress={() => {
-            setFeedback(null);
-            setSession(endPractice(session));
-          }}
-        />
+        <ScrollView style={styles.controls} contentContainerStyle={styles.controlsContent}>
+          {input(<ArrowPad onAnswer={practiceAnswer} />)}
+          <Button
+            label={copy.practice.skip}
+            variant="link"
+            onPress={() => {
+              setFeedback(null);
+              setSession(endPractice(session));
+            }}
+          />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -277,11 +288,13 @@ export default function AcuityScreen() {
           {copy.progress(session.test.level + 1, session.levels.length)}
         </Text>
       </View>
-      <View style={styles.letter}>
+      <View style={[styles.letter, { height: maxPoints }]}>
         <Optotype size={letter} direction={session.direction} crowded={crowded} />
       </View>
-      {input(<ArrowPad onAnswer={answer} />)}
-      <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />
+      <ScrollView style={styles.controls} contentContainerStyle={styles.controlsContent}>
+        {input(<ArrowPad onAnswer={answer} />)}
+        <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -361,7 +374,10 @@ const styles = StyleSheet.create({
   },
   top: { flexDirection: "row", justifyContent: "space-between", paddingTop: theme.spacing.sm },
   topText: { fontFamily: fonts.extraBold, fontWeight: "800", color: theme.colors.muted },
-  letter: { flex: 1, alignItems: "center", justifyContent: "center" },
+  // A fixed square for the letter; the controls below scroll if they need more room.
+  letter: { alignItems: "center", justifyContent: "center" },
+  controls: { flex: 1 },
+  controlsContent: { gap: theme.spacing.md, paddingBottom: theme.spacing.md },
   pad: { alignSelf: "center", width: 3 * KEY + 2 * GAP, height: 3 * KEY + 2 * GAP },
   arrow: {
     position: "absolute",

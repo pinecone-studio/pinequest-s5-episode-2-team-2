@@ -39,6 +39,7 @@ jest.mock("../../components/ui", () => ({
 jest.mock("react-native", () => ({
   View: "View",
   Pressable: "Pressable",
+  ScrollView: "ScrollView",
   PixelRatio: { get: () => 3 },
   useWindowDimensions: () => ({ width: 390, height: 844 }),
   StyleSheet: { create: (styles: unknown) => styles },
@@ -176,4 +177,39 @@ test("camera answers share practice feedback, thumbs-up readiness and silent tes
   for (const key of spoken()) expect(NEUTRAL).toContain(key);
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
   jest.useRealTimers();
+});
+
+test("every letter and its crowding bars fit the letter's own square, above the controls", () => {
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.adult);
+  const letters = () => renderer.root.findAllByType(Optotype);
+  const has = (label: string) =>
+    renderer.root.findAll((n) => n.type === ("Button" as never) && n.props.label === label).length;
+  // 390 × 844 points: the square is min(390 - 40, 844 / 2) = 350 points.
+  let checked = 0;
+  const check = () => {
+    const { size, crowded } = letters()[0]!.props;
+    const box = letters()[0]!.parent!;
+    expect(crowded ? (size * 12) / 5 : size).toBeLessThanOrEqual(box.props.style[1].height);
+    expect(box.props.style[1].height).toBeLessThanOrEqual(350);
+    // The answer controls sit in a scroll view after the letter, never inside its square.
+    expect(all("ScrollView")).toHaveLength(1);
+    expect(box.findAll((n) => n.type === ("GestureInput" as never))).toHaveLength(0);
+    checked += 1;
+  };
+  check();
+  press(copy.practice.skip);
+  for (let i = 0; i < 80; i++) {
+    if (letters().length) {
+      check();
+      // Right answers walk down every level to the smallest, crowded letters.
+      press(labels[shown()]);
+    } else if (has(copy.ready)) press(copy.ready);
+    else break;
+  }
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.resultTitle);
+  // Practice plus all eight levels for each eye.
+  expect(checked).toBe(1 + 2 * 8);
 });
