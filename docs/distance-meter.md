@@ -3,7 +3,7 @@
 The optional setup before `/acuity` reads native depth associated with exactly one current
 face. It displays approximate metres and the existing 3 m setup target. It does not change
 optotype sizes, decision thresholds or save a distance with a clinical result. The distance
-camera unmounts before the test screen can open its camera. This is independent of PR258.
+camera unmounts before the test screen can open its camera. The existing gesture-enabled test screen is preserved from main (PR #258).
 
 No adult IPD, assumed shoulder width or guessed focal length is used. AVDepthData distinguishes
 absolute/relative accuracy and quality; only current absolute/high-quality depth is accepted.
@@ -30,8 +30,13 @@ Manual continuation remains available if the sensor cannot measure at the requir
 Device acceptance: Xcode Run on the USB iPhone, Device Hub off. Check no-person/multiple-person
 and stale-reading behavior, permission denial/recovery, background/navigation and retry. Compare the displayed distance with a physical tape/ruler at known distances,
 including approximately0.5m,1m and3m; record the actual errors and unsupported ranges. Do not
-store participant previews or depth maps. Native validation is pending. The owner currently has no tape/ruler, so only functional
-checks can be completed; measured accuracy acceptance remains open.
+store participant previews or depth maps.
+
+On 2026-10-29, Xcode Run on the USB iPhone 12 Pro Max returned absolute/high-quality depth
+readings; the owner confirmed the small preview, approximate metres and placement guidance
+appeared. No-face callbacks returned null. Back returned to Home, as expected for this route.
+The owner currently has no tape/ruler. Known-distance accuracy, approximately 3 m range,
+on-screen stale-number clearing, continuation and remaining lifecycle acceptance are pending.
 
 Primary references: [AVDepthData](https://developer.apple.com/documentation/avfoundation/avdepthdata),
 [depth accuracy](https://developer.apple.com/documentation/avfoundation/avdepthdata/depthdataaccuracy),

@@ -1,4 +1,4 @@
-// Matches the owner's screenshot/web-demo copy (2026-10-28); controls reuse existing app wording.
+// Matches the owner's screenshot/web-demo copy (2026-10-29); controls reuse existing app wording.
 export const distanceCopy = {
   title: "Зай хэмжих",
   help: "Урд камер шалгуулж буй хүний зайг ойролцоогоор тооцно. Хүүхдийн хувьд зайг метрээр хэмжиж тэмдэглэх нь илүү найдвартай.",
