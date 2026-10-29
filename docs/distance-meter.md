@@ -9,8 +9,10 @@ No adult IPD, assumed shoulder width or guessed focal length is used. AVDepthDat
 absolute/relative accuracy and quality; only current absolute/high-quality depth is accepted.
 Disparity/half-depth is converted natively to float32 depth in metres when supported. The
 camera-space face centre and bounds are mapped with the depth API rather than preview maths.
-A full 3x3 patch must fit inside the face bounds; at least five finite positive samples are
-needed for its median. Below-display-resolution readings are hidden instead of showing0.0m.
+At least a 3×3 patch must fit inside the face bounds. Larger faces use a bounded central
+ellipse, inset from the face edges, up to 25×25 pixels. The median requires sufficient
+finite positive samples; scattered/mixed-surface values are rejected by their interquartile
+spread. These are input-quality checks, not calibrated error bounds. Below-display-resolution readings are hidden instead of showing0.0m.
 
 Face targets and displayed readings expire after750ms. Missing/multiple faces, unsupported
 formats/hardware, low-quality data, invalid pixels, backgrounding and navigation clear the
@@ -95,3 +97,9 @@ a measured distance-accuracy result. Some metre readings remained unstable and n
 event was recorded. A stable approximately 3 m display and its green/tone cue are still
 unverified. The debug session later showed Finished running; no post-check thermal reading
 was obtained. Keep #259 open for measured reference and remaining lifecycle acceptance.
+
+A follow-up spatial filter broadens sampling inside the face instead of trusting nine centre
+pixels. It preserves the quality/accuracy gate and rejects a patch with insufficient valid
+pixels or broad depth scatter. Synthetic regressions cover isolated bad centre pixels and
+mixed foreground/background surfaces. Its physical approximately 3 m stability check is
+still pending; the prior recognition success alone does not establish stable metres.
