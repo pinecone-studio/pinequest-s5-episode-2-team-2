@@ -27,4 +27,5 @@ export const dashboardCopy = {
   failed: "Мэдээлэл уншиж чадсангүй. Дахин оролдоно уу.",
   retry: "Дахин оролдох",
   settings: "Тохиргоо",
+  history: "Шалгалтын түүх",
 } as const;
