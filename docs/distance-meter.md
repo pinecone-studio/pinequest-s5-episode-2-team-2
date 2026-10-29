@@ -101,5 +101,9 @@ was obtained. Keep #259 open for measured reference and remaining lifecycle acce
 A follow-up spatial filter broadens sampling inside the face instead of trusting nine centre
 pixels. It preserves the quality/accuracy gate and rejects a patch with insufficient valid
 pixels or broad depth scatter. Synthetic regressions cover isolated bad centre pixels and
-mixed foreground/background surfaces. Its physical approximately 3 m stability check is
-still pending; the prior recognition success alone does not establish stable metres.
+mixed foreground/background surfaces. On the follow-up Xcode Run (thermal baseline 0), the owner confirmed the readout became
+stable at the approximately 3 m position. A stationary scalar segment read approximately
+3.41–3.43 m. The real position was not measured, so this is functional stability evidence,
+not an accuracy result. The debug session then showed Finished running; post-check thermal
+was unavailable. Physical reference comparison and the native 3.0 m green/tone check remain
+incomplete.
