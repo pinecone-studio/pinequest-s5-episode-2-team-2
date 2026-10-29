@@ -41,3 +41,32 @@ on-screen stale-number clearing, continuation and remaining lifecycle acceptance
 Primary references: [AVDepthData](https://developer.apple.com/documentation/avfoundation/avdepthdata),
 [depth accuracy](https://developer.apple.com/documentation/avfoundation/avdepthdata/depthdataaccuracy),
 [LiDAR capture](https://developer.apple.com/documentation/avfoundation/capturing-depth-using-the-lidar-camera).
+
+## Display stability and ready cue
+
+A bounded, in-memory window needs at least three coherent samples over 400 ms before showing
+metres. It uses their median and a small rounding dead band to reduce tenth-place flicker.
+A large jump hides the old value until new samples agree. Invalid data, gaps, stale/queued
+samples, backgrounding and retry reset the filter. Face-loss metadata clears the number
+immediately; an acquisition/loss generation rejects older queued depth replies.
+
+The green state requires one continuous second of fresh samples rounding to the existing
+3.0 m target. A short local tone plays once per capture attempt; retry rearms it. Loss of
+readiness/background/unmount cancels pending audio. Manual continuation is always available,
+including when audio fails. These time/noise limits are UI behaviour, not calibrated error
+bounds or clinical tolerances. No screening thresholds or optotype sizes change.
+
+Regression tests cover jitter, isolated spikes, real movement, stale and non-monotonic
+samples, target-hold reset, face-loss races, cue repetition/cancellation and audio failure.
+A fresh Xcode Run on 2026-10-29 started at thermal state 0. The owner confirmed the revised
+number was stable at close range and disappeared when their face left the camera. An
+approximately 3 m attempt failed: valid face targets were lost and the display returned to
+its unknown state. No ready event was recorded, so the green/tone native check remains
+unverified. The debug session later showed Finished running; no post-check thermal reading
+was obtained. Known-distance accuracy still needs a physical reference.
+
+The owner approved clearer waiting/unknown copy on 2026-10-29: “Зай хэмжиж байна…” while
+acquiring a stable value; after three seconds without a stable value, “Зайг тогтвортой
+хэмжиж чадсангүй”. Retry/background resets this wait, and valid readings restore placement
+guidance. These captions distinguish lost measurement from navigation; they do not repair
+the failed approximately 3 m recognition.

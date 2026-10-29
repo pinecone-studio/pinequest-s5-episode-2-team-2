@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useAudioPlayer } from "expo-audio";
+import correctSound from "../../../assets/sounds/correct.wav";
+import { emptyDistance, stabilizeDistance } from "./stability";
 import { router, useIsFocused } from "expo-router";
 import {
   AppState,
@@ -36,7 +39,16 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
   const [attempt, setAttempt] = useState(0);
   const { width, height } = useWindowDimensions();
   const [state, setState] = useState(AppState.currentState);
-  const [reading, setReading] = useState<{ value: number | null; at: number }>();
+  const [reading, setReading] = useState<{ value: number | null; at: number; ready: boolean }>();
+  const filter = useRef(emptyDistance());
+  const lastKnown = useRef(Date.now());
+  const played = useRef(false);
+  const cue = useAudioPlayer(correctSound);
+  const clear = useCallback(() => {
+    filter.current = emptyDistance();
+    lastKnown.current = Date.now();
+    setReading(undefined);
+  }, []);
   const [now, setNow] = useState(Date.now());
   const devices = useCameraDevices();
   const front =
@@ -55,15 +67,15 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
     Platform.OS === "ios";
   useEffect(() => {
     const listener = AppState.addEventListener("change", (nextState) => {
-      setReading(undefined);
+      clear();
       setNow(Date.now());
       setState(nextState);
     });
     return () => listener.remove();
-  }, []);
+  }, [clear]);
   useLayoutEffect(() => {
-    if (!focused) setReading(undefined);
-  }, [focused]);
+    if (!active) clear();
+  }, [active, clear]);
   useEffect(() => {
     if (!active) return;
     const timer = setInterval(() => setNow(Date.now()), 200);
@@ -75,15 +87,25 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
   }, [active, device?.id, attempt]);
   const fail = useCallback(() => {
     setFailed(true);
-    setReading(undefined);
-  }, []);
-  const report = useCallback((value: number | null) => {
-    const at = Date.now();
-    setReading({ value, at });
-    setNow(at);
+    clear();
+  }, [clear]);
+  const report = useCallback((value: number | null, at: number) => {
+    const now = Date.now();
+    const next = stabilizeDistance(filter.current, value, at, now);
+    if (
+      __DEV__ &&
+      process.env.EXPO_PUBLIC_LANDMARK_DEBUG === "1" &&
+      (next.value !== filter.current.value || next.ready !== filter.current.ready)
+    )
+      console.info("distance-display", { metres: next.value, ready: next.ready });
+    filter.current = next;
+    if (next.value !== null) lastKnown.current = now;
+    setReading({ value: filter.current.value, ready: filter.current.ready, at });
+    setNow(now);
   }, []);
   async function restart() {
-    setReading(undefined);
+    clear();
+    played.current = false;
     setFailed(false);
     setEnabled(true);
     setAttempt((value) => value + 1);
@@ -98,6 +120,26 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
   }
   const value =
     active && reading && now >= reading.at && now - reading.at <= 750 ? reading.value : null;
+  const ready = value !== null && !!reading?.ready;
+  useEffect(() => {
+    if (!ready || !active || played.current) return;
+    let cancelled = false;
+    void cue
+      .seekTo(0)
+      .then(() => {
+        if (!cancelled) {
+          played.current = true;
+          cue.play();
+        }
+      })
+      .catch(() => {
+        /* Audio failure must not block the manual controls. */
+      });
+    return () => {
+      cancelled = true;
+      cue.pause();
+    };
+  }, [ready, active, cue]);
   const guidance = distanceGuidance(value);
   const headline =
     enabled && (!active || failed)
@@ -106,10 +148,12 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
         ? copy.farther
         : guidance === "closer"
           ? copy.closer
-          : guidance === "ready"
+          : ready
             ? copy.ready
-            : copy.title;
-  const tone = guidance === "ready" ? "#16835E" : guidance === "unknown" ? "#1E293B" : "#CA8A04";
+            : value === null && now - lastKnown.current >= 3000
+              ? copy.notMeasured
+              : copy.measuring;
+  const tone = ready ? "#16835E" : guidance === "unknown" ? "#1E293B" : "#CA8A04";
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -171,12 +215,13 @@ function DepthCamera({
   onFailure,
 }: {
   device: CameraDevice;
-  onReading: (value: number | null) => void;
+  onReading: (value: number | null, at: number) => void;
   onFailure: () => void;
 }) {
   const live = useMemo(() => createSynchronizable(true), []);
   const target = useMemo(() => createSynchronizable<FaceTarget | null>(null), []);
   const next = useMemo(() => createSynchronizable(0), []);
+  const epoch = useMemo(() => createSynchronizable(0), []);
   const alive = useRef(true);
   useLayoutEffect(() => {
     alive.current = true;
@@ -191,24 +236,39 @@ function DepthCamera({
     if (alive.current) onFailure();
   }, [onFailure]);
   const report = useCallback(
-    (value: number | null, accuracy?: string, quality?: string, hasFace?: boolean) => {
-      if (alive.current) onReading(value);
+    (
+      value: number | null,
+      at: number,
+      generation: number,
+      accuracy?: string,
+      quality?: string,
+      hasFace?: boolean,
+    ) => {
+      if (!alive.current || generation !== epoch.getBlocking()) return;
+      onReading(value, at);
       if (alive.current && __DEV__ && process.env.EXPO_PUBLIC_LANDMARK_DEBUG === "1")
         console.info("distance-reading", { metres: value, accuracy, quality, hasFace });
     },
-    [onReading],
+    [onReading, epoch],
   );
   const objects = useCallback(
     (values: ScannedObject[]) => {
       try {
-        if (alive.current) target.setBlocking(singleFace(values, Date.now()));
+        if (!alive.current) return;
+        const face = singleFace(values, Date.now());
+        const previous = target.getBlocking();
+        if (!!face !== !!previous) epoch.setBlocking(epoch.getBlocking() + 1);
+        target.setBlocking(face);
+        if (!face && previous) onReading(null, Date.now());
       } catch {
         target.setBlocking(null);
+        epoch.setBlocking(epoch.getBlocking() + 1);
+        if (alive.current) onReading(null, Date.now());
       } finally {
         values.forEach((value) => value.dispose());
       }
     },
-    [target],
+    [target, epoch, onReading],
   );
   const face = useObjectOutput({ types: faceTypes, onObjectsScanned: objects });
   const depth = useDepthOutput({
@@ -221,11 +281,20 @@ function DepthCamera({
         const now = Date.now();
         if (!live.getBlocking() || now < next.getBlocking()) return;
         next.setBlocking(now + 200);
+        const generation = epoch.getBlocking();
         const faceTarget = target.getBlocking();
         const metres = personMetres(frame, faceTarget, now);
-        scheduleOnRN(report, metres, frame.depthDataAccuracy, frame.depthDataQuality, !!faceTarget);
+        scheduleOnRN(
+          report,
+          metres,
+          now,
+          generation,
+          frame.depthDataAccuracy,
+          frame.depthDataQuality,
+          !!faceTarget,
+        );
       } catch {
-        scheduleOnRN(report, null);
+        scheduleOnRN(report, null, Date.now(), epoch.getBlocking());
       } finally {
         frame.dispose();
       }
