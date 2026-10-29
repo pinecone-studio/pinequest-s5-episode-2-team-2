@@ -22,6 +22,7 @@ export function singleFace(
   objects: Pick<ScannedObject, "type" | "boundingBox">[],
   now: number,
 ): FaceTarget | null {
+  "worklet";
   const faces = objects.filter((object) => object.type === "face");
   if (faces.length !== 1 || !Number.isFinite(now)) return null;
   const b = faces[0]!.boundingBox;

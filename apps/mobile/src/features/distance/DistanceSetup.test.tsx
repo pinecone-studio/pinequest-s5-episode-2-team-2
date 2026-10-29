@@ -1,13 +1,14 @@
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
-import type { Depth, ScannedObject } from "react-native-vision-camera";
+import type { Depth } from "react-native-vision-camera";
 import { DistanceSetup } from "./DistanceSetup";
+import { type FaceTarget } from "./depthDistance";
 import { distanceCopy as copy } from "./copy";
 
 let mockPermission = true,
   mockSupported = true;
 let mockDepth: (depth: Depth) => void,
-  mockFaces: (faces: ScannedObject[]) => void,
+  mockFace: (face: FaceTarget | null) => void,
   mockState: (state: string) => void;
 const mockAudio = { seekTo: jest.fn(() => Promise.resolve()), play: jest.fn(), pause: jest.fn() };
 jest.mock("expo-audio", () => ({ useAudioPlayer: () => mockAudio }));
@@ -44,6 +45,12 @@ jest.mock("react-native", () => ({
   },
   Linking: { openSettings: jest.fn() },
 }));
+jest.mock("./useFullRangeFaces", () => ({
+  useFullRangeFaces: (onTarget: (target: FaceTarget | null) => void) => {
+    mockFace = onTarget;
+    return jest.requireActual("react").useMemo(() => mockCreateFaces(), []);
+  },
+}));
 jest.mock("react-native-vision-camera", () => ({
   Camera: "Camera",
   useCameraDevices: () => mockDevices,
@@ -55,10 +62,6 @@ jest.mock("react-native-vision-camera", () => ({
   useDepthOutput: (props: { onDepth: typeof mockDepth; targetResolution: object }) => {
     mockDepth = props.onDepth;
     return jest.requireActual("react").useMemo(() => mockCreateDepth(), [props.targetResolution]);
-  },
-  useObjectOutput: (props: { onObjectsScanned: typeof mockFaces; types: string[] }) => {
-    mockFaces = props.onObjectsScanned;
-    return jest.requireActual("react").useMemo(() => mockCreateFaces(), [props.types]);
   },
 }));
 jest.mock("react-native-worklets", () => ({
@@ -91,12 +94,8 @@ function depth(metres = 2.4) {
     dispose: jest.fn(),
   };
 }
-function face() {
-  return {
-    type: "face",
-    boundingBox: { x: 0, y: 0, width: 1, height: 1 },
-    dispose: jest.fn(),
-  };
+function face(): FaceTarget {
+  return { x: 0.5, y: 0.5, halfWidth: 0.5, halfHeight: 0.5, at: Date.now() };
 }
 let renderer: ReactTestRenderer;
 const cameras = () => renderer.root.findAll((n) => n.type === ("Camera" as never));
@@ -128,7 +127,7 @@ test("setup reads one face's depth, releases frames and preserves native output 
   const target = face(),
     frame = depth();
   await act(async () => {
-    mockFaces([target as unknown as ScannedObject]);
+    mockFace(target);
     mockDepth(frame as unknown as Depth);
   });
   expect(text()).not.toContain("≈ 2.4 м");
@@ -139,7 +138,6 @@ test("setup reads one face's depth, releases frames and preserves native output 
     renderer.root.findByProps({ testID: "distance-status" }).props.style[1].backgroundColor,
   ).toBe("#CA8A04");
   expect(frame.dispose).toHaveBeenCalledTimes(1);
-  expect(target.dispose).toHaveBeenCalledTimes(1);
   await act(async () => jest.advanceTimersByTime(400));
   expect(mockCreateDepth).toHaveBeenCalledTimes(1);
   expect(mockCreateFaces).toHaveBeenCalledTimes(1);
@@ -150,7 +148,7 @@ test("backgrounding clears readings and stale callbacks cannot restore them", as
   const oldDepth = mockDepth,
     target = face();
   await act(async () => {
-    mockFaces([target as unknown as ScannedObject]);
+    mockFace(target);
     mockDepth(depth() as unknown as Depth);
   });
   await observe(2.4, 2);
@@ -189,7 +187,7 @@ test("capture stops after thirty seconds rather than measuring unattended", asyn
 
 test("three displayed metres has the ready card, while retry clears the old reading", async () => {
   await act(async () => {
-    mockFaces([face() as unknown as ScannedObject]);
+    mockFace(face());
     mockDepth(depth(3) as unknown as Depth);
   });
   expect(text()).not.toContain(copy.ready);
@@ -209,7 +207,7 @@ async function observe(metres: number, count: number) {
   for (let i = 0; i < count; i++)
     await act(async () => {
       jest.advanceTimersByTime(200);
-      mockFaces([face() as unknown as ScannedObject]);
+      mockFace(face());
       mockDepth(depth(metres) as unknown as Depth);
     });
 }
@@ -219,7 +217,7 @@ test("face loss immediately clears the number and invalidates queued native repo
   mockQueue = [];
   await observe(2.4, 3);
   const queued = mockQueue;
-  await act(async () => mockFaces([]));
+  await act(async () => mockFace(null));
   expect(text()).not.toContain("≈ 2.4 м");
   await act(async () => queued.forEach((fn) => fn()));
   expect(text()).not.toContain("≈ 2.4 м");
@@ -233,7 +231,7 @@ test("stable target cues once per attempt, cancels on loss and can be explicitly
   expect(mockAudio.play).toHaveBeenCalledTimes(1);
   await observe(3, 3);
   expect(mockAudio.play).toHaveBeenCalledTimes(1);
-  await act(async () => mockFaces([]));
+  await act(async () => mockFace(null));
   expect(mockAudio.pause).toHaveBeenCalled();
   await observe(3, 6);
   expect(mockAudio.play).toHaveBeenCalledTimes(1);

@@ -70,3 +70,28 @@ acquiring a stable value; after three seconds without a stable value, “Зай�
 хэмжиж чадсангүй”. Retry/background resets this wait, and valid readings restore placement
 guidance. These captions distinguish lost measurement from navigation; they do not repair
 the failed approximately 3 m recognition.
+
+## Full-range face acquisition
+
+The distance camera now obtains its target from MediaPipe's full-range sparse detector
+instead of AVFoundation face metadata, which lost valid targets in the approximate 3 m
+attempt. The reference graph specifies float32 192×192 RGB in [-1, 1], 2304 stride-4 anchors
+and a 0.6 confidence cutoff. The existing short-range landmark/eye pipeline is unchanged.
+The full-range model is checksum-pinned and prepared locally; no weights enter git.
+
+Inference uses one cached interpreter, a bounded single-frame handoff and a worker at
+approximately 3 Hz or slower when inference is expensive. Full-frame letterboxing is undone
+before all four face-box corners are mapped through native frame→camera→depth APIs. Multiple,
+clipped or stale faces do not produce a target. Frame and resize buffers are released on
+success, failure, busy dispatch and unmount; old worker results cannot revive capture.
+
+The model's published face-detection range is not a depth-camera range or an accuracy claim.
+The existing absolute/high-quality depth gate, small in-face sample patch and physical
+reference requirement remain. On 2026-10-29, a fresh Xcode Run began at thermal state 0. The owner reported face
+recognition from approximately 3 m. A bounded scalar log sample contained 155 detector
+callbacks, 117 with one face and 109 valid camera-space targets, median worker latency
+36.13 ms. These include movement/near-range samples and are not a sustained benchmark or
+a measured distance-accuracy result. Some metre readings remained unstable and no ready
+event was recorded. A stable approximately 3 m display and its green/tone cue are still
+unverified. The debug session later showed Finished running; no post-check thermal reading
+was obtained. Keep #259 open for measured reference and remaining lifecycle acceptance.

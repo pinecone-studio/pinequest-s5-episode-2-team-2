@@ -21,6 +21,10 @@ const anchors = [16, 8].flatMap((grid) =>
     return { x: ((cell % grid) + 0.5) / grid, y: (Math.floor(cell / grid) + 0.5) / grid };
   }),
 );
+const fullAnchors = Array.from({ length: 48 * 48 }, (_, i) => ({
+  x: ((i % 48) + 0.5) / 48,
+  y: (Math.floor(i / 48) + 0.5) / 48,
+}));
 
 function overlap(a: FaceBox, b: FaceBox) {
   "worklet";
@@ -30,27 +34,33 @@ function overlap(a: FaceBox, b: FaceBox) {
   return intersection / (a.width * a.height + b.width * b.height - intersection);
 }
 
-/** BlazeFace short-range decoder and weighted NMS, in normalized letterboxed coordinates. */
-export function decodeFaces(boxes: Float32Array, logits: Float32Array): FaceBox[] {
+/** BlazeFace short/full-range decoder and weighted NMS, in normalized letterboxed coordinates. */
+export function decodeFaces(
+  boxes: Float32Array,
+  logits: Float32Array,
+  fullRange = false,
+): FaceBox[] {
   "worklet";
-  if (boxes.length !== 896 * 16 || logits.length !== 896)
+  const grid = fullRange ? fullAnchors : anchors;
+  const size = fullRange ? 192 : 128;
+  if (boxes.length !== grid.length * 16 || logits.length !== grid.length)
     throw new Error("Unexpected face detector tensors");
   let candidates: FaceBox[] = [];
-  for (let i = 0; i < anchors.length; i++) {
+  for (let i = 0; i < grid.length; i++) {
     const logit = logits[i]!;
-    if (!Number.isFinite(logit) || logit < 0) continue;
-    const anchor = anchors[i]!;
+    if (!Number.isFinite(logit) || logit < (fullRange ? Math.log(0.6 / 0.4) : 0)) continue;
+    const anchor = grid[i]!;
     const offset = i * 16;
     const values = boxes.subarray(offset, offset + 8);
     if (!values.every(Number.isFinite) || values[2]! <= 0 || values[3]! <= 0) continue;
     candidates.push({
-      x: (values[0]! - values[2]! / 2) / 128 + anchor.x,
-      y: (values[1]! - values[3]! / 2) / 128 + anchor.y,
-      width: values[2]! / 128,
-      height: values[3]! / 128,
+      x: (values[0]! - values[2]! / 2) / size + anchor.x,
+      y: (values[1]! - values[3]! / 2) / size + anchor.y,
+      width: values[2]! / size,
+      height: values[3]! / size,
       eyes: [
-        { x: values[4]! / 128 + anchor.x, y: values[5]! / 128 + anchor.y },
-        { x: values[6]! / 128 + anchor.x, y: values[7]! / 128 + anchor.y },
+        { x: values[4]! / size + anchor.x, y: values[5]! / size + anchor.y },
+        { x: values[6]! / size + anchor.x, y: values[7]! / size + anchor.y },
       ],
       score: 1 / (1 + Math.exp(-Math.min(100, logit))),
     });
