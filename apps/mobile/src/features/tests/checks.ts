@@ -9,12 +9,12 @@ export type CheckId = keyof typeof copy.checks;
 export interface Check {
   id: CheckId;
   /** Where the check starts; null for a check that is not in the app. */
-  route: "/scan" | "/acuity" | null;
+  route: "/prepare" | "/acuity" | null;
 }
 
 /** The checks the Tests screen offers, in display order (#140). */
 export const CHECKS: readonly Check[] = [
-  { id: "strabismus", route: "/scan" },
+  { id: "strabismus", route: "/prepare" },
   { id: "vision", route: "/acuity" },
 ];
 
