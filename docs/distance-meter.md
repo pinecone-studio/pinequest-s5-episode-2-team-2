@@ -64,3 +64,9 @@ approximately 3 m attempt failed: valid face targets were lost and the display r
 its unknown state. No ready event was recorded, so the green/tone native check remains
 unverified. The debug session later showed Finished running; no post-check thermal reading
 was obtained. Known-distance accuracy still needs a physical reference.
+
+The owner approved clearer waiting/unknown copy on 2026-10-29: “Зай хэмжиж байна…” while
+acquiring a stable value; after three seconds without a stable value, “Зайг тогтвортой
+хэмжиж чадсангүй”. Retry/background resets this wait, and valid readings restore placement
+guidance. These captions distinguish lost measurement from navigation; they do not repair
+the failed approximately 3 m recognition.

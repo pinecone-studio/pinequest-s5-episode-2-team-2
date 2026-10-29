@@ -178,7 +178,11 @@ test("denial and unsupported hardware retain manual continuation without fake me
   expect(text()).toContain(copy.unavailable);
 });
 test("capture stops after thirty seconds rather than measuring unattended", async () => {
-  await act(async () => jest.advanceTimersByTime(30_000));
+  expect(text()).toContain(copy.measuring);
+  await act(async () => jest.advanceTimersByTime(3000));
+  expect(text()).toContain(copy.notMeasured);
+  expect(cameras()).toHaveLength(1);
+  await act(async () => jest.advanceTimersByTime(27_000));
   expect(cameras()).toHaveLength(0);
   expect(text()).toContain(copy.unavailable);
 });
@@ -197,6 +201,7 @@ test("three displayed metres has the ready card, while retry clears the old read
   ).toBe("#16835E");
   await press(copy.retry);
   expect(text()).not.toContain("≈ 3.0 м");
+  expect(text()).toContain(copy.measuring);
   expect(cameras()).toHaveLength(1);
 });
 
@@ -219,6 +224,9 @@ test("face loss immediately clears the number and invalidates queued native repo
   await act(async () => queued.forEach((fn) => fn()));
   expect(text()).not.toContain("≈ 2.4 м");
   expect(mockAudio.play).not.toHaveBeenCalled();
+  expect(text()).toContain(copy.measuring);
+  await act(async () => jest.advanceTimersByTime(3000));
+  expect(text()).toContain(copy.notMeasured);
 });
 test("stable target cues once per attempt, cancels on loss and can be explicitly retried", async () => {
   await observe(3, 6);

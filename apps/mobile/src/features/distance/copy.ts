@@ -1,6 +1,9 @@
 // Matches the owner's screenshot/web-demo copy (2026-10-29); controls reuse existing app wording.
 export const distanceCopy = {
   title: "Зай хэмжих",
+  // Owner approved the waiting/unknown wording on 2026-10-29.
+  measuring: "Зай хэмжиж байна…",
+  notMeasured: "Зайг тогтвортой хэмжиж чадсангүй",
   help: "Урд камер шалгуулж буй хүний зайг ойролцоогоор тооцно. Хүүхдийн хувьд зайг метрээр хэмжиж тэмдэглэх нь илүү найдвартай.",
   back: "Буцах",
   retry: "Дахин шалгах",

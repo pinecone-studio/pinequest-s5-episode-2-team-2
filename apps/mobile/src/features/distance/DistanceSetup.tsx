@@ -41,10 +41,12 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
   const [state, setState] = useState(AppState.currentState);
   const [reading, setReading] = useState<{ value: number | null; at: number; ready: boolean }>();
   const filter = useRef(emptyDistance());
+  const lastKnown = useRef(Date.now());
   const played = useRef(false);
   const cue = useAudioPlayer(correctSound);
   const clear = useCallback(() => {
     filter.current = emptyDistance();
+    lastKnown.current = Date.now();
     setReading(undefined);
   }, []);
   const [now, setNow] = useState(Date.now());
@@ -97,6 +99,7 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
     )
       console.info("distance-display", { metres: next.value, ready: next.ready });
     filter.current = next;
+    if (next.value !== null) lastKnown.current = now;
     setReading({ value: filter.current.value, ready: filter.current.ready, at });
     setNow(now);
   }, []);
@@ -147,7 +150,9 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
           ? copy.closer
           : ready
             ? copy.ready
-            : copy.title;
+            : value === null && now - lastKnown.current >= 3000
+              ? copy.notMeasured
+              : copy.measuring;
   const tone = ready ? "#16835E" : guidance === "unknown" ? "#1E293B" : "#CA8A04";
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom", "left", "right"]}>
