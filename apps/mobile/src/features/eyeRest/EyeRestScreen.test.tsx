@@ -1,6 +1,6 @@
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
-import EyeRestScreen from "./EyeRestScreen";
+import EyeRestScreen, { INTRO_MS } from "./EyeRestScreen";
 import { exercises, eyeRestCopy } from "./content";
 import { quizCopy } from "./quiz";
 
@@ -14,6 +14,10 @@ jest.mock("expo-linear-gradient", () => ({ LinearGradient: "LinearGradient" }));
 jest.mock("@expo/vector-icons/Ionicons", () => "Ionicons");
 jest.mock("../scaffold/EyeHero", () => ({ EyeHero: "EyeHero" }));
 jest.mock("./QuizGame", () => ({ QuizGame: "QuizGame" }));
+const mockSay = jest.fn();
+jest.mock("../voice/useVoice", () => ({
+  useVoice: () => ({ say: (...keys: string[]) => mockSay(...keys), stop: jest.fn() }),
+}));
 const mockDb = {};
 jest.mock("expo-sqlite", () => ({ useSQLiteContext: () => mockDb }));
 let mockChildId: string | null = "c1";
@@ -49,6 +53,16 @@ const startOf = (title: string) =>
 const button = (label: string) =>
   renderer.root.findAll((node) => String(node.type) === "Button" && node.props.label === label);
 const blink = exercises.find((exercise) => exercise.key === "blink")!;
+const outside = exercises.find((exercise) => exercise.key === "outside")!;
+/** Advance the clock a second at a time, so every step renders as it would on a phone. */
+const tick = async (seconds: number) => {
+  for (let i = 0; i < seconds; i++) await act(async () => jest.advanceTimersByTime(1000));
+};
+/** Blinking has a spoken intro before its first step. */
+const startBlink = async () => {
+  await act(async () => startOf(blink.title).props.onPress());
+  await act(async () => jest.advanceTimersByTime(INTRO_MS));
+};
 const rest = exercises.find((exercise) => exercise.key === "20-20-20")!;
 
 beforeEach(async () => {
@@ -56,6 +70,7 @@ beforeEach(async () => {
   jest.useFakeTimers({ now: new Date("2026-10-27T10:00:00Z") });
   mockOpen.mockClear();
   mockPlay.mockClear();
+  mockSay.mockClear();
   mockAddStar.mockClear();
   mockChildId = "c1";
   mockToday = [];
@@ -78,7 +93,7 @@ test("lists every exercise with its source and the not-a-treatment notice", () =
 });
 
 test("start shows the first step, then counts through rounds to the end", async () => {
-  await act(async () => startOf(blink.title).props.onPress());
+  await startBlink();
   expect(text()).toContain(blink.steps[0]!.text);
   expect(text()).toContain(eyeRestCopy.round(1, blink.rounds));
 
@@ -91,7 +106,7 @@ test("start shows the first step, then counts through rounds to the end", async 
 });
 
 test("a running exercise takes the whole screen with a big countdown and progress", async () => {
-  await act(async () => startOf(blink.title).props.onPress());
+  await startBlink();
   // The other exercises, their start buttons and source links are hidden while it runs.
   expect(starts()).toHaveLength(0);
   for (const other of exercises.filter((exercise) => exercise !== blink)) {
@@ -121,13 +136,29 @@ test("after the end, again restarts and back returns to the list", async () => {
 });
 
 test("a chime plays on each new step and at the end, not at the start", async () => {
-  await act(async () => startOf(blink.title).props.onPress());
+  await act(async () => startOf(outside.title).props.onPress());
   expect(mockPlay).not.toHaveBeenCalled();
-  await act(async () => jest.advanceTimersByTime(blink.steps[0]!.seconds * 1000));
+  await act(async () => jest.advanceTimersByTime(outside.steps[0]!.seconds * 1000));
   expect(mockPlay).toHaveBeenCalledTimes(1);
-  await act(async () => jest.advanceTimersByTime(60_000));
+  await tick(5 * 60);
   expect(text()).toContain(eyeRestCopy.done);
-  expect(mockPlay.mock.calls.length).toBeGreaterThanOrEqual(2);
+  expect(mockPlay).toHaveBeenCalledTimes(outside.steps.length);
+});
+
+test("blinking is voiced: intro, close/open for every step, then the end", async () => {
+  await act(async () => startOf(blink.title).props.onPress());
+  expect(text()).toContain(eyeRestCopy.getReady);
+  expect(mockSay).toHaveBeenLastCalledWith("blink-start");
+  await act(async () => jest.advanceTimersByTime(INTRO_MS));
+  expect(mockSay).toHaveBeenLastCalledWith("blink-close");
+  await act(async () => jest.advanceTimersByTime(blink.steps[0]!.seconds * 1000));
+  expect(mockSay).toHaveBeenLastCalledWith("blink-open");
+  await tick(30);
+  expect(mockSay).toHaveBeenLastCalledWith("blink-done");
+  const spoken = mockSay.mock.calls.flat();
+  expect(spoken.filter((key) => key === "blink-close")).toHaveLength(blink.rounds);
+  expect(spoken.filter((key) => key === "blink-open")).toHaveLength(blink.rounds);
+  expect(mockPlay).not.toHaveBeenCalled();
 });
 
 test("each card shows its picture tile and tag", () => {

@@ -2,6 +2,8 @@
 // these are eye-rest breaks, never a treatment: no diagnosis, healthy/normal or cure wording
 // (CONTRIBUTING.md). Exercises do not treat strabismus or a lazy eye.
 
+import type { VoiceKey } from "../voice/clips";
+
 export type Source = { label: string; url: string };
 export type Step = { text: string; seconds: number };
 export type Exercise = {
@@ -16,6 +18,8 @@ export type Exercise = {
   icon: "leaf" | "partly-sunny" | "flower";
   tint: { background: string; foreground: string };
   tag: string;
+  /** Recorded prompts: an intro before the first step, one per step, and one at the end. */
+  voice?: { intro: VoiceKey; steps: VoiceKey[]; done: VoiceKey };
 };
 
 const EYEWIKI_CVS: Source = {
@@ -67,6 +71,7 @@ export const exercises: Exercise[] = [
     icon: "flower",
     tint: { background: "#FFE4EC", foreground: "#B0335F" },
     tag: "АМРАЛТ · 20 СЕК",
+    voice: { intro: "blink-start", steps: ["blink-close", "blink-open"], done: "blink-done" },
   },
 ];
 
@@ -92,6 +97,7 @@ export const eyeRestCopy = {
   step: (current: number, total: number) => `Алхам ${current}/${total}`,
   secondsLeft: (seconds: number) => `${seconds} сек`,
   secondsUnit: "сек",
+  getReady: "Бэлдээрэй!",
   progress: "Дасгалын явц",
   back: "Дасгалууд руу буцах",
   openFromTips: "Нүд амраах дасгал хийх",

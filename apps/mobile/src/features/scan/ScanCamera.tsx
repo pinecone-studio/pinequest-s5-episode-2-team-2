@@ -16,6 +16,7 @@ export function ScanCamera({
   onReady,
   onFailure,
   onFrame,
+  speakGuidance = false,
 }: {
   device: CameraDevice;
   torchOn: boolean;
@@ -23,6 +24,8 @@ export function ScanCamera({
   onFailure: () => void;
   /** Every analysed frame, with quality, for recording the scan. */
   onFrame?: ((frame: LandmarkFrame) => void) | undefined;
+  /** Read the live instruction aloud. */
+  speakGuidance?: boolean;
 }) {
   const live = useRef(true);
   const [frame, setFrame] = useState<LandmarkFrame | null>(null);
@@ -62,7 +65,7 @@ export function ScanCamera({
     if (started && previewStarted && ready && live.current) onReady();
   }, [started, previewStarted, ready, onReady]);
   return (
-    <ScanPreview guidance={<LiveGuidance frame={frame} />}>
+    <ScanPreview guidance={<LiveGuidance frame={frame} speak={speakGuidance} />}>
       <Camera
         style={StyleSheet.absoluteFill}
         device={device}

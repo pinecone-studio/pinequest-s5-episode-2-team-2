@@ -4,6 +4,10 @@ import { create, type ReactTestRenderer } from "react-test-renderer";
 import type { LandmarkFrame } from "../vision/facePipeline";
 import { GUIDANCE } from "./guidance";
 import { LiveGuidance } from "./LiveGuidance";
+const mockSay = jest.fn();
+jest.mock("../voice/useVoice", () => ({
+  useVoice: () => ({ say: (...keys: string[]) => mockSay(...keys), stop: jest.fn() }),
+}));
 
 jest.mock("../../components/ui", () => ({ Card: "Card", Text: "Text" }));
 jest.mock("react-native", () => ({
@@ -69,4 +73,21 @@ test("still announces no face, head turned and closed eyes after moving below th
     expect(text.props.accessibilityLiveRegion).toBe("polite");
     expect(text.props.numberOfLines).toBeUndefined();
   }
+});
+
+test("the instruction is read aloud only while speaking is on, after the scan intro", async () => {
+  mockSay.mockClear();
+  let now = 1000;
+  jest.spyOn(performance, "now").mockImplementation(() => now);
+  await act(async () => {
+    renderer = create(<LiveGuidance frame={frame(0, 0)} />);
+  });
+  expect(mockSay).not.toHaveBeenCalled();
+
+  await act(async () => renderer.update(<LiveGuidance frame={frame(0, 1)} speak />));
+  expect(mockSay).not.toHaveBeenCalled(); // room for the intro prompt
+  now += 4000;
+  await act(async () => renderer.update(<LiveGuidance frame={frame(0, 2)} speak />));
+  expect(mockSay).toHaveBeenCalledWith("scan-no-face");
+  jest.restoreAllMocks();
 });

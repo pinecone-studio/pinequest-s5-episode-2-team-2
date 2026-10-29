@@ -12,6 +12,7 @@ import { useActiveChildId } from "../children/useActiveChildId";
 import { EyeHero } from "../scaffold/EyeHero";
 import { exercises, eyeRestCopy as copy, type Exercise } from "./content";
 import { QuizGame } from "./QuizGame";
+import { useVoice } from "../voice/useVoice";
 import { quizCopy } from "./quiz";
 import { stepAt, totalSeconds } from "./steps";
 
@@ -22,6 +23,8 @@ type Card = Pick<Exercise, "key" | "title" | "summary" | "tag" | "tint"> & {
 };
 
 const DAILY_GOAL = 3;
+/** Time for the spoken intro before the first step starts. */
+export const INTRO_MS = 2500;
 const QUIZ_CARD: Card = {
   key: quizCopy.key,
   title: quizCopy.title,
@@ -62,8 +65,9 @@ export default function EyeRestScreen() {
     setNewStar(false);
     if (key === quizCopy.key) return setQuiz(true);
     const at = Date.now();
+    const intro = exercises.find((exercise) => exercise.key === key)?.voice ? INTRO_MS : 0;
     setNow(at);
-    setRunning({ key, startedAt: at });
+    setRunning({ key, startedAt: at + intro });
   };
   const exit = () => {
     setRunning(null);
@@ -252,17 +256,43 @@ function RunningExercise({
 }) {
   const state = stepAt(exercise, elapsedMs);
   const cue = useAudioPlayer(chime);
+  const { say } = useVoice();
+  const intro = elapsedMs < 0;
 
-  // A chime on every new step and at the end, so the child can look away from the screen.
-  const position = state.done ? "done" : `${state.round}-${state.stepIndex}`;
-  const last = useRef(position);
+  // A cue on every new step and at the end, so the child can look away from the screen:
+  // the recorded voice when the exercise has one, otherwise a chime.
+  const position = intro ? "intro" : state.done ? "done" : `${state.round}-${state.stepIndex}`;
+  const last = useRef<string | null>(null);
   useEffect(() => {
+    const first = last.current === null;
     if (last.current === position) return;
     last.current = position;
-    void cue.seekTo(0);
-    cue.play();
+    const voice = exercise.voice;
+    if (voice) {
+      if (position === "intro") say(voice.intro);
+      else if (position === "done") say(voice.done);
+      else if (!state.done) say(voice.steps[state.stepIndex % voice.steps.length]!);
+    } else if (!first) {
+      void cue.seekTo(0);
+      cue.play();
+    }
     if (position === "done") onFinish();
-  }, [position, cue, onFinish]);
+  }, [position, cue, onFinish, exercise.voice, say, state]);
+
+  if (intro) {
+    return (
+      <View style={styles.running}>
+        <Text variant="title" accessibilityRole="header" style={styles.center}>
+          {exercise.title}
+        </Text>
+        <Text accessibilityLiveRegion="polite" style={[styles.instruction, styles.center]}>
+          {copy.getReady}
+        </Text>
+        <Text style={[styles.center, styles.unit]}>{exercise.summary}</Text>
+        <Button label={copy.stop} variant="outline" onPress={onStop} />
+      </View>
+    );
+  }
 
   if (state.done) {
     return (
