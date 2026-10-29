@@ -13,6 +13,13 @@ jest.mock("./AcuityGestureInput", () => ({
     jest.requireActual("react").createElement("GestureInput", props, manual),
 }));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
+let mockSpeech: { enabled: boolean; round: string; onAnswer: (a: unknown) => void } | null = null;
+jest.mock("./useSpokenAnswers", () => ({
+  useSpokenAnswers: (options: typeof mockSpeech) => {
+    mockSpeech = options;
+    return options?.enabled ? "listening" : "off";
+  },
+}));
 const mockSay = jest.fn();
 jest.mock("../voice/useVoice", () => ({
   useVoice: () => ({ say: (...keys: string[]) => mockSay(...keys), stop: jest.fn() }),
@@ -174,4 +181,44 @@ test("camera answers share practice feedback, thumbs-up readiness and silent tes
   for (const key of spoken()) expect(NEUTRAL).toContain(key);
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
   jest.useRealTimers();
+});
+
+test("spoken replies answer alongside the arrows, and only while a letter is shown", () => {
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.adult);
+  expect(mockSpeech?.enabled).toBe(false);
+  press(copy.speech.enable);
+  expect(mockSpeech?.enabled).toBe(true);
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.speech.listening);
+
+  act(() => mockSpeech!.onAnswer(wrongOf(shown())));
+  expect(mockSay).toHaveBeenLastCalledWith("acuity-wrong");
+  act(() => mockSpeech!.onAnswer(shown()));
+  expect(mockSay).toHaveBeenLastCalledWith("acuity-correct");
+
+  press(copy.practice.skip);
+  // Cover stage: the microphone is off, so "Зүүн нүдээ…" is never heard as an answer.
+  expect(mockSpeech?.enabled).toBe(false);
+  press(copy.ready);
+  expect(mockSpeech?.enabled).toBe(true);
+  act(() => mockSpeech!.onAnswer("cantSee"));
+  act(() => mockSpeech!.onAnswer("cantSee"));
+  act(() => mockSpeech!.onAnswer("cantSee"));
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
+});
+
+test("a child's spoken left or right asks them to point instead", () => {
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.child4);
+  press(copy.speech.enable);
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.speech.listeningChild);
+  mockSay.mockClear();
+  act(() => mockSpeech!.onAnswer(180));
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.speech.pointLeftRight);
+  expect(mockSay).not.toHaveBeenCalledWith("acuity-wrong");
+  expect(mockSay).not.toHaveBeenCalledWith("acuity-correct");
 });
