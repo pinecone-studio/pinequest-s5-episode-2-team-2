@@ -1,5 +1,14 @@
 import type { Depth, ScannedObject } from "react-native-vision-camera";
 
+/** UI guidance follows the displayed tenth of a metre; it does not validate a clinical setup. */
+export function distanceGuidance(
+  metres: number | null,
+): "unknown" | "farther" | "closer" | "ready" {
+  if (metres === null || !Number.isFinite(metres) || metres <= 0) return "unknown";
+  const shown = Number(metres.toFixed(1));
+  return shown === 3 ? "ready" : shown < 3 ? "farther" : "closer";
+}
+
 export interface FaceTarget {
   x: number;
   y: number;

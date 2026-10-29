@@ -1,5 +1,5 @@
 import type { Depth } from "react-native-vision-camera";
-import { personMetres, sampleMetres, singleFace } from "./depthDistance";
+import { distanceGuidance, personMetres, sampleMetres, singleFace } from "./depthDistance";
 
 function map(value = 2.4) {
   const buffer = new ArrayBuffer(28 * 5),
@@ -95,4 +95,12 @@ test("sub-display-resolution depth cannot appear as a valid zero metres", () => 
   tiny.buffer = map(0.01).buffer;
   tiny.getDepthData = () => tiny.buffer;
   expect(personMetres(tiny as unknown as Depth, target, 1200)).toBeNull();
+});
+
+test("guidance follows the displayed tenth without presenting a clinical tolerance", () => {
+  expect(distanceGuidance(0.7)).toBe("farther");
+  expect(distanceGuidance(4)).toBe("closer");
+  expect(distanceGuidance(3)).toBe("ready");
+  expect(distanceGuidance(2.99)).toBe("ready");
+  for (const value of [null, NaN, Infinity, 0, -1]) expect(distanceGuidance(value)).toBe("unknown");
 });

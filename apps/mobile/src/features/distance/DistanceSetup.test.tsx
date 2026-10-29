@@ -16,7 +16,8 @@ const mockRequest = jest.fn(),
 const mockDevices = [
   { id: "front", type: "true-depth", position: "front", supportsOutput: () => mockSupported },
 ];
-jest.mock("expo-router", () => ({ useIsFocused: () => true }));
+jest.mock("expo-router", () => ({ useIsFocused: () => true, router: { back: jest.fn() } }));
+jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 jest.mock("../../components/ui", () => ({
   Button: "Button",
   Text: "Text",
@@ -25,6 +26,9 @@ jest.mock("../../components/ui", () => ({
 }));
 jest.mock("react-native", () => ({
   View: "View",
+  Pressable: "Pressable",
+  ScrollView: "ScrollView",
+  useWindowDimensions: () => ({ width: 390, height: 844 }),
   StyleSheet: { create: (s: unknown) => s },
   Platform: { OS: "ios" },
   AppState: {
@@ -65,8 +69,8 @@ jest.mock("react-native-worklets", () => ({
   },
   scheduleOnRN: (fn: (...args: unknown[]) => void, ...args: unknown[]) => fn(...args),
 }));
-function depth() {
-  const values = new Float32Array(25).fill(2.4);
+function depth(metres = 2.4) {
+  const values = new Float32Array(25).fill(metres);
   return {
     isValid: true,
     depthDataAccuracy: "absolute",
@@ -93,7 +97,7 @@ const text = () => JSON.stringify(renderer.toJSON());
 const press = (label: string) =>
   act(async () => {
     await renderer.root
-      .find((n) => n.type === ("Button" as never) && n.props.label === label)
+      .find((n) => n.type === ("Pressable" as never) && n.props.accessibilityLabel === label)
       .props.onPress();
   });
 beforeEach(async () => {
@@ -111,9 +115,8 @@ afterEach(async () => {
   await act(async () => renderer.unmount());
   jest.useRealTimers();
 });
-test("opt-in reads one face's depth, releases frames and preserves native output identity", async () => {
-  expect(cameras()).toHaveLength(0);
-  await press(copy.open);
+test("setup reads one face's depth, releases frames and preserves native output identity", async () => {
+  expect(cameras()).toHaveLength(1);
   const target = face(),
     frame = depth();
   await act(async () => {
@@ -121,6 +124,10 @@ test("opt-in reads one face's depth, releases frames and preserves native output
     mockDepth(frame as unknown as Depth);
   });
   expect(text()).toContain("≈ 2.4 м");
+  expect(text()).toContain(copy.farther);
+  expect(
+    renderer.root.findByProps({ testID: "distance-status" }).props.style[1].backgroundColor,
+  ).toBe("#CA8A04");
   expect(frame.dispose).toHaveBeenCalledTimes(1);
   expect(target.dispose).toHaveBeenCalledTimes(1);
   await act(async () => jest.advanceTimersByTime(400));
@@ -130,7 +137,6 @@ test("opt-in reads one face's depth, releases frames and preserves native output
   expect(text()).not.toContain("≈ 2.4 м");
 });
 test("backgrounding clears readings and stale callbacks cannot restore them", async () => {
-  await press(copy.open);
   const oldDepth = mockDepth,
     target = face();
   await act(async () => {
@@ -149,7 +155,7 @@ test("backgrounding clears readings and stale callbacks cannot restore them", as
 test("denial and unsupported hardware retain manual continuation without fake metres", async () => {
   mockPermission = false;
   await act(async () => renderer.update(<DistanceSetup onContinue={mockContinue} />));
-  await press(copy.open);
+  await press(copy.retry);
   expect(mockRequest).toHaveBeenCalledTimes(1);
   expect(cameras()).toHaveLength(0);
   await press(copy.proceed);
@@ -161,8 +167,22 @@ test("denial and unsupported hardware retain manual continuation without fake me
   expect(text()).toContain(copy.unavailable);
 });
 test("capture stops after thirty seconds rather than measuring unattended", async () => {
-  await press(copy.open);
   await act(async () => jest.advanceTimersByTime(30_000));
   expect(cameras()).toHaveLength(0);
   expect(text()).toContain(copy.unavailable);
+});
+
+test("three displayed metres has the ready card, while retry clears the old reading", async () => {
+  await act(async () => {
+    mockFaces([face() as unknown as ScannedObject]);
+    mockDepth(depth(3) as unknown as Depth);
+  });
+  expect(text()).toContain(copy.ready);
+  expect(text()).toContain("≈ 3.0 м");
+  expect(
+    renderer.root.findByProps({ testID: "distance-status" }).props.style[1].backgroundColor,
+  ).toBe("#16835E");
+  await press(copy.retry);
+  expect(text()).not.toContain("≈ 3.0 м");
+  expect(cameras()).toHaveLength(1);
 });

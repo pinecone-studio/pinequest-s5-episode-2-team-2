@@ -19,16 +19,19 @@ configuration avoids recreating camera threads on UI updates. Capture stops afte
 can be reopened. Only scalar diagnostics are available behind the existing development flag;
 images, depth maps and face coordinates are not saved, uploaded or logged.
 
-Front TrueDepth is preferred; the camera switch can select rear LiDAR where available.
+The front TrueDepth camera is preferred. The owner’s reference is reflected in a small
+mirrored preview, large amber/green guidance card, approximate metres and manual start button.
+Guidance follows the displayed tenth around the existing 3 m target; it is not an accuracy
+claim or clinical acceptance threshold. “Дахин шалгах” restarts capture, not screen calibration.
 Hardware/range support and accuracy must be verified on the actual device. A native quality
 flag is not a calibrated error bound. Never claim validated3m placement from unit tests.
 Manual continuation remains available if the sensor cannot measure at the required range.
 
 Device acceptance: Xcode Run on the USB iPhone, Device Hub off. Check no-person/multiple-person
-and stale-reading behavior, permission denial/recovery, background/navigation and camera
-switches. Compare the displayed distance with a physical tape/ruler at known distances,
+and stale-reading behavior, permission denial/recovery, background/navigation and retry. Compare the displayed distance with a physical tape/ruler at known distances,
 including approximately0.5m,1m and3m; record the actual errors and unsupported ranges. Do not
-store participant previews or depth maps. Native validation is pending.
+store participant previews or depth maps. Native validation is pending. The owner currently has no tape/ruler, so only functional
+checks can be completed; measured accuracy acceptance remains open.
 
 Primary references: [AVDepthData](https://developer.apple.com/documentation/avfoundation/avdepthdata),
 [depth accuracy](https://developer.apple.com/documentation/avfoundation/avdepthdata/depthdataaccuracy),

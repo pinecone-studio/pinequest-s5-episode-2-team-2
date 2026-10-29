@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useIsFocused } from "expo-router";
-import { AppState, Linking, Platform, StyleSheet, View } from "react-native";
+import { router, useIsFocused } from "expo-router";
+import {
+  AppState,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import {
   Camera,
   useCameraDevices,
@@ -12,17 +21,20 @@ import {
   type ScannedObjectType,
 } from "react-native-vision-camera";
 import { createSynchronizable, scheduleOnRN } from "react-native-worklets";
-import { Button, Notice, Screen, Text } from "../../components/ui";
+import { Text } from "../../components/ui";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { fonts } from "../../theme";
 import { distanceCopy as copy } from "./copy";
-import { personMetres, singleFace, type FaceTarget } from "./depthDistance";
+import { distanceGuidance, personMetres, singleFace, type FaceTarget } from "./depthDistance";
 
 const resolution = { width: 640, height: 480 };
 const faceTypes: ScannedObjectType[] = ["face"];
 
 export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
-  const [enabled, setEnabled] = useState(false),
-    [failed, setFailed] = useState(false),
-    [back, setBack] = useState(false);
+  const [enabled, setEnabled] = useState(true),
+    [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const { width, height } = useWindowDimensions();
   const [state, setState] = useState(AppState.currentState);
   const [reading, setReading] = useState<{ value: number | null; at: number }>();
   const [now, setNow] = useState(Date.now());
@@ -30,9 +42,7 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
   const front =
     devices.find((d) => d.position === "front" && d.type === "true-depth") ??
     devices.find((d) => d.position === "front");
-  const rear =
-    devices.find((d) => d.type === "lidar-depth") ?? devices.find((d) => d.position === "back");
-  const device = back ? rear : front;
+  const device = front;
   const { hasPermission, canRequestPermission, requestPermission } = useCameraPermission();
   const focused = useIsFocused();
   const active =
@@ -62,7 +72,7 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
       clearInterval(timer);
       clearTimeout(timeout);
     };
-  }, [active, device?.id]);
+  }, [active, device?.id, attempt]);
   const fail = useCallback(() => {
     setFailed(true);
     setReading(undefined);
@@ -72,14 +82,11 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
     setReading({ value, at });
     setNow(at);
   }, []);
-  async function toggle() {
+  async function restart() {
     setReading(undefined);
     setFailed(false);
-    if (enabled && !failed && hasPermission) {
-      setEnabled(false);
-      return;
-    }
     setEnabled(true);
+    setAttempt((value) => value + 1);
     try {
       if (!hasPermission) {
         if (canRequestPermission) await requestPermission();
@@ -91,43 +98,70 @@ export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
   }
   const value =
     active && reading && now >= reading.at && now - reading.at <= 750 ? reading.value : null;
+  const guidance = distanceGuidance(value);
+  const headline =
+    enabled && (!active || failed)
+      ? copy.unavailable
+      : guidance === "farther"
+        ? copy.farther
+        : guidance === "closer"
+          ? copy.closer
+          : guidance === "ready"
+            ? copy.ready
+            : copy.title;
+  const tone = guidance === "ready" ? "#16835E" : guidance === "unknown" ? "#1E293B" : "#CA8A04";
   return (
-    <Screen>
-      <Text variant="title">{copy.title}</Text>
-      <Text>{copy.help}</Text>
-      <View style={styles.preview}>
-        {active && device && (
-          <DepthCamera key={device.id} device={device} onReading={report} onFailure={fail} />
-        )}
-      </View>
-      <Text style={styles.metres} accessibilityLiveRegion="polite">
-        {value === null ? "—" : copy.metres(value)}
-      </Text>
-      <Text>
-        {enabled && (!active || failed)
-          ? copy.unavailable
-          : value === null
-            ? copy.unknown
-            : copy.approximate}
-      </Text>
-      <Button
-        label={enabled && !failed && hasPermission ? copy.close : copy.open}
-        onPress={() => void toggle()}
-      />
-      {!!front && !!rear && (
-        <Button
-          label={copy.swap}
-          variant="link"
-          onPress={() => {
-            setReading(undefined);
-            setFailed(false);
-            setBack((v) => !v);
-          }}
-        />
-      )}
-      <Notice>{copy.privacy}</Notice>
-      <Button label={copy.proceed} onPress={onContinue} />
-    </Screen>
+    <SafeAreaView style={styles.screen} edges={["top", "bottom", "left", "right"]}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={[styles.top, { height: Math.min(124, height * 0.18) }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={copy.back}
+            onPress={() => router.back()}
+            style={styles.back}
+          >
+            <Text style={styles.backText}>‹</Text>
+          </Pressable>
+          <View style={[styles.preview, { height: Math.min(116, height * 0.17) }]}>
+            {active && device && (
+              <DepthCamera
+                key={`${device.id}:${attempt}`}
+                device={device}
+                onReading={report}
+                onFailure={fail}
+              />
+            )}
+          </View>
+        </View>
+        <View testID="distance-status" style={[styles.status, { backgroundColor: tone }]}>
+          <Text
+            accessibilityRole="header"
+            accessibilityLiveRegion="polite"
+            style={[styles.headline, { fontSize: Math.min(52, Math.max(28, width * 0.08)) }]}
+          >
+            {headline}
+          </Text>
+          <Text style={styles.metres}>{value === null ? "—" : copy.metres(value)}</Text>
+        </View>
+        <Text style={styles.help}>{copy.help}</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={copy.proceed}
+          onPress={onContinue}
+          style={styles.primary}
+        >
+          <Text style={styles.primaryText}>{copy.proceed}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={copy.retry}
+          onPress={() => void restart()}
+          style={styles.secondary}
+        >
+          <Text style={styles.secondaryText}>{copy.retry}</Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -222,7 +256,45 @@ function DepthCamera({
   ) : null;
 }
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: "#0F1B2D" },
+  content: { flexGrow: 1, padding: 16, gap: 12 },
+  top: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+  back: { minWidth: 44, minHeight: 44, alignItems: "center" },
+  backText: { color: "#FFFFFF", fontSize: 36 },
+  preview: { width: 88, borderRadius: 16, overflow: "hidden", backgroundColor: "#1E293B" },
   mirrorPreview: { transform: [{ scaleX: -1 }] },
-  preview: { height: 240, borderRadius: 16, overflow: "hidden", backgroundColor: "#111" },
-  metres: { fontSize: 48, fontWeight: "900", textAlign: "center" },
+  status: {
+    flex: 1,
+    minHeight: 160,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    gap: 12,
+  },
+  headline: {
+    color: "#FFFFFF",
+    fontFamily: fonts.black,
+    fontWeight: "900",
+    textAlign: "center",
+    lineHeight: undefined,
+  },
+  metres: { color: "#FFFFFF", fontFamily: fonts.extraBold, fontSize: 22, textAlign: "center" },
+  help: { color: "#CBD5E1", fontSize: 13, lineHeight: 19, textAlign: "center" },
+  primary: {
+    minHeight: 52,
+    borderRadius: 999,
+    backgroundColor: "#2F6FED",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 14,
+  },
+  primaryText: {
+    color: "#FFFFFF",
+    fontFamily: fonts.black,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  secondary: { minHeight: 44, alignItems: "center", justifyContent: "center", padding: 8 },
+  secondaryText: { color: "#D5E2F7", fontFamily: fonts.extraBold, textAlign: "center" },
 });
