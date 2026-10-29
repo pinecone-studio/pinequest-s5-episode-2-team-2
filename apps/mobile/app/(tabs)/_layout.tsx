@@ -21,7 +21,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: "Нүүр", tabBarIcon: tabIcon("home") }} />
-      <Tabs.Screen name="scan" options={{ title: "Шалгах", tabBarIcon: tabIcon("eye") }} />
+      <Tabs.Screen name="(check)" options={{ title: "Шалгах", tabBarIcon: tabIcon("eye") }} />
       {/* Eye-rest exercises replace History in the tab bar; History opens from Profile. */}
       <Tabs.Screen name="eye-rest" options={{ title: "Дасгал", tabBarIcon: tabIcon("leaf") }} />
       <Tabs.Screen name="profile" options={{ title: "Профайл", tabBarIcon: tabIcon("person") }} />

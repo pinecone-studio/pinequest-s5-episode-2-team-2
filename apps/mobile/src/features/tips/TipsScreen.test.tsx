@@ -5,9 +5,9 @@ import { eyeRestCopy } from "../eyeRest/content";
 import { tipSections, tipsCopy } from "./content";
 
 const mockOpen = jest.fn(async () => true);
-const mockPush = jest.fn();
+const mockDismissTo = jest.fn();
 jest.mock("expo-router", () => ({
-  router: { push: (...args: unknown[]) => mockPush(...(args as [])) },
+  router: { dismissTo: (...args: unknown[]) => mockDismissTo(...(args as [])) },
 }));
 jest.mock("react-native", () => ({
   Linking: { openURL: (...args: unknown[]) => mockOpen(...(args as [])) },
@@ -59,5 +59,5 @@ test("the eye-rest button opens the exercises", async () => {
     (node) => String(node.type) === "Button" && node.props.label === eyeRestCopy.openFromTips,
   );
   await act(async () => button.props.onPress());
-  expect(mockPush).toHaveBeenCalledWith("/eye-rest");
+  expect(mockDismissTo).toHaveBeenCalledWith("/eye-rest");
 });
