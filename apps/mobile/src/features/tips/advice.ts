@@ -28,7 +28,9 @@ function isTip(tip: Tip | undefined): tip is Tip {
 
 export const adviceCards: readonly AdviceCard[] = groups.flatMap((group) => {
   const summary = group.tips[group.summaryIndex ?? 0] ?? group.tips[0];
-  return summary ? [{ id: group.id, title: group.title, summary: summary.text, tips: group.tips }] : [];
+  return summary
+    ? [{ id: group.id, title: group.title, summary: summary.text, tips: group.tips }]
+    : [];
 });
 
 export function findAdvice(id: string | undefined): AdviceCard | undefined {
