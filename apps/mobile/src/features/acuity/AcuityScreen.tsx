@@ -1,5 +1,6 @@
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { HeaderHeightContext } from "expo-router/react-navigation";
+import { useContext, useEffect, useRef, useState } from "react";
 import {
   PixelRatio,
   Pressable,
@@ -61,6 +62,11 @@ export default function AcuityScreen() {
   const maxPoints = Math.min(width - 40, height * 0.5);
   const [session, setSession] = useState<Session | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  // Below the stack header the header already clears the status bar (#163).
+  const hasHeader = (useContext(HeaderHeightContext) ?? 0) > 0;
+  const edges = hasHeader ? (["bottom"] as const) : (["top", "bottom"] as const);
+  // The practice letter fills what the controls leave; until measured, a third of the screen.
+  const [practiceArea, setPracticeArea] = useState({ width: width - 40, height: height * 0.3 });
   // Practice answers get spoken feedback ("Зөв!" / "Дахин оролдоорой"). The test itself only
   // says "Дараагийнх!" for every letter, so it never tells the child which answers were right.
   const { say } = useVoice();
@@ -128,7 +134,7 @@ export default function AcuityScreen() {
     }
     setSession(next);
   };
-  const input = (manual: React.ReactNode) =>
+  const input = (manual: React.ReactNode, actions?: React.ReactNode) =>
     session && (
       <AcuityGestureInput
         round={`${session.stage}:${session.eye}:${session.direction}:${session.practiceCorrect}:${session.test.level}:${session.test.shown}`}
@@ -139,6 +145,7 @@ export default function AcuityScreen() {
           else setSession((current) => (current ? respond(current, shown, Math.random) : current));
         }}
         manual={manual}
+        actions={actions}
       />
     );
 
@@ -174,22 +181,30 @@ export default function AcuityScreen() {
   }
 
   if (session.stage === "practice") {
-    // The largest letter that fits; practice is about answering, not the size.
-    const size = Math.min(width - 40, height * 0.3, optotypeSize(LEVELS[0], pointsPerMm));
+    // Practice is about answering, not the size: the letter fits whatever the controls leave.
+    const size = Math.min(
+      optotypeSize(LEVELS[0], pointsPerMm),
+      practiceArea.width,
+      practiceArea.height,
+    );
 
     return (
-      <SafeAreaView edges={["top", "bottom"]} style={styles.test}>
+      <SafeAreaView edges={edges} style={styles.test}>
         <View style={styles.top}>
           <Text style={styles.topText}>{copy.practice.title}</Text>
         </View>
         <Text>{copy.practice.intro}</Text>
-        <View style={[styles.letter, { height: size }]}>
+        <View
+          testID="practice-letter"
+          style={styles.practiceLetter}
+          onLayout={(event) => setPracticeArea(event.nativeEvent.layout)}
+        >
           <Optotype size={size} direction={session.direction} crowded={false} />
         </View>
         <Text accessibilityLiveRegion="polite" style={styles.feedback}>
           {feedback ?? " "}
         </Text>
-        <ScrollView style={styles.controls} contentContainerStyle={styles.controlsContent}>
+        <ScrollView style={styles.fitControls} contentContainerStyle={styles.controlsContent}>
           {input(<ArrowPad onAnswer={practiceAnswer} />)}
           <Button
             label={copy.practice.skip}
@@ -277,23 +292,32 @@ export default function AcuityScreen() {
     );
   }
 
-  const letter = optotypeSize(session.levels[session.test.level]!, pointsPerMm);
-  const crowded = (letter * CROWDED_UNITS) / 5 <= maxPoints;
+  // Each level's letter, with crowding bars when they fit the square. The letter's space is as
+  // tall as the session's largest one, so it never moves or overlaps the controls between levels.
+  const optotype = (logMar: number) => {
+    const size = optotypeSize(logMar, pointsPerMm);
+    const crowded = (size * CROWDED_UNITS) / 5 <= maxPoints;
+    return { size, crowded, box: crowded ? (size * CROWDED_UNITS) / 5 : size };
+  };
+  const { size: letter, crowded } = optotype(session.levels[session.test.level]!);
+  const letterBox = Math.max(...session.levels.map((level) => optotype(level).box));
   const answer = (shown: Direction | null) => setSession(respond(session, shown, Math.random));
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={styles.test}>
+    <SafeAreaView edges={edges} style={styles.test}>
       <View style={styles.top}>
         <Text style={styles.topText}>{copy.eyeLabel(session.eye)}</Text>
         <Text style={styles.topText}>
           {copy.progress(session.test.level + 1, session.levels.length)}
         </Text>
       </View>
-      <View style={[styles.letter, { height: maxPoints }]}>
+      <View style={[styles.letter, { height: letterBox }]}>
         <Optotype size={letter} direction={session.direction} crowded={crowded} />
       </View>
       <ScrollView style={styles.controls} contentContainerStyle={styles.controlsContent}>
-        {input(<ArrowPad onAnswer={answer} />)}
-        <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />
+        {input(
+          <ArrowPad onAnswer={answer} />,
+          <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />,
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -374,9 +398,12 @@ const styles = StyleSheet.create({
   },
   top: { flexDirection: "row", justifyContent: "space-between", paddingTop: theme.spacing.sm },
   topText: { fontFamily: fonts.extraBold, fontWeight: "800", color: theme.colors.muted },
-  // A fixed square for the letter; the controls below scroll if they need more room.
+  // A fixed space for the test letter; the controls below scroll if they need more room.
   letter: { alignItems: "center", justifyContent: "center" },
   controls: { flex: 1 },
+  // Practice: the letter takes what is left and the controls keep their height when they fit.
+  practiceLetter: { flex: 1, alignItems: "center", justifyContent: "center" },
+  fitControls: { flexGrow: 0, flexShrink: 1 },
   controlsContent: { gap: theme.spacing.md, paddingBottom: theme.spacing.md },
   pad: { alignSelf: "center", width: 3 * KEY + 2 * GAP, height: 3 * KEY + 2 * GAP },
   arrow: {

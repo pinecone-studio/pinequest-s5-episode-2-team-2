@@ -53,6 +53,7 @@ function Harness() {
       cover={false}
       onAnswer={mockAnswer}
       manual={"touch controls"}
+      actions={"can't see"}
     />
   );
 }
@@ -88,6 +89,7 @@ afterEach(async () => {
 const text = () => JSON.stringify(renderer.toJSON());
 test("the camera answers from the start, with no touch controls or toggle", async () => {
   expect(cameras()).toHaveLength(1);
+  expect(text()).toContain("can't see");
   expect(text()).not.toContain("touch controls");
   expect(text()).not.toContain(copy.gesture.unavailable);
   expect(renderer.root.findAll((n) => n.type === ("Button" as never))).toHaveLength(0);
@@ -105,6 +107,9 @@ test("without permission it asks once; denial leaves touch controls and a retry"
   expect(cameras()).toHaveLength(0);
   expect(text()).toContain("touch controls");
   expect(text()).toContain(copy.gesture.unavailable);
+  // Answers come right after the arrows; the camera note and retry follow.
+  expect(text().indexOf("touch controls")).toBeLessThan(text().indexOf("can't see"));
+  expect(text().indexOf("can't see")).toBeLessThan(text().indexOf(copy.gesture.unavailable));
   await press(copy.gesture.retry);
   expect(mockRequest).toHaveBeenCalledTimes(2);
 });
