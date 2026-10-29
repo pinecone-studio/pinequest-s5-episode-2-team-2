@@ -1,1 +1,1 @@
-export { default } from "../src/features/acuity/AcuityScreen";
+export { default } from "../src/features/distance/AcuityEntry";
