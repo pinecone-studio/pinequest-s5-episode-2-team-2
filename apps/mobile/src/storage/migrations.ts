@@ -128,6 +128,20 @@ export const migrations: readonly Migration[] = [
         CREATE INDEX acuity_results_by_child ON acuity_results (child_id, created_at DESC, id DESC);
       `),
   },
+  {
+    // Eye-rest games: one star per child, local day and game, so a game counts once a day.
+    version: 8,
+    up: (db) =>
+      db.execAsync(`
+        CREATE TABLE play_stars (
+          child_id TEXT NOT NULL REFERENCES children (id) ON DELETE CASCADE,
+          day TEXT NOT NULL CHECK (day GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+          game TEXT NOT NULL CHECK (length(trim(game)) > 0),
+          earned_at TEXT NOT NULL,
+          PRIMARY KEY (child_id, day, game)
+        );
+      `),
+  },
 ];
 
 type MigrationDatabase = {

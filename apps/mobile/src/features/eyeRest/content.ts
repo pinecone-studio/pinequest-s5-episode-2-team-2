@@ -12,56 +12,84 @@ export type Exercise = {
   /** How many times the steps run back to back. */
   rounds: number;
   source: Source;
+  /** #eye-rest-games: the card's picture tile and its small label. */
+  icon: "leaf" | "partly-sunny" | "flower";
+  tint: { background: string; foreground: string };
+  tag: string;
 };
 
 const EYEWIKI_CVS: Source = {
   label: "EyeWiki (AAO): Computer Vision Syndrome",
   url: "https://eyewiki.org/Computer_Vision_Syndrome",
 };
-const AAO_SCREENS: Source = {
-  label: "AAO: Screen Use for Kids",
-  url: "https://www.aao.org/eye-health/tips-prevention/screen-use-kids",
-};
 
 export const exercises: Exercise[] = [
   {
+    key: "outside",
+    title: "Эрдэнэсийн ан",
+    summary: "Том хүнтэйгээ гадаа гараад хол байгаа 3 зүйл олоорой.",
+    steps: [
+      { text: "Том хүнтэйгээ хамт гадаа гараарай.", seconds: 30 },
+      { text: "Хамгийн хол байгаа модыг олоорой.", seconds: 90 },
+      { text: "Тэнгэрээс үүл хайгаарай.", seconds: 90 },
+      { text: "Хол явж байгаа машин эсвэл шувуу олоорой.", seconds: 90 },
+    ],
+    rounds: 1,
+    source: {
+      label: "AAO: Prescription for Keeping Children Out of Glasses",
+      url: "https://www.aao.org/eye-health/news/prevent-childhood-myopia-sunshine-outdoors",
+    },
+    icon: "leaf",
+    tint: { background: "#DDF5E6", foreground: "#1F7A45" },
+    tag: "ГАДАА · 5 МИН",
+  },
+  {
     key: "20-20-20",
-    title: "20-20-20 дүрэм",
-    summary: "Дэлгэц 20 минут харсны дараа 6 метр орчим зайтай зүйл рүү 20 секунд харна.",
-    steps: [{ text: "Дэлгэцээ тавиад цонхоор эсвэл холын зүйл рүү хар.", seconds: 20 }],
+    title: "Нүдхэнтэй амаръя",
+    summary: "Дэлгэцээс харцаа салгаж холыг 20 секунд хараарай.",
+    steps: [{ text: "Дэлгэцээ тавиад цонхоор хол хараарай. Дуу гарахаар буцаад ир!", seconds: 20 }],
     rounds: 1,
     source: EYEWIKI_CVS,
+    icon: "partly-sunny",
+    tint: { background: "#DCEBFF", foreground: "#2559C4" },
+    tag: "АМРАЛТ · 20 СЕК",
   },
   {
     key: "blink",
-    title: "Удаан ирмэх",
-    summary:
-      "Дэлгэц харж байхад ирмэх нь цөөрдөг. Удаан, бүтэн ирмэх нь нүдийг чийглэг байлгахад тусална.",
+    title: "Эрвээхэйн далавч",
+    summary: "Эрвээхэй далавчаа дэвэх шиг нүдээ удаан ирмээрэй.",
     steps: [
-      { text: "Нүдээ зөөлөн аниад 2 хүртэл тоол.", seconds: 2 },
-      { text: "Нүдээ нээгээд амар.", seconds: 2 },
+      { text: "Нүдээ зөөлөн ань. Далавч хумигдлаа.", seconds: 2 },
+      { text: "Нүдээ нээ. Далавч дэлгэгдлээ.", seconds: 2 },
     ],
     rounds: 5,
     source: EYEWIKI_CVS,
-  },
-  {
-    key: "outside",
-    title: "Гадаа завсарлах",
-    summary: "Дэлгэцээс завсарлаж гадаа гарах нь хүүхдийн нүдэнд ээлтэй дадал.",
-    steps: [{ text: "Хүүхэдтэйгээ гадаа гарч хол байгаа зүйлсийг хамт ажигла.", seconds: 120 }],
-    rounds: 1,
-    source: AAO_SCREENS,
+    icon: "flower",
+    tint: { background: "#FFE4EC", foreground: "#B0335F" },
+    tag: "АМРАЛТ · 20 СЕК",
   },
 ];
 
 export const eyeRestCopy = {
   title: "Нүд амраах дасгал",
+  screenTitle: "Тоглоом",
+  stars: (count: number) => `${count} од`,
+  starEarned: "+1 од авлаа!",
+  dailyTitle: "Өнөөдрийн адал явдал",
+  dailyBody: "3 даалгаврыг биелүүлээд од цуглуулаарай",
+  dailyNoChild: "Од хадгалахын тулд хүүхдийн профайл нэмээрэй",
+  dailyProgress: (done: number, goal: number) => `Өнөөдөр ${done}/${goal} од`,
+  doneToday: "Өнөөдөр хийсэн",
+  heroTitle: "Нүдхэнтэй тоглоё!",
+  heroSubtitle: "Бяцхан даалгавар, том инээмсэглэл",
+  section: "Адал явдлууд",
   sourcePrefix: "Эх сурвалж:",
   start: "Эхлэх",
   stop: "Зогсоох",
   again: "Дахин хийх",
   done: "Дууслаа. Нүдээ амраасанд баярлалаа!",
   round: (current: number, total: number) => `Давталт ${current}/${total}`,
+  step: (current: number, total: number) => `Алхам ${current}/${total}`,
   secondsLeft: (seconds: number) => `${seconds} сек`,
   secondsUnit: "сек",
   progress: "Дасгалын явц",
