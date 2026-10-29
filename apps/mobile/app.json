@@ -60,7 +60,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Хараа шалгах үед Е үсгийн чиглэлийг дуугаар хэлэхэд микрофон ашиглана. Бичлэг утсанд л боловсруулагдаж, хадгалагдахгүй.",
+          "microphonePermission": false,
           "recordAudioAndroid": false,
           "enableBackgroundPlayback": false
         }
