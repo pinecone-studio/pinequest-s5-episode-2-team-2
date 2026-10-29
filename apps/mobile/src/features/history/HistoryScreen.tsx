@@ -66,7 +66,8 @@ export default function HistoryScreen() {
           <EmptyState
             icon="time-outline"
             message={copy.empty}
-            action={{ label: copy.startScan, onPress: () => router.push("/scan") }}
+            // History is pushed over the tabs (#263): go back to them, a push would stack a second tab bar.
+            action={{ label: copy.startScan, onPress: () => router.dismissTo("/scan") }}
           />
         )
       ) : (

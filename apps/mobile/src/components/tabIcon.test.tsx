@@ -5,14 +5,14 @@ import { tabIcon, type TabIconName } from "./tabIcon";
 
 jest.mock("@expo/vector-icons/Ionicons", () => {
   const glyphMap: Record<string, number> = {};
-  for (const n of ["home", "eye", "time", "person"]) glyphMap[n] = glyphMap[`${n}-outline`] = 1;
+  for (const n of ["home", "eye", "fitness", "person"]) glyphMap[n] = glyphMap[`${n}-outline`] = 1;
   return Object.assign(() => null, { glyphMap });
 });
 
 let renderer: ReactTestRenderer;
 afterEach(() => act(() => renderer?.unmount()));
 
-test.each<TabIconName>(["home", "eye", "time", "person"])(
+test.each<TabIconName>(["home", "eye", "fitness", "person"])(
   "%s is filled when focused, outline otherwise, and exists in Ionicons",
   (name) => {
     const Icon = tabIcon(name);

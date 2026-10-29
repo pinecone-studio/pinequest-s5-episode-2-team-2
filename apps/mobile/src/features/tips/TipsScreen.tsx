@@ -37,7 +37,8 @@ export default function TipsScreen() {
       <Button
         label={eyeRestCopy.openFromTips}
         variant="secondary"
-        onPress={() => router.push("/eye-rest")}
+        // Eye rest is a tab (#263): go back to the tabs, a push would stack a second tab bar.
+        onPress={() => router.dismissTo("/eye-rest")}
       />
       <Text variant="caption" style={styles.notice}>
         {copy.notice}

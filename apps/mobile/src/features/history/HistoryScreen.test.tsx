@@ -11,12 +11,16 @@ import { outcomeCopy } from "../scan/resultCopy";
 let mockChildId: string | null | undefined;
 const mockList = jest.fn<Promise<ScanResult[]>, [unknown, string | null]>();
 const mockPush = jest.fn();
+const mockDismissTo = jest.fn();
 const mockDb = {};
 jest.mock("expo-sqlite", () => ({ useSQLiteContext: () => mockDb }));
 jest.mock("expo-router", () => {
   const { useEffect } = jest.requireActual<typeof React>("react");
   return {
-    router: { push: (...args: unknown[]) => mockPush(...args) },
+    router: {
+      push: (...args: unknown[]) => mockPush(...args),
+      dismissTo: (...args: unknown[]) => mockDismissTo(...args),
+    },
     useFocusEffect: (effect: () => void) => useEffect(effect, [effect]),
   };
 });
@@ -111,7 +115,7 @@ test("shows the empty state", async () => {
   expect(text()).toContain(copy.empty);
   const empty = renderer.root.findByType("EmptyState" as never);
   await act(async () => empty.props.action.onPress());
-  expect(mockPush).toHaveBeenCalledWith("/scan");
+  expect(mockDismissTo).toHaveBeenCalledWith("/scan");
 });
 
 test("lists sessions by day and opens one", async () => {

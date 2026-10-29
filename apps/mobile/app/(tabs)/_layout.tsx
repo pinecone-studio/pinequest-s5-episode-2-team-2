@@ -21,8 +21,8 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: "Нүүр", tabBarIcon: tabIcon("home") }} />
-      <Tabs.Screen name="scan" options={{ title: "Шалгах", tabBarIcon: tabIcon("eye") }} />
-      <Tabs.Screen name="history" options={{ title: "Түүх", tabBarIcon: tabIcon("time") }} />
+      <Tabs.Screen name="(check)" options={{ title: "Шалгах", tabBarIcon: tabIcon("eye") }} />
+      <Tabs.Screen name="eye-rest" options={{ title: "Дасгал", tabBarIcon: tabIcon("fitness") }} />
       <Tabs.Screen name="profile" options={{ title: "Профайл", tabBarIcon: tabIcon("person") }} />
     </Tabs>
   );

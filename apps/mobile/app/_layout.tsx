@@ -4,19 +4,9 @@ import type { ErrorBoundaryProps } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { stackHeader } from "../src/components/stackHeader";
 import { Button, Screen, Text } from "../src/components/ui";
 import { migrateDatabase } from "../src/storage/migrations";
-import { fonts, theme } from "../src/theme";
-
-// Pushed screens get a back button (#163). Each screen shows its own title, so the bar has none.
-const stackHeader = {
-  title: "",
-  headerBackTitle: "Буцах",
-  headerBackTitleStyle: { fontFamily: fonts.bold },
-  headerTintColor: theme.colors.primary,
-  headerStyle: { backgroundColor: theme.colors.background },
-  headerShadowVisible: false,
-};
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   return (
