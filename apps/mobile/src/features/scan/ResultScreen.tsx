@@ -6,6 +6,7 @@ import { mascotCopy } from "../../components/mascotCopy";
 import { Button, Card, Notice, Text, Verdict } from "../../components/ui";
 import { fonts, theme } from "../../theme";
 import { EyeDiagramView } from "../eyeView/EyeDiagramView";
+import { EyePhotoView } from "../eyeView/EyePhotoView";
 import { tipsCopy } from "../tips/content";
 import { SaveResultButton } from "./SaveResultButton";
 import { useScanResult } from "./ScanResultContext";
@@ -13,7 +14,7 @@ import { outcomeCopy, reasonCopy, resultCopy as copy } from "./resultCopy";
 import { isUnvalidatedPolicy } from "./scanPolicy";
 
 export default function ResultScreen() {
-  const { result, setResult, eyes } = useScanResult();
+  const { result, setResult, eyes, photos } = useScanResult();
   const outcome = result ? outcomeCopy[result.outcome] : null;
   const retry = () => {
     setResult(null);
@@ -51,7 +52,9 @@ export default function ResultScreen() {
                 <Text style={styles.thanksText}>{mascotCopy.thanks}</Text>
               </View>
             )}
-            {eyes ? (
+            {eyes && photos ? (
+              <EyePhotoView eyes={eyes} photos={photos} />
+            ) : eyes ? (
               <EyeDiagramView eyes={eyes} />
             ) : (
               <>

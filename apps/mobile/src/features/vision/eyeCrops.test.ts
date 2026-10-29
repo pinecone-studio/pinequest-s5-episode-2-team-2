@@ -91,6 +91,8 @@ test("both eye tensors come from full 4K RGB and predictions map back to frame p
     expect(eye.cropStats?.exposure).toBeCloseTo(128 / 255, 6);
     expect(eye.cropStats?.sharpness).toBe(0);
     expect(eye.cropStats?.clipped).toBe(0);
+    // The result screen gets the same crop as bytes.
+    expect(eye.photo).toEqual(new Uint8Array(128 * 128 * 3).fill(128));
   }
   runSync.mockReturnValueOnce([new Float32Array([0.5, 0.5, 0.2, -8, -8, 0.1]).buffer]);
   expect(inferEyes(source, landmarks(), { runSync })![0].reflex).toBeNull();
@@ -137,5 +139,10 @@ test("without a model the heuristic finds the iris and reflex in frame pixels (#
     expect(eye.reflexVisibleProbability).toBe(1);
     expect(eye.cropStats).toBeDefined();
   });
+  // The photo is the measured crop: background at the corner, the dark iris at the centre.
+  const photo = eyes[0].photo!;
+  expect(photo).toHaveLength(128 * 128 * 3);
+  expect([...photo.subarray(0, 3)]).toEqual([190, 190, 190]);
+  expect([...photo.subarray((64 * 128 + 64) * 3, (64 * 128 + 64) * 3 + 3)]).toEqual([60, 60, 60]);
   expect(heuristicEyes(source, [])).toBeNull();
 });

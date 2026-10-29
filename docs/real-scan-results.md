@@ -16,6 +16,9 @@ false`. Scan and Result display an explicit unvalidated-demo notice. The local k
 weights have no release version yet, so model metadata says `keypoints-local-unversioned`;
 scans measured with the web demo's heuristic (no model installed, #274) say `heuristic-web-demo`.
 No images, landmarks, model files or representative eyes are persisted with the session.
+Like the web demo, the result screen shows the representative frame's two 128 × 128 eye crops
+with the iris and reflex drawn on (`EyePhotoView`). They are held in memory during the scan,
+dropped with the result and never written to storage; History shows the drawn diagram.
 
 When no child profile exists, History lists sessions saved with `childId: null` and opens
 their saved details. These unassigned sessions do not appear in a progress chart, since
