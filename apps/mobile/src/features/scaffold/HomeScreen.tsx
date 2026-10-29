@@ -2,25 +2,31 @@ import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Mascot } from "../../components/Mascot";
 import { Button, Text } from "../../components/ui";
 import { fonts, theme } from "../../theme";
-import { LatestScanCard } from "../history/LatestScanCard";
-import { tipsCopy } from "../tips/content";
+import type { AdviceId } from "../tips/advice";
+import { adviceCopy } from "../tips/adviceCopy";
+import { AdviceCarousel } from "../tips/AdviceCarousel";
+import { DailyAdviceCard } from "../tips/DailyAdviceCard";
+import { useDailyAdvice } from "../tips/useDailyAdvice";
+import { Mascot } from "../../components/Mascot";
 
 // The web demo's start-screen copy (demo/web-poc, apps/web-demo/src/strings.ts), a team draft.
-// Approved by the team lead; the Home title uses the team name Нүдхэн (TODO(copy): confirm with lead).
+// Home title and mascot follow the team's merged #281 branding.
 const copy = {
   badge: "Туршилтын хувилбар",
   title: "Нүдхэн",
   tagline: "Хүүхэд, том хүний нүдний гэрлийн тусгалыг 3 секундэд шалгана",
   start: "Шалгаж эхлэх",
-  vision: "Хараа шалгах",
   footnote: "Зураг утаснаас гарахгүй · Онош биш",
 } as const;
 
-/** Start screen in the web demo's style (#152): gradient, title, illustration, actions. */
+/** Keep the brand header; local advice is the focus of Home after #263. */
 export default function HomeScreen() {
+  const dailyAdvice = useDailyAdvice();
+  function openAdvice(id: AdviceId) {
+    router.push({ pathname: "/tips", params: { topic: id } });
+  }
   return (
     <LinearGradient
       // Darker top than the web demo so the white text reaches WCAG contrast (#238).
@@ -38,25 +44,19 @@ export default function HomeScreen() {
             <Text style={styles.tagline}>{copy.tagline}</Text>
           </View>
           <View style={styles.hero}>
-            <Mascot variant="wave" size={240} motion="float" />
+            <Mascot variant="wave" size={192} motion="float" />
           </View>
           <View style={styles.actions}>
             <Button label={`${copy.start}  ›`} onPress={() => router.navigate("/tests")} />
-            <Button
-              label={copy.vision}
-              variant="secondary"
-              onPress={() => router.navigate("/acuity")}
-            />
-            <Button
-              label={tipsCopy.openTips}
-              variant="secondary"
-              onPress={() => router.navigate("/tips")}
-            />
             <Text variant="caption" style={styles.footnote}>
               {copy.footnote}
             </Text>
           </View>
-          <LatestScanCard />
+          <DailyAdviceCard advice={dailyAdvice} onOpen={openAdvice} />
+          <Text accessibilityRole="header" style={styles.sectionTitle}>
+            {adviceCopy.topics}
+          </Text>
+          <AdviceCarousel onOpen={openAdvice} />
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
@@ -99,7 +99,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     maxWidth: 300,
   },
-  hero: { flex: 1, minHeight: 240, alignItems: "center", justifyContent: "center" },
+  hero: { alignItems: "center", justifyContent: "center", paddingVertical: 4 },
+  sectionTitle: { fontWeight: "800", fontSize: 22, lineHeight: 30 },
   actions: { gap: 10 },
   footnote: { color: "#3E5A86", textAlign: "center" },
 });

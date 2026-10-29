@@ -20,7 +20,7 @@ export function AdvicePicture({ source }: { source: ImageSourcePropType }) {
             source={source}
             resizeMode="contain"
             accessible={false}
-            style={StyleSheet.absoluteFill}
+            style={styles.image}
             onLoad={() => setState("ready")}
             onError={() => setState("failed")}
           />
@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#F3F7FF",
   },
+  image: { width: "100%", height: "100%" },
   loading: {
     position: "absolute",
     top: 0,
