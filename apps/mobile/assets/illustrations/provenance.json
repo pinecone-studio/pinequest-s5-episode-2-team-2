@@ -1,0 +1,42 @@
+{
+  "owner": "megnamigi",
+  "permission": "Owner-authorized project use, 2026-10-29; see README.md",
+  "files": [
+    {
+      "id": "early-checks",
+      "source": "Friendly Eye Care Vision Test.png",
+      "originalSha256": "54ccd08cccda230dadc0d2ac4fd5cde8b3c345abe0943eba10a54231e90f464c",
+      "outputSha256": "5127eee67a2c7dd96741d9c1f19986bb9baab2d8fde86f366d72e6e2fea83082",
+      "bytes": 139376,
+      "width": 450,
+      "height": 800
+    },
+    {
+      "id": "screen-time",
+      "source": "Digital Eye Strain Awareness.png",
+      "originalSha256": "e69c75797915625e8438b09234eb85e8dc8ad220473b7131f12d3639dd6794b0",
+      "outputSha256": "e844b1cd1108e00057332d5317b9921a8138656c4ca1f15bd80bbf89d11954cf",
+      "bytes": 117834,
+      "width": 400,
+      "height": 711
+    },
+    {
+      "id": "outdoor-time",
+      "source": "nudkhen16.png",
+      "originalSha256": "3d4148224055a1c7ebbb8301608d2da240c4db71fa09cc1ca8b366a14d48418a",
+      "outputSha256": "a008c8c80a24d0fd37644bc351b1565fa79c0150f45d368820b2ea71fe0043ce",
+      "bytes": 132728,
+      "width": 450,
+      "height": 800
+    },
+    {
+      "id": "doctor-signs",
+      "source": "Vision Care Examination Illustration.png",
+      "originalSha256": "911cd0b35822a1e1c4712bc740f3fc2712ae6f61139e32d71942c7ae61e1bdd8",
+      "outputSha256": "54a219f1070e34c6b7e862fe9ae2b2fc38d710e337d2c3be0fd45a25dbd49eb6",
+      "bytes": 133467,
+      "width": 400,
+      "height": 711
+    }
+  ]
+}
