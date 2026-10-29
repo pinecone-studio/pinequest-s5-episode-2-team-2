@@ -16,6 +16,15 @@ import { emptyRecording, finishScan, recordFrame } from "./recorder";
 import type { ScanMeta, ScanRecording } from "./recorder";
 import { SCAN_POLICY, SCAN_POLICY_VERSION } from "./scanPolicy";
 import { resultCopy } from "./resultCopy";
+import { useVoice } from "../voice/useVoice";
+import type { VoiceKey } from "../voice/clips";
+
+// Spoken cues for the child as the scan moves on; the result itself is never read aloud.
+const STATUS_VOICE: Partial<Record<string, VoiceKey>> = {
+  aligning: "scan-intro",
+  scanning: "scan-hold",
+  processing: "scan-done",
+};
 
 export default function ScanScreen() {
   const [state, dispatch] = useReducer(scanReducer, initialScanState);
@@ -36,6 +45,15 @@ export default function ScanScreen() {
     endsAtMs: number;
   } | null>(null);
   const active = focused && appState === "active";
+  const { say, stop } = useVoice();
+  const spokenStatus = useRef(state.status);
+  useEffect(() => {
+    if (spokenStatus.current === state.status) return;
+    spokenStatus.current = state.status;
+    const key = active ? STATUS_VOICE[state.status] : undefined;
+    if (key) say(key);
+    else if (state.status === "idle" || state.status === "failed") stop();
+  }, [state.status, active, say, stop]);
   const showCamera =
     active && hasPermission && !!device && ["idle", "aligning", "scanning"].includes(state.status);
 
@@ -189,6 +207,7 @@ export default function ScanScreen() {
               onFrame={record}
               torchOn={torchEnabled(state, active, device.hasTorch)}
               onReady={() => setReady(true)}
+              speakGuidance={state.status === "aligning"}
               onFailure={() => {
                 setReady(false);
                 dispatch({ type: "FAIL" });

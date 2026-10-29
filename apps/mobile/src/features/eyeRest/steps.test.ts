@@ -11,6 +11,9 @@ const blink: Exercise = {
   ],
   rounds: 2,
   source: { label: "x", url: "https://example.com" },
+  icon: "flower",
+  tint: { background: "#fff", foreground: "#000" },
+  tag: "",
 };
 
 test("total counts every round", () => {

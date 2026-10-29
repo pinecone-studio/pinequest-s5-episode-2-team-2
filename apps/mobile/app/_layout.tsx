@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { setAudioModeAsync } from "expo-audio";
+import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import type { ErrorBoundaryProps } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
@@ -22,6 +23,10 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 
 export default function RootLayout() {
   const [databaseError, setDatabaseError] = useState<Error | null>(null);
+  // Voice prompts guide the child, so they play even when the phone's silent switch is on.
+  useEffect(() => {
+    void setAudioModeAsync({ playsInSilentMode: true }).catch(() => undefined);
+  }, []);
   if (databaseError) throw databaseError;
   return (
     <SafeAreaProvider>
