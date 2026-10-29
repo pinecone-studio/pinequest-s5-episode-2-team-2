@@ -1,13 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, Easing, StyleSheet, View, useWindowDimensions } from "react-native";
 import { mascotCopy } from "./mascotCopy";
+import { useReduceMotion } from "./useReduceMotion";
 import { mascotSources, type MascotVariant } from "./mascots";
 
 export type MascotMotion = "none" | "float" | "pop";
@@ -28,23 +22,7 @@ type Props = {
   halo?: string;
 };
 
-/** Follows the system Reduce Motion setting. */
-export function useReduceMotion() {
-  const [reduce, setReduce] = useState(true);
-  useEffect(() => {
-    let active = true;
-    AccessibilityInfo.isReduceMotionEnabled().then(
-      (value) => active && setReduce(value),
-      () => active && setReduce(false),
-    );
-    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduce);
-    return () => {
-      active = false;
-      subscription.remove();
-    };
-  }, []);
-  return reduce;
-}
+export { useReduceMotion };
 
 export function Mascot({
   variant,

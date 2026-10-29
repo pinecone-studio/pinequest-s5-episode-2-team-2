@@ -1,1 +1,1 @@
-export { default } from "../../src/features/eyeRest/EyeRestScreen";
+export { default } from "../../src/features/world/WorldScreen";
