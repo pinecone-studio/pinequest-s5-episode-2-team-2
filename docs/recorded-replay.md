@@ -29,6 +29,6 @@ the screen suppress pending results and clear replay timers. No input is uploade
 An already-running native inference may finish after cancel; its result is ignored.
 
 The released eye model is optional for face-only debugging; see [eye-crops.md](eye-crops.md).
-Missing weights remain `MODEL_UNAVAILABLE`. Quality integration, trained weights, approved
+Without weights the eyes are measured with the web demo's heuristic (#274). Quality integration, trained weights, approved
 real recordings and physical iPhone replay checks are still pending. This developer screen
 shows processing metadata and guidance, never a clinical assessment.

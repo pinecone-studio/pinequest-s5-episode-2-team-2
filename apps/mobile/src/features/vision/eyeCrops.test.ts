@@ -1,4 +1,4 @@
-import { eyeRegions, inferEyes } from "./eyeCrops";
+import { eyeRegions, heuristicEyes, inferEyes } from "./eyeCrops";
 import { cropPixels } from "./pixels";
 import type { PixelSource } from "./pixels";
 
@@ -96,4 +96,46 @@ test("both eye tensors come from full 4K RGB and predictions map back to frame p
   expect(inferEyes(source, landmarks(), { runSync })![0].reflex).toBeNull();
   runSync.mockReturnValueOnce([new Float32Array([NaN, 0.5, 0.2, 0.6, 0.5, 0.9]).buffer]);
   expect(() => inferEyes(source, landmarks(), { runSync })).toThrow("Invalid eye model output");
+});
+
+test("without a model the heuristic finds the iris and reflex in frame pixels (#274)", () => {
+  const width = 2200,
+    height = 1200;
+  const source: PixelSource = {
+    format: "rgb",
+    width,
+    height,
+    stride: width * 3,
+    rgb: new Uint8Array(width * height * 3).fill(190),
+  };
+  const disc = (cx: number, cy: number, r: number, value: number) => {
+    for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) {
+      for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) {
+        // Pixel x covers x .. x + 1, so its centre is x + 0.5.
+        if ((x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= r * r)
+          source.rgb.fill(value, (y * width + x) * 3, (y * width + x) * 3 + 3);
+      }
+    }
+  };
+  disc(1000, 1000, 40, 60);
+  disc(2000, 1000, 40, 60);
+  disc(1012, 994, 5, 255);
+  disc(2000, 1000, 5, 255);
+  const eyes = heuristicEyes(source, landmarks())!;
+  expect(eyes.map((eye) => eye.side)).toEqual(["imageLeft", "imageRight"]);
+  const expected = [
+    { iris: { x: 1000, y: 1000 }, reflex: { x: 1012, y: 994 } },
+    { iris: { x: 2000, y: 1000 }, reflex: { x: 2000, y: 1000 } },
+  ];
+  // One crop pixel is 200 / 128 frame pixels.
+  eyes.forEach((eye, i) => {
+    expect(Math.abs(eye.irisCenter.x - expected[i]!.iris.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(eye.irisCenter.y - expected[i]!.iris.y)).toBeLessThanOrEqual(2);
+    expect(Math.abs(eye.irisRadius - 40)).toBeLessThanOrEqual(2);
+    expect(Math.abs(eye.reflex!.x - expected[i]!.reflex.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(eye.reflex!.y - expected[i]!.reflex.y)).toBeLessThanOrEqual(2);
+    expect(eye.reflexVisibleProbability).toBe(1);
+    expect(eye.cropStats).toBeDefined();
+  });
+  expect(heuristicEyes(source, [])).toBeNull();
 });

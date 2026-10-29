@@ -1,5 +1,6 @@
 import { cropStats, lumaFromRgb } from "@app/core";
 import type { CropStats, EyeSide, Point } from "@app/core";
+import { measureEye } from "./heuristic";
 import { cropPixels } from "./pixels";
 import type { PixelCrop, PixelSource } from "./pixels";
 import type { InferenceModel } from "./facePipeline";
@@ -97,6 +98,43 @@ export function inferEyes(
       reflex:
         visible >= 0.5 ? { x: region.x + rx * region.size, y: region.y + ry * region.size } : null,
       reflexVisibleProbability: visible,
+    };
+  });
+  return [eyes[0]!, eyes[1]!];
+}
+
+/**
+ * The web demo's heuristic on the same crops the model gets (#274). The crop puts the Face
+ * Landmarker iris at its centre with a radius of a fifth of its width, which seeds the search.
+ */
+export function heuristicEyes(
+  source: PixelSource,
+  landmarks: Point[],
+): [EyePrediction, EyePrediction] | null {
+  "worklet";
+  const regions = eyeRegions(landmarks);
+  if (!regions) return null;
+  const eyes = regions.map((region): EyePrediction => {
+    const luma = lumaFromRgb(cropPixels(source, region));
+    const stats = cropStats({ width: 128, height: 128, luma });
+    if (!stats) throw new Error("Invalid eye crop statistics");
+    const gray = new Float64Array(luma.length);
+    for (let i = 0; i < luma.length; i++) gray[i] = luma[i]! * 255;
+    const eye = measureEye({ width: 128, height: 128, data: gray }, { x: 63.5, y: 63.5 }, 25.6);
+    // Crop pixel i covers frame pixels region.x + (i .. i + 1) * scale.
+    const scale = region.size / 128;
+    const toFrame = (p: Point) => ({
+      x: region.x + (p.x + 0.5) * scale,
+      y: region.y + (p.y + 0.5) * scale,
+    });
+    return {
+      side: region.side,
+      crop: region,
+      cropStats: stats,
+      irisCenter: toFrame(eye.center),
+      irisRadius: eye.radius * scale,
+      reflex: eye.reflex && toFrame(eye.reflex),
+      reflexVisibleProbability: eye.confidence,
     };
   });
   return [eyes[0]!, eyes[1]!];

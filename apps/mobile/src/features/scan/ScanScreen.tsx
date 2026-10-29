@@ -14,6 +14,7 @@ import type { LandmarkFrame } from "../vision/facePipeline";
 import { saveSession } from "../../storage/sessions";
 import { emptyRecording, finishScan, recordFrame } from "./recorder";
 import type { ScanMeta, ScanRecording } from "./recorder";
+import { MEASUREMENT_VERSION } from "../measurement/eyeMeasure";
 import { SCAN_POLICY, SCAN_POLICY_VERSION } from "./scanPolicy";
 import { resultCopy } from "./resultCopy";
 import { useVoice } from "../voice/useVoice";
@@ -92,7 +93,7 @@ export default function ScanScreen() {
         createdAt: new Date().toISOString(),
         childId,
         durationMs: SCAN_DURATION_MS,
-        modelVersion: "keypoints-local-unversioned",
+        modelVersion: MEASUREMENT_VERSION,
         policyVersion: SCAN_POLICY_VERSION,
       },
     };

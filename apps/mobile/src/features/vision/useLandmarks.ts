@@ -25,6 +25,9 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
       ? process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI
       : undefined,
   );
+  // A configured model that has not loaded yet keeps frames unmeasured, so a scan never mixes
+  // the model with the heuristic used when no model is installed (#274).
+  const eyeModelPending = !!process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI && !eyeModel;
   const { resizer, error } = useResizer({
     width: 512,
     height: 512,
@@ -85,7 +88,9 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
               );
               const eyeResult = eyeModelError
                 ? { eyes: null, eyeFailure: "MODEL_ERROR" as const }
-                : analyzeEyes(frame, result.landmarks, eyeModel);
+                : eyeModelPending
+                  ? { eyes: null, eyeFailure: "MODEL_UNAVAILABLE" as const }
+                  : analyzeEyes(frame, result.landmarks, eyeModel);
               const latencyMs = performance.now() - started;
               const interval = Math.max(100, latencyMs * 2);
               timing.setBlocking({ next: timestampMs + interval, interval });
@@ -123,6 +128,7 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
       meshModel,
       runner,
       eyeModelError,
+      eyeModelPending,
       eyeModel,
       timing,
       report,

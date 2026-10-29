@@ -13,7 +13,8 @@ stores the completed scan, but cannot publish a stale result or affect a later s
 
 `demo-unvalidated-v1` uses the shared policy fixture's example thresholds with `validated:
 false`. Scan and Result display an explicit unvalidated-demo notice. The local keypoint
-weights have no release version yet, so model metadata says `keypoints-local-unversioned`.
+weights have no release version yet, so model metadata says `keypoints-local-unversioned`;
+scans measured with the web demo's heuristic (no model installed, #274) say `heuristic-web-demo`.
 No images, landmarks, model files or representative eyes are persisted with the session.
 
 When no child profile exists, History lists sessions saved with `childId: null` and opens

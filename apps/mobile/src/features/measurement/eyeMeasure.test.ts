@@ -2,6 +2,7 @@ import { decide } from "@app/core";
 import type { PolicyConfig } from "@app/core";
 import type { EyePrediction } from "../vision/eyeCrops";
 import { scanFailure, toEyeMeasure, toEyeMeasures } from "./eyeMeasure";
+import type * as EyeMeasureModule from "./eyeMeasure";
 
 function prediction(overrides: Partial<EyePrediction> = {}): EyePrediction {
   return {
@@ -61,4 +62,24 @@ test("an eye not found in one frame is not a scan failure", () => {
   expect(scanFailure("EYE_NOT_FOUND")).toBeNull();
   expect(scanFailure(null)).toBeNull();
   expect(scanFailure(undefined)).toBeNull();
+});
+
+test("scans record whether the model or the heuristic measured them (#274)", () => {
+  const saved = process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI;
+  const version = (uri: string | undefined) => {
+    if (uri) process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI = uri;
+    else delete process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI;
+    let value = "";
+    jest.isolateModules(() => {
+      value = jest.requireActual<typeof EyeMeasureModule>("./eyeMeasure").MEASUREMENT_VERSION;
+    });
+    return value;
+  };
+  try {
+    expect(version(undefined)).toBe("heuristic-web-demo");
+    expect(version("keypoints.tflite")).toBe("keypoints-local-unversioned");
+  } finally {
+    if (saved === undefined) delete process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI;
+    else process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI = saved;
+  }
 });
