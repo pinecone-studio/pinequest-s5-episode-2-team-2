@@ -2,18 +2,23 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { StyleSheet, View } from "react-native";
 import { Text } from "../../components/ui";
 import { theme } from "../../theme";
+import { toEyeMeasures } from "../measurement/eyeMeasure";
 import type { LandmarkFrame } from "../vision/facePipeline";
-import { withWebDemoQuality } from "../vision/frameQuality";
 
 /**
  * The web demo's live checks for the latest frame (demo/web-poc, #274), with its labels: one
- * face, both eyes, a reflex in each. A scan only counts frames where all three pass.
+ * face, both eyes, a reflex in each. A scan counts frames where all three pass and one eye
+ * looks at the light (`withWebDemoQuality`); the guidance asks for that when it is missing.
  */
 export function scanChecks(frame: LandmarkFrame | null): { label: string; ok: boolean }[] {
+  const eyes = frame?.faceCount === 1 ? toEyeMeasures(frame) : null;
   return [
     { label: "Нүүр олдлоо", ok: frame?.faceCount === 1 },
-    { label: "Хоёр нүд олдлоо", ok: !!frame && frame.faceCount === 1 && !!frame.eyes },
-    { label: "Тусгал харагдаж байна", ok: !!frame && withWebDemoQuality(frame).quality!.ok },
+    { label: "Хоёр нүд олдлоо", ok: !!eyes },
+    {
+      label: "Тусгал харагдаж байна",
+      ok: !!eyes && eyes.every((eye) => eye.reflexOffset !== null),
+    },
   ];
 }
 
