@@ -16,15 +16,24 @@ asserted. The earlier stock reference screenshot was not copied into the app.
 | ------------------ | ------------------------------------------ | --------------------- |
 | `early-checks.png` | `Friendly Eye Care Vision Test.png`        | Early checks          |
 | `screen-time.png`  | `Digital Eye Strain Awareness.png`         | Screen use            |
-| `outdoor-time.png` | `nudkhen16.png`                            | Outdoor time          |
+| `outdoor-time.png` | `Nudkhen3.png`                             | Outdoor time          |
 | `doctor-signs.png` | `Vision Care Examination Illustration.png` | Seeking an eye doctor |
+
+## Owner-requested palette edits
+
+On 2026-10-29 the owner requested lavender plants in the early-checks, screen-time
+and doctor-signs scenes and a subtle lavender palette in the outdoor scene.
+These four derivatives were edited with OpenAI imagegen from the owner-provided
+originals. The original files remain unchanged. The permission above covers their
+use in this project; no broader redistribution licence is asserted.
 
 ## Export
 
 The originals remain unchanged in the owner's folders. App copies are PNGs,
 resized proportionally without cropping or stretching and palette-compressed
-with Sharp. Each is under 150,000 bytes and retains its approximately 9:16
-portrait composition. Source/output checksums and dimensions are in
+with Sharp. Each is under 150,000 bytes. Three retain their approximately 9:16
+portrait composition. Outdoor time uses the owner-provided 4:3 landscape variant
+(requested 2026-10-29) so the whole sun and children remain visible with less foreground grass. Original, generated-edit and app-output checksums and dimensions are in
 `provenance.json`. Sharp is an export tool, not a new app dependency.
 
 Decorative images must use `accessible={false}` and be hidden from VoiceOver;

@@ -2,15 +2,22 @@ import { useState } from "react";
 import { Image, StyleSheet, View, type ImageSourcePropType } from "react-native";
 import { EmptyState, Loading } from "../../components/EmptyState";
 import { adviceCopy } from "./adviceCopy";
+import { theme } from "../../theme";
 
 /** Preserve the complete owner-provided portrait; the card text supplies its meaning. */
-export function AdvicePicture({ source }: { source: ImageSourcePropType }) {
+export function AdvicePicture({
+  source,
+  height,
+}: {
+  source: ImageSourcePropType;
+  height?: number;
+}) {
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
   return (
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={styles.frame}
+      style={[styles.frame, height !== undefined && { height, aspectRatio: undefined }]}
     >
       {state === "failed" ? (
         <EmptyState icon="image-outline" message={adviceCopy.imageUnavailable} />
@@ -42,7 +49,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
     justifyContent: "center",
-    backgroundColor: "#F3F7FF",
+    backgroundColor: theme.colors.surface,
   },
   image: { width: "100%", height: "100%" },
   loading: {

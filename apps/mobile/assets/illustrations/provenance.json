@@ -6,37 +6,61 @@
       "id": "early-checks",
       "source": "Friendly Eye Care Vision Test.png",
       "originalSha256": "54ccd08cccda230dadc0d2ac4fd5cde8b3c345abe0943eba10a54231e90f464c",
-      "outputSha256": "5127eee67a2c7dd96741d9c1f19986bb9baab2d8fde86f366d72e6e2fea83082",
-      "bytes": 139376,
-      "width": 450,
-      "height": 800
+      "outputSha256": "4812c49af181595c24bb06ddaab0dbd3a10bb4919ba703d030996dfe1360b059",
+      "bytes": 133166,
+      "width": 430,
+      "height": 764,
+      "edit": {
+        "tool": "OpenAI imagegen",
+        "date": "2026-10-29",
+        "request": "Decorative plants recolored lavender at the owner's request.",
+        "generatedSha256": "4235d51ae40d6d73c3bc588750d014c4bf621345a3fe02db2af6e04a9e8cdf70"
+      }
     },
     {
       "id": "screen-time",
       "source": "Digital Eye Strain Awareness.png",
       "originalSha256": "e69c75797915625e8438b09234eb85e8dc8ad220473b7131f12d3639dd6794b0",
-      "outputSha256": "e844b1cd1108e00057332d5317b9921a8138656c4ca1f15bd80bbf89d11954cf",
-      "bytes": 117834,
+      "outputSha256": "7f89c9630b0e596d946dcc5a765f07c8d7eaf4b74ef3f640ff50a06feb1f8871",
+      "bytes": 132420,
       "width": 400,
-      "height": 711
+      "height": 711,
+      "edit": {
+        "tool": "OpenAI imagegen",
+        "date": "2026-10-29",
+        "request": "Decorative plants recolored lavender at the owner's request.",
+        "generatedSha256": "05f88bf5f31193bdb118772873f313a603a285829fd4277ed2b63c13e81b6b64"
+      }
     },
     {
       "id": "outdoor-time",
-      "source": "nudkhen16.png",
-      "originalSha256": "3d4148224055a1c7ebbb8301608d2da240c4db71fa09cc1ca8b366a14d48418a",
-      "outputSha256": "a008c8c80a24d0fd37644bc351b1565fa79c0150f45d368820b2ea71fe0043ce",
-      "bytes": 132728,
-      "width": 450,
-      "height": 800
+      "source": "Nudkhen3.png",
+      "originalSha256": "1cd7974a29176ac2825f4b7c403145b6e5734a94d4496d0db334097a1743d535",
+      "outputSha256": "d2f88414e613b5e0eaeb26a1c2e1f6fc566ce1e7e56be174420aefe448586446",
+      "bytes": 123922,
+      "width": 640,
+      "height": 480,
+      "edit": {
+        "tool": "OpenAI imagegen",
+        "date": "2026-10-29",
+        "request": "Subtle lavender palette harmonization, preserving the sun and family composition.",
+        "generatedSha256": "c5d131e662395056756375f3a6773da1462f2e6a42fc724af4d19dfb3a569ac0"
+      }
     },
     {
       "id": "doctor-signs",
       "source": "Vision Care Examination Illustration.png",
       "originalSha256": "911cd0b35822a1e1c4712bc740f3fc2712ae6f61139e32d71942c7ae61e1bdd8",
-      "outputSha256": "54a219f1070e34c6b7e862fe9ae2b2fc38d710e337d2c3be0fd45a25dbd49eb6",
-      "bytes": 133467,
-      "width": 400,
-      "height": 711
+      "outputSha256": "34a7672f2a61894574698d94a0ab2da300bfdad0e1e7117b02421bc2598ce223",
+      "bytes": 129765,
+      "width": 380,
+      "height": 675,
+      "edit": {
+        "tool": "OpenAI imagegen",
+        "date": "2026-10-29",
+        "request": "Decorative plants recolored lavender at the owner's request.",
+        "generatedSha256": "c333a3e4d8dd46ab00068f8aa8daa2b175b02e6ab89d3b94804825d1e5d16ac2"
+      }
     }
   ]
 }

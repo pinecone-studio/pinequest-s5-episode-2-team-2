@@ -5,6 +5,7 @@ import { adviceCards } from "../tips/advice";
 
 const mockNavigate = jest.fn();
 const mockPush = jest.fn();
+const mockScrollTo = jest.fn();
 jest.mock("expo-router", () => ({
   router: { navigate: (to: string) => mockNavigate(to), push: (to: unknown) => mockPush(to) },
 }));
@@ -30,7 +31,10 @@ beforeEach(() => {
   mockNavigate.mockReset();
   mockPush.mockReset();
   act(() => {
-    renderer = create(<HomeScreen />);
+    renderer = create(<HomeScreen />, {
+      createNodeMock: (element) =>
+        element.type === ("ScrollView" as never) ? { scrollTo: mockScrollTo } : null,
+    });
   });
 });
 afterEach(() => act(() => renderer.unmount()));
@@ -52,4 +56,11 @@ test("Home keeps the brand and one check action while advice opens the selected 
   expect(JSON.stringify(renderer.toJSON())).toContain("Нүдхэн");
   expect(JSON.stringify(renderer.toJSON())).toContain("Зураг утаснаас гарахгүй · Онош биш");
   expect(nodes("LatestScanCard")).toHaveLength(0);
+});
+
+test("paging aligns the advice section so a preceding daily card does not hang above it", () => {
+  const section = nodes("View").find((node) => node.props.onLayout)!;
+  act(() => section.props.onLayout({ nativeEvent: { layout: { y: 720 } } }));
+  act(() => nodes("AdviceCarousel")[0]!.props.onPageChange());
+  expect(mockScrollTo).toHaveBeenLastCalledWith({ y: 720, animated: false });
 });

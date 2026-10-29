@@ -6,6 +6,7 @@ import { adviceCards } from "./advice";
 
 const mockScrollTo = jest.fn();
 const mockOpen = jest.fn();
+const mockPageChange = jest.fn();
 let mockReduced = false;
 let mockFontScale = 1;
 jest.mock("./useReducedMotion", () => ({ useReducedMotion: () => mockReduced }));
@@ -46,8 +47,9 @@ beforeEach(() => {
   mockFontScale = 1;
   mockScrollTo.mockClear();
   mockOpen.mockClear();
+  mockPageChange.mockClear();
   act(() => {
-    renderer = create(<AdviceCarousel onOpen={mockOpen} />, {
+    renderer = create(<AdviceCarousel onOpen={mockOpen} onPageChange={mockPageChange} />, {
       createNodeMock: (element) =>
         element.type === ("ScrollView" as never) ? { scrollTo: mockScrollTo } : null,
     });
@@ -68,7 +70,11 @@ test("portrait cards open their own topics and dot controls expose the selected 
   act(() => pages()[1]!.props.onPress());
   expect(mockScrollTo).toHaveBeenLastCalledWith({ x: 335, animated: true });
   expect(pages()[1]!.props.accessibilityState.selected).toBe(true);
-  expect(nodes("AnimatedView")[0]!.props.accessibilityElementsHidden).toBe(true);
+  expect(mockPageChange).toHaveBeenCalledTimes(1);
+  expect(
+    nodes("View").find((node) => node.props.importantForAccessibility === "no-hide-descendants")!
+      .props.accessibilityElementsHidden,
+  ).toBe(true);
 });
 
 test("swiping updates the active page and relayout preserves that page", () => {
@@ -78,6 +84,8 @@ test("swiping updates the active page and relayout preserves that page", () => {
     }),
   );
   expect(pages()[2]!.props.accessibilityState.selected).toBe(true);
+  // A swipe must not pull the outer Home scroll back to the advice section.
+  expect(mockPageChange).not.toHaveBeenCalled();
   const layout = nodes("View").find((node) => node.props.onLayout)!;
   act(() => layout.props.onLayout({ nativeEvent: { layout: { width: 280 } } }));
   expect(mockScrollTo).toHaveBeenLastCalledWith({ x: 560, animated: false });
