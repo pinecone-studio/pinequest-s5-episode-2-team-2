@@ -1,5 +1,7 @@
 import hashlib
 import io
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -37,6 +39,18 @@ class ModelBundleTests(unittest.TestCase):
                 subject.extract_models(bundle, sha256, names)
             digest = hashlib.sha256(bundle).hexdigest()
             self.assertEqual(set(subject.extract_models(bundle, digest, names)), set(names))
+
+    def test_full_range_cached_model_is_checked_before_use(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "face_detection_full_range_sparse.tflite"
+            data = b"\x00\x00\x00\x00TFL3"
+            path.write_bytes(data)
+            with patch.object(subject, "DESTINATION", Path(folder)):
+                with self.assertRaisesRegex(ValueError, "checksum"):
+                    subject.prepare_full_range()
+                with patch.object(subject, "FULL_RANGE_SHA256", hashlib.sha256(data).hexdigest()):
+                    subject.prepare_full_range()
+                    self.assertEqual(path.read_bytes(), data)
 
 
 if __name__ == "__main__":

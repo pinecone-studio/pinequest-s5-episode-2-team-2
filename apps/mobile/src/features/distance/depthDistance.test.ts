@@ -104,3 +104,22 @@ test("guidance follows the displayed tenth without presenting a clinical toleran
   expect(distanceGuidance(2.99)).toBe("ready");
   for (const value of [null, NaN, Infinity, 0, -1]) expect(distanceGuidance(value)).toBe("unknown");
 });
+
+test("a bounded central-face ellipse rejects a few bad centre pixels instead of jumping", () => {
+  const width = 25,
+    stride = width * 4,
+    buffer = new ArrayBuffer(stride * width),
+    data = new DataView(buffer);
+  for (let y = 0; y < width; y++)
+    for (let x = 0; x < width; x++) data.setFloat32(y * stride + x * 4, 3, true);
+  for (let y = 11; y <= 13; y++)
+    for (let x = 11; x <= 13; x++) data.setFloat32(y * stride + x * 4, 9, true);
+  expect(sampleMetres(buffer, width, width, stride, 12, 12)).toBe(9);
+  expect(sampleMetres(buffer, width, width, stride, 12, 12, 6, 6)).toBe(3);
+  expect(sampleMetres(buffer, width, width, stride, 0, 0, 6, 6)).toBeNull();
+  expect(sampleMetres(buffer, width, width, stride, 12, 12, 13, 6)).toBeNull();
+  // A mixed surface must not be made stable by averaging foreground and background.
+  for (let y = 0; y < width; y++)
+    for (let x = 0; x < width; x++) data.setFloat32(y * stride + x * 4, x < 12 ? 3 : 9, true);
+  expect(sampleMetres(buffer, width, width, stride, 12, 12, 6, 6)).toBeNull();
+});

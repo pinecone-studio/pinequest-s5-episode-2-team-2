@@ -22,6 +22,7 @@ export function singleFace(
   objects: Pick<ScannedObject, "type" | "boundingBox">[],
   now: number,
 ): FaceTarget | null {
+  "worklet";
   const faces = objects.filter((object) => object.type === "face");
   if (faces.length !== 1 || !Number.isFinite(now)) return null;
   const b = faces[0]!.boundingBox;
@@ -52,10 +53,16 @@ export function sampleMetres(
   stride: number,
   x: number,
   y: number,
+  radiusX = 1,
+  radiusY = 1,
 ): number | null {
   "worklet";
   if (
-    ![width, height, stride].every(Number.isInteger) ||
+    ![width, height, stride, radiusX, radiusY].every(Number.isInteger) ||
+    radiusX < 1 ||
+    radiusY < 1 ||
+    radiusX > 12 ||
+    radiusY > 12 ||
     width <= 0 ||
     height <= 0 ||
     stride < width * 4 ||
@@ -65,17 +72,25 @@ export function sampleMetres(
     return null;
   const cx = Math.round(x),
     cy = Math.round(y);
-  if (cx < 1 || cy < 1 || cx >= width - 1 || cy >= height - 1) return null;
+  if (cx < radiusX || cy < radiusY || cx >= width - radiusX || cy >= height - radiusY) return null;
   const values: number[] = [],
     view = new DataView(buffer);
-  for (let dy = -1; dy <= 1; dy++)
-    for (let dx = -1; dx <= 1; dx++) {
+  const broad = radiusX > 1 || radiusY > 1;
+  let total = 0;
+  for (let dy = -radiusY; dy <= radiusY; dy++)
+    for (let dx = -radiusX; dx <= radiusX; dx++) {
+      if (broad && (dx / radiusX) ** 2 + (dy / radiusY) ** 2 > 1) continue;
+      total++;
       const value = view.getFloat32((cy + dy) * stride + (cx + dx) * 4, true);
       if (Number.isFinite(value) && value > 0) values.push(value);
     }
-  if (values.length < 5) return null;
+  if (values.length < Math.max(5, broad ? Math.ceil(total * 0.6) : 5)) return null;
   values.sort((a, b) => a - b);
-  return values[Math.floor(values.length / 2)]!;
+  const median = values[Math.floor(values.length / 2)]!;
+  // Mixed foreground/background or highly scattered sensor values are not a stable face surface.
+  const spread =
+    values[Math.floor(values.length * 0.75)]! - values[Math.floor(values.length * 0.25)]!;
+  return broad && spread > Math.max(0.15, median * 0.15) ? null : median;
 }
 
 /** Never interpret relative disparity, stale targets or low-quality data as physical metres. */
@@ -125,6 +140,14 @@ export function personMetres(depth: Depth, target: FaceTarget | null, now: numbe
       source.bytesPerRow,
       point.x,
       point.y,
+      Math.max(
+        1,
+        Math.min(12, Math.floor(Math.min(cx - Math.min(a.x, b.x), Math.max(a.x, b.x) - cx) * 0.5)),
+      ),
+      Math.max(
+        1,
+        Math.min(12, Math.floor(Math.min(cy - Math.min(a.y, b.y), Math.max(a.y, b.y) - cy) * 0.5)),
+      ),
     );
     // A positive sub-display-resolution sample must not be rounded into a valid-looking 0.0 m.
     return metres !== null && Math.round(metres * 10) > 0 ? metres : null;
