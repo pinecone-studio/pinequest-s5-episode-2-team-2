@@ -136,8 +136,9 @@ test("practice says Зөв! when right and Дахин оролдоорой when 
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.practice.great);
   act(() => jest.advanceTimersByTime(1500));
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("right"));
-  // Testing the right eye: the voice asks to cover the LEFT eye, matching the text.
-  expect(mockSay).toHaveBeenLastCalledWith("acuity-cover-left");
+  // Testing the right eye: the voice asks to cover the LEFT eye, matching the text, then for
+  // a thumbs-up, since the camera answers by default.
+  expect(mockSay).toHaveBeenLastCalledWith("acuity-cover-left", "acuity-thumb");
   jest.useRealTimers();
 });
 

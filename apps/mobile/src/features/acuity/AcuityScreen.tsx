@@ -51,7 +51,6 @@ export default function AcuityScreen() {
   const pointsPerMm = iPhonePointsPerMm(PixelRatio.get());
   const maxPoints = Math.min(width - 40, height * 0.5);
   const [session, setSession] = useState<Session | null>(null);
-  const [gestureEnabled, setGestureEnabled] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   // Practice answers get spoken feedback ("Зөв!" / "Дахин оролдоорой"). The test itself only
   // says "Дараагийнх!" for every letter, so it never tells the child which answers were right.
@@ -87,13 +86,13 @@ export default function AcuityScreen() {
             ? [
                 // Testing the right eye means covering the left one, and the other way round.
                 session.eye === "right" ? "acuity-cover-left" : "acuity-cover-right",
-                ...(gestureEnabled ? (["acuity-thumb"] as const) : []),
+                "acuity-thumb",
               ]
             : first
               ? []
               : ["acuity-next"];
     say(...keys);
-  }, [cue, session, gestureEnabled, say]);
+  }, [cue, session, say]);
 
   const practiceAnswer = (shown: Direction | null) => {
     if (!session || session.stage !== "practice" || session.practiceCorrect >= PRACTICE_CORRECT)
@@ -125,8 +124,6 @@ export default function AcuityScreen() {
       <AcuityGestureInput
         round={`${session.stage}:${session.eye}:${session.direction}:${session.practiceCorrect}:${session.test.level}:${session.test.shown}`}
         cover={session.stage === "cover"}
-        enabled={gestureEnabled}
-        setEnabled={setGestureEnabled}
         onAnswer={(shown) => {
           if (shown === "ready") setSession((current) => (current ? beginEye(current) : current));
           else if (session.stage === "practice") practiceAnswer(shown);

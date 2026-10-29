@@ -1,4 +1,4 @@
-import { act, useState } from "react";
+import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { AcuityGestureInput } from "./AcuityGestureInput";
 import { acuityCopy as copy } from "./copy";
@@ -7,6 +7,7 @@ const mockAnswer = jest.fn(),
   mockRequest = jest.fn();
 let mockPalm = false;
 let mockPermission = true,
+  mockCanRequest = true,
   mockFocused = true,
   round = "practice-1";
 let mockStateListener: (state: string) => void, mockReport: (frame: GestureFrame) => void;
@@ -29,7 +30,7 @@ jest.mock("react-native-vision-camera", () => ({
   useCameraDevice: () => ({ id: "front" }),
   useCameraPermission: () => ({
     hasPermission: mockPermission,
-    canRequestPermission: true,
+    canRequestPermission: mockCanRequest,
     requestPermission: mockRequest,
   }),
 }));
@@ -46,13 +47,10 @@ jest.mock("./gestures", () => ({
 }));
 let renderer: ReactTestRenderer;
 function Harness() {
-  const [enabled, setEnabled] = useState(false);
   return (
     <AcuityGestureInput
       round={round}
       cover={false}
-      enabled={enabled}
-      setEnabled={setEnabled}
       onAnswer={mockAnswer}
       manual={"touch controls"}
     />
@@ -76,6 +74,7 @@ beforeEach(async () => {
   mockAnswer.mockReset();
   mockRequest.mockReset();
   mockPermission = true;
+  mockCanRequest = true;
   mockPalm = false;
   mockFocused = true;
   round = "practice-1";
@@ -86,18 +85,41 @@ beforeEach(async () => {
 afterEach(async () => {
   await act(async () => renderer.unmount());
 });
-test("camera is opt-in; denial leaves touch controls and a retry", async () => {
-  expect(cameras()).toHaveLength(0);
+const text = () => JSON.stringify(renderer.toJSON());
+test("the camera answers from the start, with no touch controls or toggle", async () => {
+  expect(cameras()).toHaveLength(1);
+  expect(text()).not.toContain("touch controls");
+  expect(text()).not.toContain(copy.gesture.unavailable);
+  expect(renderer.root.findAll((n) => n.type === ("Button" as never))).toHaveLength(0);
+  expect(mockRequest).not.toHaveBeenCalled();
+});
+test("without permission it asks once; denial leaves touch controls and a retry", async () => {
+  await act(async () => renderer.unmount());
   mockPermission = false;
+  await act(async () => {
+    renderer = create(<Harness />);
+  });
+  expect(mockRequest).toHaveBeenCalledTimes(1);
   await act(async () => renderer.update(<Harness />));
-  await press(copy.gesture.enable);
   expect(mockRequest).toHaveBeenCalledTimes(1);
   expect(cameras()).toHaveLength(0);
-  expect(JSON.stringify(renderer.toJSON())).toContain("touch controls");
-  expect(JSON.stringify(renderer.toJSON())).toContain(copy.gesture.unavailable);
+  expect(text()).toContain("touch controls");
+  expect(text()).toContain(copy.gesture.unavailable);
+  await press(copy.gesture.retry);
+  expect(mockRequest).toHaveBeenCalledTimes(2);
+});
+test("a permanent denial shows touch controls without asking", async () => {
+  await act(async () => renderer.unmount());
+  mockPermission = false;
+  mockCanRequest = false;
+  await act(async () => {
+    renderer = create(<Harness />);
+  });
+  expect(mockRequest).not.toHaveBeenCalled();
+  expect(text()).toContain("touch controls");
+  expect(text()).toContain(copy.gesture.unavailable);
 });
 test("backgrounding and navigation tear down capture and suppress old callbacks", async () => {
-  await press(copy.gesture.enable);
   expect(cameras()).toHaveLength(1);
   const oldReport = mockReport;
   await act(async () => mockStateListener("background"));
@@ -116,7 +138,6 @@ test("backgrounding and navigation tear down capture and suppress old callbacks"
   expect(cameras()).toHaveLength(0);
 });
 test("preview-ready observations submit once, then a new round needs a fresh release", async () => {
-  await press(copy.gesture.enable);
   await act(async () => {
     cameras()[0]!.props.onStarted();
     cameras()[0]!.props.onPreviewStarted();
@@ -143,7 +164,6 @@ test("preview-ready observations submit once, then a new round needs a fresh rel
 });
 
 test("an open palm rearms without answering; only the preview is mirrored", async () => {
-  await press(copy.gesture.enable);
   const camera = cameras()[0]!;
   expect(camera.props.mirrorMode).toBe("off");
   expect(camera.props.style).toEqual(expect.arrayContaining([{ transform: [{ scaleX: -1 }] }]));
@@ -168,7 +188,6 @@ test("an open palm rearms without answering; only the preview is mirrored", asyn
 
 test("30 seconds without progressing pauses capture, while a new round renews the limit", async () => {
   jest.useFakeTimers();
-  await press(copy.gesture.enable);
   const oldReport = mockReport;
   await act(async () => jest.advanceTimersByTime(29_000));
   round = "practice-2";

@@ -16,20 +16,20 @@ import { useGestureFrames, type GestureFrame } from "./useGestureFrames";
 interface Props {
   round: string;
   cover: boolean;
-  enabled: boolean;
-  setEnabled: (value: boolean) => void;
   onAnswer: (answer: GestureAnswer) => void;
+  /** Shown only when the camera cannot answer: no permission, no camera, a failure or a pause. */
   manual: ReactNode;
 }
+/** The child answers with the front camera; touch is the fallback when it cannot run. */
 export function AcuityGestureInput(props: Props) {
   const [state, setState] = useState(AppState.currentState);
   const [failed, setFailed] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [asked, setAsked] = useState(false);
   const focused = useIsFocused();
   const device = useCameraDevice("front");
   const { hasPermission, canRequestPermission, requestPermission } = useCameraPermission();
-  const running =
-    props.enabled && focused && state === "active" && hasPermission && !!device && !failed;
+  const running = focused && state === "active" && hasPermission && !!device && !failed;
   useEffect(() => {
     const listener = AppState.addEventListener("change", setState);
     return () => listener.remove();
@@ -44,8 +44,8 @@ export function AcuityGestureInput(props: Props) {
   async function enable() {
     if (requesting) return;
     setRequesting(true);
+    setAsked(true);
     setFailed(false);
-    props.setEnabled(true);
     try {
       if (!hasPermission) {
         if (canRequestPermission) await requestPermission();
@@ -57,6 +57,12 @@ export function AcuityGestureInput(props: Props) {
       setRequesting(false);
     }
   }
+  // The camera is the way to answer, so ask for it as soon as the test opens.
+  useEffect(() => {
+    if (!hasPermission && canRequestPermission && !asked) void enable();
+  });
+  const blocked =
+    failed || !device || (!hasPermission && !requesting && (asked || !canRequestPermission));
   return (
     <View style={styles.input}>
       {running && device ? (
@@ -64,16 +70,8 @@ export function AcuityGestureInput(props: Props) {
       ) : (
         props.manual
       )}
-      {props.enabled && (!hasPermission || !device || failed) && (
-        <Text>{copy.gesture.unavailable}</Text>
-      )}
-      <Button
-        label={props.enabled ? copy.gesture.touch : copy.gesture.enable}
-        variant="link"
-        onPress={() => (props.enabled ? props.setEnabled(false) : void enable())}
-        disabled={requesting}
-      />
-      {props.enabled && !running && (
+      {blocked && <Text>{copy.gesture.unavailable}</Text>}
+      {blocked && (
         <Button
           label={copy.gesture.retry}
           variant="outline"

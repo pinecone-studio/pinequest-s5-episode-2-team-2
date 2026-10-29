@@ -17,8 +17,6 @@ export const acuityCopy = {
   under3: "Энэ шалгалт 3 ба түүнээс дээш насныханд зориулагдсан.",
   // Camera-control copy approved by the owner on 2026-10-28.
   gesture: {
-    enable: "Камераар хариулах",
-    touch: "Сумаар хариулах",
     retry: "Камерыг дахин нээх",
     loading: "Камер бэлдэж байна…",
     unavailable: "Камер ашиглах боломжгүй. Сум дарж үргэлжлүүлж болно.",

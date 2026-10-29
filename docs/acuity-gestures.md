@@ -1,9 +1,10 @@
 # Camera answers for the vision check (#254)
 
-Practice, eye-cover readiness and the test offer an optional **Камераар хариулах** button.
-It opens the front camera without audio capture. Touch answers remain available through
-**Сумаар хариулах**, and appear automatically if permission, camera or model loading fails.
-The practice keeps its existing correct/incorrect tones; the test stays silent.
+Practice, eye-cover readiness and the test are answered with the front camera from the start,
+without audio capture; camera permission is asked for when the test opens. There is no
+toggle: touch answers appear only when permission, camera or model loading fails or capture
+pauses, with **Камерыг дахин нээх** to try again. The cover step always asks for a
+thumbs-up. The practice keeps its existing correct/incorrect tones; the test stays silent.
 
 The worker resizes the upright, unmirrored frame to a 512-square letterbox for pose inference.
 It selects a visible raised wrist away from the eyes, samples a 256-square hand crop from
