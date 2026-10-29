@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Pressable,
-  ScrollView,
+  type ScrollViewInstance,
   StyleSheet,
   View,
   useWindowDimensions,
@@ -31,7 +31,7 @@ export function AdviceCarousel({
   const pageWidth = measuredWidth || Math.max(1, width - 40);
   const active = Math.min(index, Math.max(0, cards.length - 1));
   const activeRef = useRef(active);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   useEffect(() => {
     scroll.current?.scrollTo({
       x: Math.min(activeRef.current, Math.max(0, cards.length - 1)) * pageWidth,
