@@ -60,6 +60,7 @@ test("portrait cards open their own topics and dot controls expose the selected 
   for (const image of nodes("Image")) {
     expect(image.props.resizeMode).toBe("contain");
     expect(image.props.accessible).toBe(false);
+    expect(image.props.style).toEqual({ width: "100%", height: "100%" });
   }
   const cards = nodes("Pressable").filter((node) => node.props.accessibilityHint);
   act(() => cards[2]!.props.onPress());
