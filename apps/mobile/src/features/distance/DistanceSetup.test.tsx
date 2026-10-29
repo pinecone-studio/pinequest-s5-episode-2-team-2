@@ -9,6 +9,10 @@ let mockPermission = true,
 let mockDepth: (depth: Depth) => void,
   mockFaces: (faces: ScannedObject[]) => void,
   mockState: (state: string) => void;
+const mockAudio = { seekTo: jest.fn(() => Promise.resolve()), play: jest.fn(), pause: jest.fn() };
+jest.mock("expo-audio", () => ({ useAudioPlayer: () => mockAudio }));
+jest.mock("../../../assets/sounds/correct.wav", () => 3, { virtual: true });
+let mockQueue: (() => void)[] | null = null;
 const mockRequest = jest.fn(),
   mockContinue = jest.fn(),
   mockCreateDepth = jest.fn(() => ({})),
@@ -67,7 +71,10 @@ jest.mock("react-native-worklets", () => ({
       },
     };
   },
-  scheduleOnRN: (fn: (...args: unknown[]) => void, ...args: unknown[]) => fn(...args),
+  scheduleOnRN: (fn: (...args: unknown[]) => void, ...args: unknown[]) => {
+    if (mockQueue) mockQueue.push(() => fn(...args));
+    else fn(...args);
+  },
 }));
 function depth(metres = 2.4) {
   const values = new Float32Array(25).fill(metres);
@@ -106,6 +113,7 @@ beforeEach(async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   mockPermission = true;
   mockSupported = true;
+  mockQueue = null;
   jest.clearAllMocks();
   await act(async () => {
     renderer = create(<DistanceSetup onContinue={mockContinue} />);
@@ -123,6 +131,8 @@ test("setup reads one face's depth, releases frames and preserves native output 
     mockFaces([target as unknown as ScannedObject]);
     mockDepth(frame as unknown as Depth);
   });
+  expect(text()).not.toContain("≈ 2.4 м");
+  await observe(2.4, 2);
   expect(text()).toContain("≈ 2.4 м");
   expect(text()).toContain(copy.farther);
   expect(
@@ -143,6 +153,7 @@ test("backgrounding clears readings and stale callbacks cannot restore them", as
     mockFaces([target as unknown as ScannedObject]);
     mockDepth(depth() as unknown as Depth);
   });
+  await observe(2.4, 2);
   expect(text()).toContain("≈ 2.4 м");
   await act(async () => mockState("background"));
   expect(cameras()).toHaveLength(0);
@@ -177,6 +188,8 @@ test("three displayed metres has the ready card, while retry clears the old read
     mockFaces([face() as unknown as ScannedObject]);
     mockDepth(depth(3) as unknown as Depth);
   });
+  expect(text()).not.toContain(copy.ready);
+  await observe(3, 5);
   expect(text()).toContain(copy.ready);
   expect(text()).toContain("≈ 3.0 м");
   expect(
@@ -185,4 +198,60 @@ test("three displayed metres has the ready card, while retry clears the old read
   await press(copy.retry);
   expect(text()).not.toContain("≈ 3.0 м");
   expect(cameras()).toHaveLength(1);
+});
+
+async function observe(metres: number, count: number) {
+  for (let i = 0; i < count; i++)
+    await act(async () => {
+      jest.advanceTimersByTime(200);
+      mockFaces([face() as unknown as ScannedObject]);
+      mockDepth(depth(metres) as unknown as Depth);
+    });
+}
+test("face loss immediately clears the number and invalidates queued native reports", async () => {
+  await observe(2.4, 3);
+  expect(text()).toContain("≈ 2.4 м");
+  mockQueue = [];
+  await observe(2.4, 3);
+  const queued = mockQueue;
+  await act(async () => mockFaces([]));
+  expect(text()).not.toContain("≈ 2.4 м");
+  await act(async () => queued.forEach((fn) => fn()));
+  expect(text()).not.toContain("≈ 2.4 м");
+  expect(mockAudio.play).not.toHaveBeenCalled();
+});
+test("stable target cues once per attempt, cancels on loss and can be explicitly retried", async () => {
+  await observe(3, 6);
+  expect(mockAudio.play).toHaveBeenCalledTimes(1);
+  await observe(3, 3);
+  expect(mockAudio.play).toHaveBeenCalledTimes(1);
+  await act(async () => mockFaces([]));
+  expect(mockAudio.pause).toHaveBeenCalled();
+  await observe(3, 6);
+  expect(mockAudio.play).toHaveBeenCalledTimes(1);
+  await press(copy.retry);
+  await observe(3, 6);
+  expect(mockAudio.play).toHaveBeenCalledTimes(2);
+});
+test("slow audio preparation cannot play after backgrounding", async () => {
+  let finish!: () => void;
+  mockAudio.seekTo.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await observe(3, 6);
+  await act(async () => mockState("background"));
+  await act(async () => finish());
+  expect(mockAudio.play).not.toHaveBeenCalled();
+});
+
+test("audio failure preserves manual continuation", async () => {
+  mockAudio.seekTo.mockRejectedValueOnce(new Error("audio unavailable"));
+  await observe(3, 6);
+  expect(text()).toContain(copy.ready);
+  expect(mockAudio.play).not.toHaveBeenCalled();
+  await press(copy.proceed);
+  expect(mockContinue).toHaveBeenCalledTimes(1);
 });
