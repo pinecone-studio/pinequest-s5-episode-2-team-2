@@ -39,7 +39,14 @@ used until a keypoint model trained on torch captures exists (#17, #29).
 
 Like the web demo, these scans count a frame when it has one face, both eyes and a reflex in
 each (`withWebDemoQuality`). The head pose, gaze, distance and crop pixel limits were set for
-the keypoint model; with the heuristic they only drive the live guidance, not the result. The
+the keypoint model; with the heuristic they only drive the live guidance, not the result.
+
+One check the demo lacked applies to every frame: at least one eye must look at the light,
+with its reflex within `MAX_FIXATION_OFFSET` (0.25 iris radii, a `TODO(tune)` placeholder) of
+the iris centre (`notFixating`). The mirrored asymmetry compares the two eyes, so crossed eyes
+or a look past the phone move both reflexes out together and score as straight eyes. Such
+frames are `NOT_LOOKING` and the guidance asks the child to look at the camera. With a real
+squint one eye still fixates, so the turned eye's frames keep counting. The
 scan screen also shows the demo's live checks (`ScanChecks`: face, both eyes, reflex) and its
 iris and reflex marks over the preview, and the camera takes the next frame as soon as the
 previous one is measured, as the demo did.

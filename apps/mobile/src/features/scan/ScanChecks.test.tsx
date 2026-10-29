@@ -39,6 +39,16 @@ test.each<[string, LandmarkFrame | null, boolean[]]>([
   ["a face without eyes", frame({}), [true, false, false]],
   ["eyes without a reflex", frame({ eyes: eyes(false) }), [true, true, false]],
   ["eyes with both reflexes", frame({ eyes: eyes(true) }), [true, true, true]],
+  [
+    "crossed eyes: the reflexes are visible, the guidance asks to look",
+    frame({
+      eyes: eyes(true).map((eye, i) => ({
+        ...eye,
+        reflex: { x: eye.irisCenter.x + (i === 0 ? -20 : 20), y: 500 },
+      })) as [EyePrediction, EyePrediction],
+    }),
+    [true, true, true],
+  ],
 ])("%s", (_, input, expected) => {
   expect(scanChecks(input).map((check) => check.ok)).toEqual(expected);
 });

@@ -3,7 +3,9 @@ import { GUIDANCE, guidanceForFrame } from "../scan/guidance";
 import { toFrameAnalysis } from "../scan/recorder";
 import type { EyePrediction } from "./eyeCrops";
 import type { LandmarkFrame } from "./facePipeline";
-import { withFrameQuality, withWebDemoQuality } from "./frameQuality";
+import { emptyRecording, finishScan, recordFrame } from "../scan/recorder";
+import { SCAN_POLICY } from "../scan/scanPolicy";
+import { notFixating, withFrameQuality, withWebDemoQuality } from "./frameQuality";
 
 function frontalFace(): Point[] {
   const points = Array.from({ length: 478 }, () => ({ x: 500, y: 550 }));
@@ -160,3 +162,62 @@ test.each<[Partial<LandmarkFrame>, QualityReason]>([
     headPose: null,
   });
 });
+
+/** Eyes whose reflexes sit `left` and `right` iris radii from the iris centre, horizontally. */
+function reflexEyes(left: number, right: number): [EyePrediction, EyePrediction] {
+  return (["imageLeft", "imageRight"] as const).map((side, index): EyePrediction => {
+    const x = 430 + index * 140;
+    return {
+      side,
+      irisCenter: { x, y: 500 },
+      irisRadius: 40,
+      reflex: { x: x + (index === 0 ? left : right) * 40, y: 500 },
+      reflexVisibleProbability: 1,
+      crop: { side, x: x - 100, y: 400, size: 200 },
+    };
+  }) as [EyePrediction, EyePrediction];
+}
+
+// Mirrored asymmetry x is left + right: straight eyes have both reflexes slightly nasal.
+const STRAIGHT = reflexEyes(0.06, -0.06);
+// Crossed eyes: both reflexes far out to the temple side, which mirrors to zero asymmetry.
+const CROSSED = reflexEyes(-0.5, 0.5);
+// A squint: the left eye fixates, the right one turns.
+const SQUINT = reflexEyes(0.06, 0.4);
+
+test("a frame counts when one eye looks at the light, even if the other is turned", () => {
+  expect(notFixating(toFrameAnalysis({ ...frame, eyes: STRAIGHT }).eyes)).toBe(false);
+  expect(notFixating(toFrameAnalysis({ ...frame, eyes: SQUINT }).eyes)).toBe(false);
+  expect(notFixating(toFrameAnalysis({ ...frame, eyes: CROSSED }).eyes)).toBe(true);
+  expect(notFixating(null)).toBe(false);
+});
+
+test("crossed eyes are not looking at the light, for the guidance and the scan", () => {
+  const measured = withFrameQuality({ ...frame, eyes: CROSSED, eyeFailure: null });
+  expect(measured.quality?.reasons).toContain("NOT_LOOKING");
+  expect(guidanceForFrame(measured)).toBe(GUIDANCE.NOT_LOOKING);
+  expect(withWebDemoQuality(measured).quality?.reasons).toEqual(["NOT_LOOKING"]);
+  expect(withFrameQuality({ ...frame, eyes: SQUINT, eyeFailure: null }).quality?.ok).toBe(true);
+});
+
+test.each<[string, string, [EyePrediction, EyePrediction], string[]]>([
+  ["straight eyes", "NO_VISIBLE_SIGN", STRAIGHT, []],
+  ["a squint", "REFER", SQUINT, ["ASYMMETRY_ABOVE_THRESHOLD"]],
+  // Without the fixation check this scored zero asymmetry and showed no visible sign.
+  ["crossed eyes", "RETAKE", CROSSED, ["NOT_LOOKING", "TOO_FEW_FRAMES"]],
+])("a heuristic scan of %s ends %s", (_, outcome, eyes, reasons) => {
+  const frames = Array.from({ length: 8 }, (__, i) =>
+    withWebDemoQuality({ ...frame, timestampMs: i * 300, eyes, eyeFailure: null }),
+  );
+  const { result } = finishScan(frames.reduce(recordFrame, emptyRecording()), meta, SCAN_POLICY);
+  expect(result).toMatchObject({ outcome, reasons });
+});
+
+const meta = {
+  id: "scan-1",
+  childId: null,
+  createdAt: "2026-10-29T08:00:00.000Z",
+  durationMs: 3000,
+  modelVersion: "heuristic-web-demo",
+  policyVersion: "test",
+};
