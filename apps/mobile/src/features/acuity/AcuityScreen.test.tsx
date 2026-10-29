@@ -13,15 +13,20 @@ jest.mock("./AcuityGestureInput", () => ({
     jest.requireActual("react").createElement("GestureInput", props, manual),
 }));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
-const mockPlay = jest.fn();
-jest.mock("expo-audio", () => ({
-  useAudioPlayer: (source: number) => ({
-    play: () => mockPlay(source === 3 ? "correct" : "wrong"),
-    seekTo: jest.fn(),
-  }),
+const mockSay = jest.fn();
+jest.mock("../voice/useVoice", () => ({
+  useVoice: () => ({ say: (...keys: string[]) => mockSay(...keys), stop: jest.fn() }),
 }));
-jest.mock("../../../assets/sounds/correct.wav", () => 3, { virtual: true });
-jest.mock("../../../assets/sounds/wrong.wav", () => 4, { virtual: true });
+/** Every key spoken so far, flattened. */
+const spoken = () => mockSay.mock.calls.flat() as string[];
+// The test may only give cues that do not depend on the answer.
+const NEUTRAL = [
+  "acuity-next",
+  "acuity-cover-left",
+  "acuity-cover-right",
+  "acuity-thumb",
+  "acuity-done",
+];
 jest.mock("../../components/ui", () => ({
   Button: "Button",
   Card: "Card",
@@ -53,7 +58,7 @@ const press = (label: string) =>
   );
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  mockPlay.mockReset();
+  mockSay.mockReset();
 });
 afterEach(() => act(() => renderer?.unmount()));
 
@@ -112,36 +117,41 @@ const labels = { 0: copy.right, 90: copy.down, 180: copy.left, 270: copy.up } as
 const shown = () => renderer.root.findByType(Optotype).props.direction as keyof typeof labels;
 const wrongOf = (d: keyof typeof labels) => ([0, 90, 180, 270] as const).find((x) => x !== d)!;
 
-test("practice gives a high tone and Зөв! when right, a low tone when wrong, then starts", () => {
+test("practice says Зөв! when right and Дахин оролдоорой when wrong, then starts", () => {
   jest.useFakeTimers();
   act(() => {
     renderer = create(<AcuityScreen />);
   });
   press(copy.groups.child4);
+  expect(mockSay).toHaveBeenCalledWith("acuity-practice", "acuity-intro");
   press(labels[wrongOf(shown())]);
-  expect(mockPlay).toHaveBeenLastCalledWith("wrong");
+  expect(mockSay).toHaveBeenLastCalledWith("acuity-wrong");
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.practice.wrong);
   press(labels[shown()]);
-  expect(mockPlay).toHaveBeenLastCalledWith("correct");
+  expect(mockSay).toHaveBeenLastCalledWith("acuity-correct");
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.practice.correct);
   press(labels[shown()]);
+  expect(mockSay).toHaveBeenLastCalledWith("acuity-great");
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.practice.great);
   act(() => jest.advanceTimersByTime(1500));
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("right"));
+  // Testing the right eye: the voice asks to cover the LEFT eye, matching the text.
+  expect(mockSay).toHaveBeenLastCalledWith("acuity-cover-left");
   jest.useRealTimers();
 });
 
-test("the test itself plays no tone, so it does not reveal correct answers", () => {
+test("the test itself only gives neutral cues, so it does not reveal correct answers", () => {
   act(() => {
     renderer = create(<AcuityScreen />);
   });
   press(copy.groups.adult);
   press(copy.practice.skip);
   press(copy.ready);
+  mockSay.mockClear();
   press(labels[shown()]);
   press(labels[wrongOf(shown())]);
   press(copy.cantSee);
-  expect(mockPlay).not.toHaveBeenCalled();
+  for (const key of spoken()) expect(NEUTRAL).toContain(key);
 });
 
 test("camera answers share practice feedback, thumbs-up readiness and silent test decisions", () => {
@@ -153,15 +163,15 @@ test("camera answers share practice feedback, thumbs-up readiness and silent tes
   const gesture = (value: GestureAnswer) =>
     act(() => all("GestureInput")[0]!.props.onAnswer(value));
   gesture(shown());
-  expect(mockPlay).toHaveBeenLastCalledWith("correct");
+  expect(mockSay).toHaveBeenLastCalledWith("acuity-correct");
   gesture(shown());
   act(() => jest.advanceTimersByTime(1500));
   expect(all("GestureInput")[0]!.props.cover).toBe(true);
   gesture("ready");
-  mockPlay.mockClear();
+  mockSay.mockClear();
   gesture(wrongOf(shown()));
   gesture(wrongOf(shown()));
-  expect(mockPlay).not.toHaveBeenCalled();
+  for (const key of spoken()) expect(NEUTRAL).toContain(key);
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
   jest.useRealTimers();
 });

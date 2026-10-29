@@ -9,6 +9,10 @@ import { mockFrameQuality } from "@app/core";
 import type { LandmarkFrame } from "../vision/facePipeline";
 import type { EyePrediction } from "../vision/eyeCrops";
 import { SCAN_POLICY_VERSION } from "./scanPolicy";
+const mockSay = jest.fn();
+jest.mock("../voice/useVoice", () => ({
+  useVoice: () => ({ say: (...keys: string[]) => mockSay(...keys), stop: jest.fn() }),
+}));
 
 const mockListeners = new Set<(state: string) => void>();
 const mockPush = jest.fn();

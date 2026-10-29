@@ -1,12 +1,9 @@
-import { useAudioPlayer } from "expo-audio";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { PixelRatio, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Card, Notice, Screen, Text, Verdict } from "../../components/ui";
 import { fonts, theme } from "../../theme";
-import correctSound from "../../../assets/sounds/correct.wav";
-import wrongSound from "../../../assets/sounds/wrong.wav";
 import {
   decimalAcuity,
   fittingLevels,
@@ -23,6 +20,8 @@ import { acuityCopy as copy } from "./copy";
 import { CROWDED_UNITS, Optotype } from "./Optotype";
 import { AcuityGestureInput } from "./AcuityGestureInput";
 import { SaveAcuityButton } from "./SaveAcuityButton";
+import { useVoice } from "../voice/useVoice";
+import type { VoiceKey } from "../voice/clips";
 import {
   beginEye,
   endPractice,
@@ -52,26 +51,54 @@ export default function AcuityScreen() {
   const [session, setSession] = useState<Session | null>(null);
   const [gestureEnabled, setGestureEnabled] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  // As in the web demo: a high tone for a correct practice answer, a low one for a wrong one.
-  // The test itself stays silent, so it does not tell the child which answers were right.
-  const correctTone = useAudioPlayer(correctSound);
-  const wrongTone = useAudioPlayer(wrongSound);
+  // Practice answers get spoken feedback ("Зөв!" / "Дахин оролдоорой"). The test itself only
+  // says "Дараагийнх!" for every letter, so it never tells the child which answers were right.
+  const { say } = useVoice();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const later = (fn: () => void, ms: number) => {
     timers.current.push(setTimeout(fn, ms));
   };
-  const play = (tone: typeof correctTone) => {
-    void tone.seekTo(0);
-    tone.play();
-  };
+
+  // One spoken cue per new stage, eye or letter.
+  const cue = !session
+    ? null
+    : session.stage === "practice"
+      ? "practice"
+      : session.stage === "cover"
+        ? `cover:${session.eye}`
+        : session.stage === "test"
+          ? `test:${session.eye}:${session.test.level}:${session.test.shown}`
+          : "result";
+  const lastCue = useRef<string | null>(null);
+  useEffect(() => {
+    if (cue === lastCue.current) return;
+    const first = lastCue.current === null || !lastCue.current.startsWith("test:");
+    lastCue.current = cue;
+    if (!cue || !session) return;
+    const keys: VoiceKey[] =
+      cue === "practice"
+        ? ["acuity-practice", "acuity-intro"]
+        : cue === "result"
+          ? ["acuity-done"]
+          : cue.startsWith("cover:")
+            ? [
+                // Testing the right eye means covering the left one, and the other way round.
+                session.eye === "right" ? "acuity-cover-left" : "acuity-cover-right",
+                ...(gestureEnabled ? (["acuity-thumb"] as const) : []),
+              ]
+            : first
+              ? []
+              : ["acuity-next"];
+    say(...keys);
+  }, [cue, session, gestureEnabled, say]);
 
   const practiceAnswer = (shown: Direction | null) => {
     if (!session || session.stage !== "practice" || session.practiceCorrect >= PRACTICE_CORRECT)
       return;
     const next = practise(session, shown, Math.random);
     if (shown === session.direction) {
-      play(correctTone);
+      say(next.practiceCorrect >= PRACTICE_CORRECT ? "acuity-great" : "acuity-correct");
       if (next.practiceCorrect >= PRACTICE_CORRECT) {
         setFeedback(copy.practice.great);
         later(() => {
@@ -86,7 +113,7 @@ export default function AcuityScreen() {
         setFeedback(copy.practice.correct);
       }
     } else {
-      play(wrongTone);
+      say("acuity-wrong");
       setFeedback(copy.practice.wrong);
     }
     setSession(next);
