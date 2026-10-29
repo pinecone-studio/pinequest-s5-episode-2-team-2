@@ -3,7 +3,7 @@ import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { theme } from "../../theme";
 import { exercises, eyeRestCopy as copy, type Exercise } from "./content";
-import { stepAt } from "./steps";
+import { stepAt, totalSeconds } from "./steps";
 
 type Running = { key: string; startedAt: number };
 
@@ -24,6 +24,21 @@ export default function EyeRestScreen() {
     setRunning({ key, startedAt: at });
   };
 
+  // #235: a running exercise gets the whole screen, so the child only sees the current step.
+  const active = running && exercises.find((exercise) => exercise.key === running.key);
+  if (running && active) {
+    return (
+      <Screen>
+        <RunningExercise
+          exercise={active}
+          elapsedMs={now - running.startedAt}
+          onStop={() => setRunning(null)}
+          onAgain={() => start(active.key)}
+        />
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       <Text variant="title" accessibilityRole="header">
@@ -35,16 +50,7 @@ export default function EyeRestScreen() {
             {exercise.title}
           </Text>
           <Text>{exercise.summary}</Text>
-          {running?.key === exercise.key ? (
-            <Countdown
-              exercise={exercise}
-              elapsedMs={now - running.startedAt}
-              onStop={() => setRunning(null)}
-              onAgain={() => start(exercise.key)}
-            />
-          ) : (
-            <Button label={copy.start} variant="secondary" onPress={() => start(exercise.key)} />
-          )}
+          <Button label={copy.start} variant="secondary" onPress={() => start(exercise.key)} />
           <Pressable
             accessibilityRole="link"
             accessibilityHint={exercise.source.url}
@@ -64,7 +70,7 @@ export default function EyeRestScreen() {
   );
 }
 
-function Countdown({
+function RunningExercise({
   exercise,
   elapsedMs,
   onStop,
@@ -76,34 +82,98 @@ function Countdown({
   onAgain: () => void;
 }) {
   const state = stepAt(exercise, elapsedMs);
+
   if (state.done) {
     return (
-      <View style={styles.countdown}>
-        <Text accessibilityLiveRegion="polite">{copy.done}</Text>
-        <Button label={copy.again} variant="outline" onPress={onAgain} />
+      <View style={styles.running}>
+        <Text variant="title" accessibilityRole="header" style={styles.center}>
+          {exercise.title}
+        </Text>
+        <Text accessibilityLiveRegion="polite" style={[styles.instruction, styles.center]}>
+          {copy.done}
+        </Text>
+        <Button label={copy.again} onPress={onAgain} />
+        <Button label={copy.back} variant="outline" onPress={onStop} />
       </View>
     );
   }
+
   const step = exercise.steps[state.stepIndex];
+  const total = totalSeconds(exercise);
+  const percent = Math.min(100, Math.round((elapsedMs / 1000 / total) * 100));
+
   return (
-    <View style={styles.countdown}>
-      {exercise.rounds > 1 ? (
-        <Text variant="caption">{copy.round(state.round, exercise.rounds)}</Text>
-      ) : null}
-      <Text accessibilityLiveRegion="polite" style={styles.step}>
+    <View style={styles.running}>
+      <Text variant="title" accessibilityRole="header" style={styles.center}>
+        {exercise.title}
+      </Text>
+
+      {/* Big number in a soft circle: readable from arm's length while the child looks away. */}
+      <View
+        style={styles.circle}
+        accessible
+        accessibilityLabel={copy.secondsLeft(state.secondsLeft)}
+      >
+        <Text variant="title" style={styles.bigNumber}>
+          {state.secondsLeft}
+        </Text>
+        <Text variant="caption" style={styles.unit}>
+          {copy.secondsUnit}
+        </Text>
+      </View>
+
+      <Text accessibilityLiveRegion="polite" style={[styles.instruction, styles.center]}>
         {step?.text}
       </Text>
-      <Text variant="title">{copy.secondsLeft(state.secondsLeft)}</Text>
-      <Button label={copy.stop} variant="outline" onPress={onStop} />
+      {exercise.rounds > 1 ? (
+        <Text variant="caption" style={[styles.unit, styles.center]}>
+          {copy.round(state.round, exercise.rounds)}
+        </Text>
+      ) : null}
+
+      <View
+        style={styles.track}
+        accessibilityRole="progressbar"
+        accessibilityLabel={copy.progress}
+        accessibilityValue={{ min: 0, max: 100, now: percent }}
+      >
+        <View style={[styles.fill, { width: `${percent}%` }]} />
+      </View>
+
+      <Button label={copy.stop} onPress={onStop} />
     </View>
   );
 }
 
+const CIRCLE = 180;
+
 const styles = StyleSheet.create({
   heading: { fontWeight: "700", color: theme.colors.text },
-  countdown: { gap: theme.spacing.xs, alignItems: "stretch" },
-  step: { fontWeight: "700" },
   source: { minHeight: 44, justifyContent: "center" },
   sourceText: { color: theme.colors.primary, textDecorationLine: "underline" },
   notice: { color: theme.colors.muted },
+  running: { gap: theme.spacing.md, paddingTop: theme.spacing.lg },
+  center: { textAlign: "center" },
+  circle: {
+    alignSelf: "center",
+    width: CIRCLE,
+    height: CIRCLE,
+    borderRadius: CIRCLE / 2,
+    borderWidth: 10,
+    borderColor: theme.colors.primarySoft,
+    backgroundColor: theme.colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: theme.spacing.md,
+  },
+  bigNumber: { fontSize: 64, lineHeight: 72, color: theme.colors.primary },
+  unit: { color: theme.colors.muted },
+  instruction: { fontSize: 20, lineHeight: 28, fontWeight: "700" },
+  track: {
+    height: 8,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.primarySoft,
+    overflow: "hidden",
+  },
+  fill: { height: "100%", backgroundColor: theme.colors.primary },
 });

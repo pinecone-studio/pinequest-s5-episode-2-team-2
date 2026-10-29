@@ -63,6 +63,9 @@ export const eyeRestCopy = {
   done: "Дууслаа. Нүдээ амраасанд баярлалаа!",
   round: (current: number, total: number) => `Давталт ${current}/${total}`,
   secondsLeft: (seconds: number) => `${seconds} сек`,
+  secondsUnit: "сек",
+  progress: "Дасгалын явц",
+  back: "Дасгалууд руу буцах",
   openFromTips: "Нүд амраах дасгал хийх",
   notice:
     "Энэ дасгалууд нь нүд амраах завсарлага юм. Хялар болон залхуу нүдийг эмчлэхгүй тул эмчийн зааврыг үргэлжлүүлэн дагаарай.",
