@@ -12,11 +12,11 @@ project on **2026-10-29**. Licence: **owner-granted permission for use in this
 PineQuest project**. No third-party stock licence or public-domain status is
 asserted. The earlier stock reference screenshot was not copied into the app.
 
-| App file | Original file supplied by the owner | Topic |
-| --- | --- | --- |
-| `early-checks.png` | `Friendly Eye Care Vision Test.png` | Early checks |
-| `screen-time.png` | `Digital Eye Strain Awareness.png` | Screen use |
-| `outdoor-time.png` | `nudkhen16.png` | Outdoor time |
+| App file           | Original file supplied by the owner        | Topic                 |
+| ------------------ | ------------------------------------------ | --------------------- |
+| `early-checks.png` | `Friendly Eye Care Vision Test.png`        | Early checks          |
+| `screen-time.png`  | `Digital Eye Strain Awareness.png`         | Screen use            |
+| `outdoor-time.png` | `nudkhen16.png`                            | Outdoor time          |
 | `doctor-signs.png` | `Vision Care Examination Illustration.png` | Seeking an eye doctor |
 
 ## Export
