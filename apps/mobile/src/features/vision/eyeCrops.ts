@@ -17,6 +17,18 @@ export interface EyePrediction {
   crop: EyeRegion;
   /** Scalar statistics from the exact RGB tensor supplied to the eye model. */
   cropStats?: CropStats;
+  /** The same crop as 128 × 128 RGB bytes for the result screen; kept in memory only. */
+  photo?: Uint8Array;
+}
+
+/** An RGB crop in 0..1 as bytes, to show the measured eye on the result screen. */
+function photoBytes(rgb: Float32Array): Uint8Array {
+  "worklet";
+  const bytes = new Uint8Array(rgb.length);
+  for (let i = 0; i < rgb.length; i++) {
+    bytes[i] = Math.round(Math.min(1, Math.max(0, rgb[i]!)) * 255);
+  }
+  return bytes;
 }
 
 function roundEven(value: number) {
@@ -64,6 +76,7 @@ export function inferEyes(
     const rgb = cropPixels(source, region);
     const stats = cropStats({ width: 128, height: 128, luma: lumaFromRgb(rgb) });
     if (!stats) throw new Error("Invalid eye crop statistics");
+    const photo = photoBytes(rgb);
     const output = model.runSync([rgb.buffer]);
     if (output.length !== 1 || output[0]?.byteLength !== 24)
       throw new Error("Unexpected eye model output");
@@ -93,6 +106,7 @@ export function inferEyes(
       side: region.side,
       crop: region,
       cropStats: stats,
+      photo,
       irisCenter: { x: region.x + x * region.size, y: region.y + y * region.size },
       irisRadius: radius * region.size,
       reflex:
@@ -115,7 +129,8 @@ export function heuristicEyes(
   const regions = eyeRegions(landmarks);
   if (!regions) return null;
   const eyes = regions.map((region): EyePrediction => {
-    const luma = lumaFromRgb(cropPixels(source, region));
+    const rgb = cropPixels(source, region);
+    const luma = lumaFromRgb(rgb);
     const stats = cropStats({ width: 128, height: 128, luma });
     if (!stats) throw new Error("Invalid eye crop statistics");
     const gray = new Float64Array(luma.length);
@@ -131,6 +146,7 @@ export function heuristicEyes(
       side: region.side,
       crop: region,
       cropStats: stats,
+      photo: photoBytes(rgb),
       irisCenter: toFrame(eye.center),
       irisRadius: eye.radius * scale,
       reflex: eye.reflex && toFrame(eye.reflex),

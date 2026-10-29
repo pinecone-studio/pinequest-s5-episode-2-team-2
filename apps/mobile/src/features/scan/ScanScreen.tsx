@@ -39,7 +39,7 @@ export default function ScanScreen() {
   const focused = useIsFocused();
   const { hasPermission, canRequestPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice("back");
-  const { setResult, setEyes } = useScanResult();
+  const { setResult, setEyes, setPhotos } = useScanResult();
   const db = useSQLiteContext();
   const childId = useActiveChildId();
   const scan = useRef<{
@@ -145,10 +145,11 @@ export default function ScanScreen() {
     Promise.resolve()
       .then(async () => {
         if (cancelled || scan.current !== current) return;
-        const { result, eyes } = finishScan(current.recording, current.meta, SCAN_POLICY);
+        const { result, eyes, photos } = finishScan(current.recording, current.meta, SCAN_POLICY);
         await saveSession(db, result);
         if (!cancelled && scan.current === current) {
           setEyes(eyes);
+          setPhotos(photos);
           dispatch({ type: "RESOLVE", result });
         }
       })
@@ -158,7 +159,7 @@ export default function ScanScreen() {
     return () => {
       cancelled = true;
     };
-  }, [state.status, active, db, setEyes]);
+  }, [state.status, active, db, setEyes, setPhotos]);
 
   useEffect(() => {
     if (state.status !== "done" || !active) return;

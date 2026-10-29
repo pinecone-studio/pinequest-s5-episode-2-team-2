@@ -86,6 +86,29 @@ test("a good scan gives a result and the eyes of a representative frame", () => 
   expect(eyes?.map((e) => e.side)).toEqual(["imageLeft", "imageRight"]);
 });
 
+test("keeps each frame's eye crops and returns the representative frame's", () => {
+  const photo = (value: number) => new Uint8Array(128 * 128 * 3).fill(value);
+  const withPhotos = (rightX: number, value: number) => {
+    const f = frame(rightX);
+    f.eyes = [
+      { ...f.eyes![0], photo: photo(value) },
+      { ...f.eyes![1], photo: photo(value + 1) },
+    ];
+    return f;
+  };
+  // Mirrored asymmetry 0.05 + rightX: 0, 0.02, 0.01; the median 0.01 is the third frame.
+  const recording = record([withPhotos(-0.05, 10), withPhotos(-0.03, 20), withPhotos(-0.04, 30)]);
+  expect(recording.photos).toHaveLength(3);
+  const { photos } = finishScan(recording, meta, config);
+  expect(photos?.map((p) => p.pixels[0])).toEqual([30, 31]);
+  expect(photos?.[0].crop).toEqual(frame(-0.04).eyes![0].crop);
+
+  // Frames measured without crops (replay fixtures) show the drawn diagram instead.
+  const plain = finishScan(record([frame(-0.05), frame(-0.04), frame(-0.06)]), meta, config);
+  expect(plain.eyes).not.toBeNull();
+  expect(plain.photos).toBeNull();
+});
+
 test("too few usable frames asks for a retake", () => {
   const { result } = finishScan(record([frame(null), frame(null), frame(-0.05)]), meta, config);
   expect(result).toMatchObject({ outcome: "RETAKE", reasons: ["EYE_NOT_FOUND", "TOO_FEW_FRAMES"] });
@@ -95,9 +118,10 @@ test("a model failure is not assessed and shows no eyes", () => {
   const failing = frame(null, { eyeFailure: "MODEL_UNAVAILABLE" });
   const recording = record([frame(-0.05), failing, frame(-0.05), frame(-0.05)]);
   expect(recording.failure).toBe("MODEL_UNAVAILABLE");
-  const { result, eyes } = finishScan(recording, meta, config);
+  const { result, eyes, photos } = finishScan(recording, meta, config);
   expect(result).toMatchObject({ outcome: "NOT_ASSESSED", reasons: ["MODEL_UNAVAILABLE"] });
   expect(eyes).toBeNull();
+  expect(photos).toBeNull();
 });
 
 test("keeps the first failure", () => {

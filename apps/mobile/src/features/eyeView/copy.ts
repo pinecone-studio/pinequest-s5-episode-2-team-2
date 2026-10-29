@@ -7,4 +7,6 @@ export const eyeViewCopy = {
   reflexAt: (x: number, y: number) =>
     `гэрлийн тусгал төвөөс ${x.toFixed(2)}, ${y.toFixed(2)} радиус зайтай`,
   legend: "Тойрог: солонгон бүрхэвч. Цэг: гэрлийн тусгал. Зураг биш, хэмжилтээр зурсан.",
+  // The photo legend and note are the web demo's strings (demo/web-poc).
+  photo: { iris: "Солонгон бүрхүүл", reflex: "Гэрлийн тусгал", notSaved: "Зураг хадгалагдаагүй." },
 } as const;
