@@ -10,6 +10,12 @@ export default function ProfileScreen() {
         {dashboardCopy.title}
       </Text>
       <ProfileDashboard />
+      {/* History left the tab bar for eye-rest exercises, so Profile is its entry point. */}
+      <Button
+        label={dashboardCopy.history}
+        variant="secondary"
+        onPress={() => router.push("/history")}
+      />
       <Button label={dashboardCopy.settings} onPress={() => router.push("/settings")} />
       {__DEV__ && (
         <Card>

@@ -33,3 +33,17 @@ test.each([false, true])(
     }
   },
 );
+
+test("History opens from Profile now that the exercises have its tab", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  mockPush.mockClear();
+  let renderer!: ReactTestRenderer;
+  await act(async () => {
+    renderer = create(<ProfileScreen />);
+  });
+  const history = renderer.root.findAllByProps({ label: "Шалгалтын түүх" });
+  expect(history).toHaveLength(1);
+  history[0]!.props.onPress();
+  expect(mockPush).toHaveBeenCalledWith("/history");
+  await act(async () => renderer.unmount());
+});
