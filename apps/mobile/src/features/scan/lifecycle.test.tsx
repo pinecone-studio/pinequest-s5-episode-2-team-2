@@ -32,6 +32,7 @@ jest.mock("../vision/useLandmarks", () => ({
   },
 }));
 jest.mock("expo-sqlite", () => ({ useSQLiteContext: () => mockDb }));
+jest.mock("./ScanChecks", () => ({ ScanChecks: "ScanChecks" }));
 jest.mock("../children/useActiveChildId", () => ({ useActiveChildId: () => mockChildId }));
 jest.mock("../../storage/sessions", () => ({
   saveSession: (db: unknown, result: ScanResult) => mockSave(db, result),

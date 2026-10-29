@@ -39,4 +39,7 @@ used until a keypoint model trained on torch captures exists (#17, #29).
 
 Like the web demo, these scans count a frame when it has one face, both eyes and a reflex in
 each (`withWebDemoQuality`). The head pose, gaze, distance and crop pixel limits were set for
-the keypoint model; with the heuristic they only drive the live guidance, not the result.
+the keypoint model; with the heuristic they only drive the live guidance, not the result. The
+scan screen also shows the demo's live checks (`ScanChecks`: face, both eyes, reflex) and its
+iris and reflex marks over the preview, and the camera takes the next frame as soon as the
+previous one is measured, as the demo did.

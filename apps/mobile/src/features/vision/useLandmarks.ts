@@ -92,7 +92,9 @@ export function useLandmarks(onResult: (result: LandmarkFrame) => void, onError:
                   ? { eyes: null, eyeFailure: "MODEL_UNAVAILABLE" as const }
                   : analyzeEyes(frame, result.landmarks, eyeModel);
               const latencyMs = performance.now() - started;
-              const interval = Math.max(100, latencyMs * 2);
+              // Like the web demo, take the next frame as soon as this one is done: a 3 s scan
+              // only gets a handful of frames on a phone (#274).
+              const interval = Math.max(100, latencyMs);
               timing.setBlocking({ next: timestampMs + interval, interval });
               scheduleOnRN(report, {
                 ...result,
