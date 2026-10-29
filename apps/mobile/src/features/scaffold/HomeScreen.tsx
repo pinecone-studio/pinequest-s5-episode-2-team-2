@@ -2,17 +2,17 @@ import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Mascot } from "../../components/Mascot";
 import { Button, Text } from "../../components/ui";
 import { fonts, theme } from "../../theme";
 import { LatestScanCard } from "../history/LatestScanCard";
 import { tipsCopy } from "../tips/content";
-import { EyeHero } from "./EyeHero";
 
 // The web demo's start-screen copy (demo/web-poc, apps/web-demo/src/strings.ts), a team draft.
-// Approved by the team lead; the app name is decided in #142.
+// Approved by the team lead; the Home title uses the team name Нүдхэн (TODO(copy): confirm with lead).
 const copy = {
   badge: "Туршилтын хувилбар",
-  title: "Нүдний гэрэл",
+  title: "Нүдхэн",
   tagline: "Хүүхэд, том хүний нүдний гэрлийн тусгалыг 3 секундэд шалгана",
   start: "Шалгаж эхлэх",
   vision: "Хараа шалгах",
@@ -24,7 +24,7 @@ export default function HomeScreen() {
   return (
     <LinearGradient
       // Darker top than the web demo so the white text reaches WCAG contrast (#238).
-      colors={[theme.colors.primary, "#5F97F5", "#DCEBFF"]}
+      colors={[theme.colors.primary, theme.colors.heroMid, theme.colors.heroEnd]}
       locations={[0, 0.55, 1]}
       style={styles.fill}
     >
@@ -38,7 +38,7 @@ export default function HomeScreen() {
             <Text style={styles.tagline}>{copy.tagline}</Text>
           </View>
           <View style={styles.hero}>
-            <EyeHero />
+            <Mascot variant="wave" size={240} motion="float" />
           </View>
           <View style={styles.actions}>
             <Button label={`${copy.start}  ›`} onPress={() => router.navigate("/tests")} />

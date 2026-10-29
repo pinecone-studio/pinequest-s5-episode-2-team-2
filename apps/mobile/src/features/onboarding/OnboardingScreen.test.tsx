@@ -5,6 +5,7 @@ import { onboardingCopy as copy, onboardingPages as pages } from "./copy";
 
 const mockReplace = jest.fn();
 const mockSave = jest.fn();
+jest.mock("../../components/Mascot", () => ({ Mascot: "Mascot" }));
 jest.mock("expo-router", () => ({ router: { replace: (to: string) => mockReplace(to) } }));
 jest.mock("expo-sqlite", () => ({ useSQLiteContext: () => ({}) }));
 jest.mock("./consent", () => ({ saveConsent: () => mockSave() }));

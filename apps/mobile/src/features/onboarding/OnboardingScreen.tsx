@@ -5,6 +5,8 @@ import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Mascot } from "../../components/Mascot";
+import type { MascotVariant } from "../../components/mascots";
 import { Button, Text } from "../../components/ui";
 import { fonts, theme } from "../../theme";
 import { saveConsent } from "./consent";
@@ -16,6 +18,13 @@ const icons = [
   "shield-checkmark-outline",
   "camera-outline",
 ] as const;
+
+/** One mascot per page where it helps; the privacy page keeps its plain shield icon. */
+const mascots: Partial<Record<(typeof pages)[number]["key"], MascotVariant>> = {
+  purpose: "idle_happy",
+  limits: "guide",
+  how: "camera",
+};
 
 export default function OnboardingScreen() {
   const compact = useWindowDimensions().height < 700;
@@ -42,7 +51,7 @@ export default function OnboardingScreen() {
 
   return (
     <LinearGradient
-      colors={[theme.colors.primary, "#5F97F5", "#DCEBFF"]}
+      colors={[theme.colors.primary, theme.colors.heroMid, theme.colors.heroEnd]}
       locations={[0, 0.55, 1]}
       style={styles.fill}
     >
@@ -64,13 +73,24 @@ export default function OnboardingScreen() {
             ))}
           </View>
           <View style={styles.intro}>
-            <View
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={[styles.hero, compact && styles.compactHero]}
-            >
-              <Ionicons name={icons[index]} size={compact ? 80 : 112} color="#FFFFFF" />
-            </View>
+            {mascots[page.key] ? (
+              <Mascot
+                key={page.key}
+                variant={mascots[page.key]!}
+                size={compact ? 170 : 240}
+                // Only the welcome page moves; the other pages stay calm to read.
+                motion={index === 0 ? "pop" : "none"}
+                halo="rgba(255,255,255,0.22)"
+              />
+            ) : (
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={[styles.hero, compact && styles.compactHero]}
+              >
+                <Ionicons name={icons[index]} size={compact ? 80 : 112} color="#FFFFFF" />
+              </View>
+            )}
             <Text variant="title" accessibilityRole="header" style={styles.title}>
               {page.title}
             </Text>

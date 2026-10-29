@@ -6,6 +6,7 @@ import { Optotype } from "./Optotype";
 import type { GestureAnswer } from "./gestureHold";
 
 const mockBack = jest.fn();
+jest.mock("../../components/Mascot", () => ({ Mascot: "Mascot" }));
 jest.mock("expo-router", () => ({ router: { back: () => mockBack() } }));
 jest.mock("./SaveAcuityButton", () => ({ SaveAcuityButton: "SaveAcuityButton" }));
 jest.mock("./AcuityGestureInput", () => ({

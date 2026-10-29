@@ -3,6 +3,7 @@ import { ActivityIndicator, AppState, Linking, StyleSheet, View } from "react-na
 import { router, useFocusEffect, useIsFocused } from "expo-router";
 import { useCameraDevice, useCameraPermission } from "react-native-vision-camera";
 import { useSQLiteContext } from "expo-sqlite";
+import { Mascot } from "../../components/Mascot";
 import { Button, Card, Screen, Text } from "../../components/ui";
 import { theme } from "../../theme";
 import { useScanResult } from "./ScanResultContext";
@@ -249,14 +250,17 @@ export default function ScanScreen() {
               </View>
             </View>
           )}
+          {/* Mascots only once the camera is closed, and they stay still (no motion near capture). */}
           {state.status === "processing" && (
             <>
+              <Mascot variant="search" size={150} />
               <ActivityIndicator />
               <Text accessibilityLiveRegion="polite">Үр дүнг боловсруулж, хадгалж байна.</Text>
             </>
           )}
           {state.status === "failed" && (
             <>
+              <Mascot variant="thinking" size={150} />
               <Text accessibilityRole="alert">Шалгалт тасалдлаа. Дахин оролдоно уу.</Text>
               <Button
                 label="Дахин оролдох"
