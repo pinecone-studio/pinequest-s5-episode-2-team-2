@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: world.purple,
   },
-  handleText: { fontSize: 22, fontFamily: fonts.black, color: world.purpleDeep },
+  handleText: { fontSize: 22, fontFamily: fonts.black, fontWeight: "900", color: world.purpleDeep },
   desk: {
     position: "absolute",
     height: 16,
@@ -581,7 +581,13 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "-35deg" }],
   },
   dark: { ...FILL, backgroundColor: world.navy },
-  hint: { fontFamily: fonts.bold, fontSize: 15, color: "#5D5A7A", textAlign: "center" },
+  hint: {
+    fontFamily: fonts.bold,
+    fontWeight: "700",
+    fontSize: 15,
+    color: "#5D5A7A",
+    textAlign: "center",
+  },
   chips: { flexDirection: "row", gap: 8 },
   chip: {
     flex: 1,
@@ -591,6 +597,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  chipText: { fontFamily: fonts.extraBold, fontSize: 15, color: world.navy },
+  chipText: { fontFamily: fonts.extraBold, fontWeight: "800", fontSize: 15, color: world.navy },
   choices: { flexDirection: "row", gap: 8 },
 });
