@@ -23,7 +23,7 @@ import {
 import { createSynchronizable, scheduleOnRN } from "react-native-worklets";
 import { Text } from "../../components/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fonts } from "../../theme";
+import { fonts, theme } from "../../theme";
 import { useFullRangeFaces } from "./useFullRangeFaces";
 import { distanceCopy as copy } from "./copy";
 import { distanceGuidance, personMetres, type FaceTarget } from "./depthDistance";
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   primary: {
     minHeight: 52,
     borderRadius: 999,
-    backgroundColor: "#2F6FED",
+    backgroundColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
     padding: 14,

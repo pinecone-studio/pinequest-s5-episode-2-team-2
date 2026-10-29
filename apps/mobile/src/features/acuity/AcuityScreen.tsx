@@ -2,6 +2,8 @@ import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { PixelRatio, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Mascot } from "../../components/Mascot";
+import { mascotCopy } from "../../components/mascotCopy";
 import { Button, Card, Notice, Screen, Text, Verdict } from "../../components/ui";
 import { fonts, theme } from "../../theme";
 import {
@@ -140,6 +142,8 @@ export default function AcuityScreen() {
         <Text variant="title" accessibilityRole="header">
           {copy.title}
         </Text>
+        {/* Still, and only before the test: no mascot or motion while the E chart is shown. */}
+        <Mascot variant="thinking" size={130} />
         <Text>{copy.setup}</Text>
         <Text style={styles.section}>{copy.who}</Text>
         <View style={styles.choices}>
@@ -218,6 +222,9 @@ export default function AcuityScreen() {
         <Text variant="title" accessibilityRole="header">
           {copy.resultTitle}
         </Text>
+        {/* The test is over: thank the child for taking part, whatever the outcome. */}
+        <Mascot variant="celebrate" size={160} motion="pop" halo={theme.colors.mint} />
+        <Text style={styles.thanks}>{mascotCopy.thanks}</Text>
         <Verdict outcome={refer ? "REFER" : "NO_VISIBLE_SIGN"} title={verdict.title}>
           <Text>{verdict.body}</Text>
         </Verdict>
@@ -305,6 +312,14 @@ function ArrowPad({ onAnswer }: { onAnswer: (direction: Direction) => void }) {
 }
 
 const styles = StyleSheet.create({
+  thanks: {
+    fontFamily: fonts.extraBold,
+    fontWeight: "800",
+    fontSize: 17,
+    lineHeight: 23,
+    color: theme.colors.primary,
+    textAlign: "center",
+  },
   section: { fontFamily: fonts.black, fontWeight: "900", fontSize: 16 },
   choices: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   choice: {

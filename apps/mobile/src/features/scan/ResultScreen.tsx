@@ -1,6 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { Mascot } from "../../components/Mascot";
+import { mascotCopy } from "../../components/mascotCopy";
 import { Button, Card, Notice, Text, Verdict } from "../../components/ui";
 import { fonts, theme } from "../../theme";
 import { EyeDiagramView } from "../eyeView/EyeDiagramView";
@@ -40,6 +42,15 @@ export default function ResultScreen() {
         )}
         {result && outcome ? (
           <>
+            {result.outcome === "RETAKE" || result.outcome === "NOT_ASSESSED" ? (
+              <Mascot variant="thinking" size={150} />
+            ) : (
+              // The check was completed: thank the child for taking part, whatever the outcome.
+              <View style={styles.thanks}>
+                <Mascot variant="celebrate" size={170} motion="pop" halo={theme.colors.mint} />
+                <Text style={styles.thanksText}>{mascotCopy.thanks}</Text>
+              </View>
+            )}
             {eyes ? (
               <EyeDiagramView eyes={eyes} />
             ) : (
@@ -166,4 +177,13 @@ const styles = StyleSheet.create({
   heading: { fontFamily: fonts.black, fontWeight: "900", fontSize: 17, lineHeight: 24 },
   body: { fontSize: 15, lineHeight: 22, color: theme.colors.muted },
   muted: { color: theme.colors.muted },
+  thanks: { alignItems: "center", gap: 4 },
+  thanksText: {
+    fontFamily: fonts.extraBold,
+    fontWeight: "800",
+    fontSize: 17,
+    lineHeight: 23,
+    color: theme.colors.primary,
+    textAlign: "center",
+  },
 });
