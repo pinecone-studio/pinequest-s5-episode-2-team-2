@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import {
+  Animated,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { EmptyState } from "../../components/EmptyState";
 import { Text } from "../../components/ui";
 import { theme } from "../../theme";
@@ -7,6 +14,7 @@ import { adviceCards, type AdviceCard, type AdviceId } from "./advice";
 import { adviceCopy } from "./adviceCopy";
 import { adviceImages } from "./adviceImages";
 import { AdvicePicture } from "./AdvicePicture";
+import { useReducedMotion } from "./useReducedMotion";
 
 export function AdviceCarousel({
   cards = adviceCards,
@@ -16,6 +24,8 @@ export function AdviceCarousel({
   onOpen: (id: AdviceId) => void;
 }) {
   const { width, fontScale } = useWindowDimensions();
+  const reducedMotion = useReducedMotion();
+  const [scrollX] = useState(() => new Animated.Value(0));
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const [index, setIndex] = useState(0);
   const pageWidth = measuredWidth || Math.max(1, width - 40);
@@ -32,7 +42,7 @@ export function AdviceCarousel({
   function select(next: number) {
     activeRef.current = next;
     setIndex(next);
-    scroll.current?.scrollTo({ x: next * pageWidth, animated: true });
+    scroll.current?.scrollTo({ x: next * pageWidth, animated: !reducedMotion });
   }
   if (!cards.length)
     return <EmptyState icon="information-circle-outline" message={adviceCopy.missing} />;
@@ -43,11 +53,19 @@ export function AdviceCarousel({
         if (next > 0) setMeasuredWidth(next);
       }}
     >
-      <ScrollView
+      <Animated.ScrollView
         ref={scroll}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={
+          reducedMotion
+            ? undefined
+            : Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+                useNativeDriver: true,
+              })
+        }
         onMomentumScrollEnd={(event) => {
           const next = Math.max(
             0,
@@ -58,9 +76,23 @@ export function AdviceCarousel({
         }}
       >
         {cards.map((card, position) => (
-          <View
+          <Animated.View
             key={card.id}
-            style={{ width: pageWidth, paddingHorizontal: 4 }}
+            style={{
+              width: pageWidth,
+              paddingHorizontal: 4,
+              opacity: reducedMotion
+                ? 1
+                : scrollX.interpolate({
+                    inputRange: [
+                      (position - 1) * pageWidth,
+                      position * pageWidth,
+                      (position + 1) * pageWidth,
+                    ],
+                    outputRange: [0.8, 1, 0.8],
+                    extrapolate: "clamp",
+                  }),
+            }}
             accessibilityElementsHidden={position !== active}
             importantForAccessibility={position !== active ? "no-hide-descendants" : "auto"}
           >
@@ -80,9 +112,9 @@ export function AdviceCarousel({
                 <Text style={styles.details}>{adviceCopy.details} ›</Text>
               </View>
             </Pressable>
-          </View>
+          </Animated.View>
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
       <View style={styles.pages}>
         {cards.map((card, position) => (
           <Pressable
