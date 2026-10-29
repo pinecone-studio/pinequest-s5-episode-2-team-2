@@ -2,6 +2,8 @@ import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { PixelRatio, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Mascot } from "../../components/Mascot";
+import { mascotCopy } from "../../components/mascotCopy";
 import { Button, Card, Notice, Screen, Text, Verdict } from "../../components/ui";
 import { fonts, theme } from "../../theme";
 import {
@@ -21,8 +23,6 @@ import { CROWDED_UNITS, Optotype } from "./Optotype";
 import { AcuityGestureInput } from "./AcuityGestureInput";
 import { SaveAcuityButton } from "./SaveAcuityButton";
 import { useVoice } from "../voice/useVoice";
-import { acceptsSpoken, type SpokenAnswer } from "./speech";
-import { useSpokenAnswers, type SpeechStatus } from "./useSpokenAnswers";
 import type { VoiceKey } from "../voice/clips";
 import {
   beginEye,
@@ -52,7 +52,6 @@ export default function AcuityScreen() {
   const maxPoints = Math.min(width - 40, height * 0.5);
   const [session, setSession] = useState<Session | null>(null);
   const [gestureEnabled, setGestureEnabled] = useState(false);
-  const [speechEnabled, setSpeechEnabled] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   // Practice answers get spoken feedback ("Зөв!" / "Дахин оролдоорой"). The test itself only
   // says "Дараагийнх!" for every letter, so it never tells the child which answers were right.
@@ -121,37 +120,10 @@ export default function AcuityScreen() {
     }
     setSession(next);
   };
-  const round = session
-    ? `${session.stage}:${session.eye}:${session.direction}:${session.practiceCorrect}:${session.test.level}:${session.test.shown}`
-    : "";
-  // Spoken replies work alongside pointing and the arrows: whichever comes first answers.
-  // Only while a letter is shown, so the cover prompts ("Зүүн нүдээ…") are never taken as a reply.
-  const spokenAnswer = (spoken: SpokenAnswer) => {
-    if (!session || (session.stage !== "practice" && session.stage !== "test")) return;
-    if (!acceptsSpoken(session.group, spoken)) return setFeedback(copy.speech.pointLeftRight);
-    const shown = spoken === "cantSee" ? null : spoken;
-    if (session.stage === "practice") practiceAnswer(shown);
-    else setSession((current) => (current ? respond(current, shown, Math.random) : current));
-  };
-  const speechStatus = useSpokenAnswers({
-    enabled:
-      speechEnabled && !!session && (session.stage === "practice" || session.stage === "test"),
-    round,
-    onAnswer: spokenAnswer,
-  });
-  const speech = session && (
-    <SpeechToggle
-      enabled={speechEnabled}
-      setEnabled={setSpeechEnabled}
-      status={speechStatus}
-      child={session.group !== "adult"}
-    />
-  );
-
   const input = (manual: React.ReactNode) =>
     session && (
       <AcuityGestureInput
-        round={round}
+        round={`${session.stage}:${session.eye}:${session.direction}:${session.practiceCorrect}:${session.test.level}:${session.test.shown}`}
         cover={session.stage === "cover"}
         enabled={gestureEnabled}
         setEnabled={setGestureEnabled}
@@ -170,6 +142,8 @@ export default function AcuityScreen() {
         <Text variant="title" accessibilityRole="header">
           {copy.title}
         </Text>
+        {/* Still, and only before the test: no mascot or motion while the E chart is shown. */}
+        <Mascot variant="thinking" size={130} />
         <Text>{copy.setup}</Text>
         <Text style={styles.section}>{copy.who}</Text>
         <View style={styles.choices}>
@@ -210,7 +184,6 @@ export default function AcuityScreen() {
           {feedback ?? " "}
         </Text>
         {input(<ArrowPad onAnswer={practiceAnswer} />)}
-        {speech}
         <Button
           label={copy.practice.skip}
           variant="link"
@@ -249,6 +222,9 @@ export default function AcuityScreen() {
         <Text variant="title" accessibilityRole="header">
           {copy.resultTitle}
         </Text>
+        {/* The test is over: thank the child for taking part, whatever the outcome. */}
+        <Mascot variant="celebrate" size={160} motion="pop" halo={theme.colors.mint} />
+        <Text style={styles.thanks}>{mascotCopy.thanks}</Text>
         <Verdict outcome={refer ? "REFER" : "NO_VISIBLE_SIGN"} title={verdict.title}>
           <Text>{verdict.body}</Text>
         </Verdict>
@@ -309,43 +285,7 @@ export default function AcuityScreen() {
       </View>
       {input(<ArrowPad onAnswer={answer} />)}
       <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />
-      {speech}
     </SafeAreaView>
-  );
-}
-
-function SpeechToggle({
-  enabled,
-  setEnabled,
-  status,
-  child,
-}: {
-  enabled: boolean;
-  setEnabled: (value: boolean) => void;
-  status: SpeechStatus;
-  child: boolean;
-}) {
-  const note =
-    status === "listening"
-      ? child
-        ? copy.speech.listeningChild
-        : copy.speech.listening
-      : status === "off"
-        ? null
-        : copy.speech[status];
-  return (
-    <View style={styles.speech}>
-      <Button
-        label={enabled ? copy.speech.disable : copy.speech.enable}
-        variant="link"
-        onPress={() => setEnabled(!enabled)}
-      />
-      {note && (
-        <Text variant="caption" accessibilityLiveRegion="polite" style={styles.speechNote}>
-          {note}
-        </Text>
-      )}
-    </View>
   );
 }
 
@@ -372,8 +312,14 @@ function ArrowPad({ onAnswer }: { onAnswer: (direction: Direction) => void }) {
 }
 
 const styles = StyleSheet.create({
-  speech: { alignItems: "center", gap: theme.spacing.xs },
-  speechNote: { textAlign: "center", color: theme.colors.muted },
+  thanks: {
+    fontFamily: fonts.extraBold,
+    fontWeight: "800",
+    fontSize: 17,
+    lineHeight: 23,
+    color: theme.colors.primary,
+    textAlign: "center",
+  },
   section: { fontFamily: fonts.black, fontWeight: "900", fontSize: 16 },
   choices: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   choice: {

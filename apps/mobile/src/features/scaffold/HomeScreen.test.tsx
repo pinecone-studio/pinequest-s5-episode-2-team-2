@@ -3,12 +3,12 @@ import { create, type ReactTestRenderer } from "react-test-renderer";
 import HomeScreen from "./HomeScreen";
 
 const mockNavigate = jest.fn();
+jest.mock("../../components/Mascot", () => ({ Mascot: "Mascot" }));
 jest.mock("expo-router", () => ({ router: { navigate: (to: string) => mockNavigate(to) } }));
 jest.mock("expo-linear-gradient", () => ({ LinearGradient: "LinearGradient" }));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 jest.mock("../history/LatestScanCard", () => ({ LatestScanCard: "LatestScanCard" }));
 jest.mock("../../components/ui", () => ({ Button: "Button", Text: "Text" }));
-jest.mock("../../../assets/splash-icon.png", () => 1);
 jest.mock("react-native", () => ({
   Image: "Image",
   View: "View",

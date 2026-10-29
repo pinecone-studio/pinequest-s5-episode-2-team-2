@@ -51,16 +51,16 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 240,
+          "image": "./assets/mascots/idle_happy.png",
+          "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#F3F7FF"
+          "backgroundColor": "#F6F3FF"
         }
       ],
       [
         "expo-audio",
         {
-          "microphonePermission": "Хараа шалгах үед Е үсгийн чиглэлийг дуугаар хэлэхэд микрофон ашиглана. Бичлэг утсанд л боловсруулагдаж, хадгалагдахгүй.",
+          "microphonePermission": false,
           "recordAudioAndroid": false,
           "enableBackgroundPlayback": false
         }

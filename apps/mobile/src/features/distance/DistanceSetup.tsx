@@ -18,20 +18,17 @@ import {
   useCameraDevices,
   useCameraPermission,
   useDepthOutput,
-  useObjectOutput,
   type CameraDevice,
-  type ScannedObject,
-  type ScannedObjectType,
 } from "react-native-vision-camera";
 import { createSynchronizable, scheduleOnRN } from "react-native-worklets";
 import { Text } from "../../components/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fonts } from "../../theme";
+import { fonts, theme } from "../../theme";
+import { useFullRangeFaces } from "./useFullRangeFaces";
 import { distanceCopy as copy } from "./copy";
-import { distanceGuidance, personMetres, singleFace, type FaceTarget } from "./depthDistance";
+import { distanceGuidance, personMetres, type FaceTarget } from "./depthDistance";
 
 const resolution = { width: 640, height: 480 };
-const faceTypes: ScannedObjectType[] = ["face"];
 
 export function DistanceSetup({ onContinue }: { onContinue: () => void }) {
   const [enabled, setEnabled] = useState(true),
@@ -251,26 +248,17 @@ function DepthCamera({
     },
     [onReading, epoch],
   );
-  const objects = useCallback(
-    (values: ScannedObject[]) => {
-      try {
-        if (!alive.current) return;
-        const face = singleFace(values, Date.now());
-        const previous = target.getBlocking();
-        if (!!face !== !!previous) epoch.setBlocking(epoch.getBlocking() + 1);
-        target.setBlocking(face);
-        if (!face && previous) onReading(null, Date.now());
-      } catch {
-        target.setBlocking(null);
-        epoch.setBlocking(epoch.getBlocking() + 1);
-        if (alive.current) onReading(null, Date.now());
-      } finally {
-        values.forEach((value) => value.dispose());
-      }
+  const updateTarget = useCallback(
+    (face: FaceTarget | null) => {
+      if (!alive.current) return;
+      const previous = target.getBlocking();
+      if (!!face !== !!previous) epoch.setBlocking(epoch.getBlocking() + 1);
+      target.setBlocking(face);
+      if (!face && previous) onReading(null, Date.now());
     },
     [target, epoch, onReading],
   );
-  const face = useObjectOutput({ types: faceTypes, onObjectsScanned: objects });
+  const face = useFullRangeFaces(updateTarget, fail);
   const depth = useDepthOutput({
     targetResolution: resolution,
     enableFiltering: true,
@@ -353,7 +341,7 @@ const styles = StyleSheet.create({
   primary: {
     minHeight: 52,
     borderRadius: 999,
-    backgroundColor: "#2F6FED",
+    backgroundColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
     padding: 14,

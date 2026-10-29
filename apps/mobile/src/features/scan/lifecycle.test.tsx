@@ -10,6 +10,7 @@ import type { LandmarkFrame } from "../vision/facePipeline";
 import type { EyePrediction } from "../vision/eyeCrops";
 import { SCAN_POLICY_VERSION } from "./scanPolicy";
 const mockSay = jest.fn();
+jest.mock("../../components/Mascot", () => ({ Mascot: "Mascot" }));
 jest.mock("../voice/useVoice", () => ({
   useVoice: () => ({ say: (...keys: string[]) => mockSay(...keys), stop: jest.fn() }),
 }));

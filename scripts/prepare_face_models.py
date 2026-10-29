@@ -21,6 +21,8 @@ HAND_POSE_BUNDLES = (
         ("pose_detector.tflite", "pose_landmarks_detector.tflite"),
     ),
 )
+FULL_RANGE_URL = "https://storage.googleapis.com/mediapipe-assets/face_detection_full_range_sparse.tflite"
+FULL_RANGE_SHA256 = "2c3728e6da56f21e21a320433396fb06d40d9088f2247c05e5635a688d45dfe1"
 DESTINATION = Path(__file__).resolve().parents[1] / "apps/mobile/assets/models"
 
 
@@ -53,10 +55,26 @@ def prepare(url: str, sha256: str, names: tuple[str, ...]) -> None:
         (DESTINATION / name).write_bytes(data)
 
 
+def prepare_full_range() -> None:
+    path = DESTINATION / "face_detection_full_range_sparse.tflite"
+    if path.exists():
+        data = path.read_bytes()
+    else:
+        with urllib.request.urlopen(FULL_RANGE_URL, timeout=60) as response:
+            data = response.read(1_000_001)
+    if len(data) > 1_000_000 or hashlib.sha256(data).hexdigest() != FULL_RANGE_SHA256:
+        raise ValueError("Full-range face model checksum mismatch")
+    if data[4:8] != b"TFL3":
+        raise ValueError("Invalid full-range TFLite model")
+    DESTINATION.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+
+
 def main() -> None:
     prepare(URL, SHA256, MODELS)
     for url, sha256, names in HAND_POSE_BUNDLES:
         prepare(url, sha256, names)
+    prepare_full_range()
     print("Verified MediaPipe face, hand and pose models ready (CPU; weights ignored by git).")
 
 if __name__ == "__main__":

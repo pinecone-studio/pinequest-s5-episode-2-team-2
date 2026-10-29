@@ -120,6 +120,17 @@ References: [Expo Router setup](https://docs.expo.dev/router/installation/),
 [SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/),
 [local development builds](https://docs.expo.dev/guides/local-app-development/).
 
+## Full-range face model
+
+The distance guide uses MediaPipe's [full-range sparse face detector](https://github.com/google-ai-edge/mediapipe/blob/master/docs/solutions/models.md#face_detection)
+([Apache-2.0 source project](https://github.com/google-ai-edge/mediapipe/blob/master/LICENSE)).
+`scripts/prepare_face_models.py` fetches the public model locally; weights are ignored by git.
+Its SHA-256 is `2c3728e6da56f21e21a320433396fb06d40d9088f2247c05e5635a688d45dfe1`.
+The [reference graph](https://github.com/google-ai-edge/mediapipe/blob/master/mediapipe/modules/face_detection/face_detection_full_range.pbtxt)
+defines the 192×192 input, 2304 stride-4 anchors and 0.6 confidence cutoff. Published face-detection
+range does not validate phone-to-person metre accuracy; physical iPhone acceptance is required.
+No new training dataset is added.
+
 ## Dataset licenses
 
 | Dataset                              | Source | License |

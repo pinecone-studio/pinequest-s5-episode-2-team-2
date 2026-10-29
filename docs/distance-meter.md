@@ -9,8 +9,10 @@ No adult IPD, assumed shoulder width or guessed focal length is used. AVDepthDat
 absolute/relative accuracy and quality; only current absolute/high-quality depth is accepted.
 Disparity/half-depth is converted natively to float32 depth in metres when supported. The
 camera-space face centre and bounds are mapped with the depth API rather than preview maths.
-A full 3x3 patch must fit inside the face bounds; at least five finite positive samples are
-needed for its median. Below-display-resolution readings are hidden instead of showing0.0m.
+At least a 3×3 patch must fit inside the face bounds. Larger faces use a bounded central
+ellipse, inset from the face edges, up to 25×25 pixels. The median requires sufficient
+finite positive samples; scattered/mixed-surface values are rejected by their interquartile
+spread. These are input-quality checks, not calibrated error bounds. Below-display-resolution readings are hidden instead of showing0.0m.
 
 Face targets and displayed readings expire after750ms. Missing/multiple faces, unsupported
 formats/hardware, low-quality data, invalid pixels, backgrounding and navigation clear the
@@ -70,3 +72,38 @@ acquiring a stable value; after three seconds without a stable value, “Зай�
 хэмжиж чадсангүй”. Retry/background resets this wait, and valid readings restore placement
 guidance. These captions distinguish lost measurement from navigation; they do not repair
 the failed approximately 3 m recognition.
+
+## Full-range face acquisition
+
+The distance camera now obtains its target from MediaPipe's full-range sparse detector
+instead of AVFoundation face metadata, which lost valid targets in the approximate 3 m
+attempt. The reference graph specifies float32 192×192 RGB in [-1, 1], 2304 stride-4 anchors
+and a 0.6 confidence cutoff. The existing short-range landmark/eye pipeline is unchanged.
+The full-range model is checksum-pinned and prepared locally; no weights enter git.
+
+Inference uses one cached interpreter, a bounded single-frame handoff and a worker at
+approximately 3 Hz or slower when inference is expensive. Full-frame letterboxing is undone
+before all four face-box corners are mapped through native frame→camera→depth APIs. Multiple,
+clipped or stale faces do not produce a target. Frame and resize buffers are released on
+success, failure, busy dispatch and unmount; old worker results cannot revive capture.
+
+The model's published face-detection range is not a depth-camera range or an accuracy claim.
+The existing absolute/high-quality depth gate, small in-face sample patch and physical
+reference requirement remain. On 2026-10-29, a fresh Xcode Run began at thermal state 0. The owner reported face
+recognition from approximately 3 m. A bounded scalar log sample contained 155 detector
+callbacks, 117 with one face and 109 valid camera-space targets, median worker latency
+36.13 ms. These include movement/near-range samples and are not a sustained benchmark or
+a measured distance-accuracy result. Some metre readings remained unstable and no ready
+event was recorded. A stable approximately 3 m display and its green/tone cue are still
+unverified. The debug session later showed Finished running; no post-check thermal reading
+was obtained. Keep #259 open for measured reference and remaining lifecycle acceptance.
+
+A follow-up spatial filter broadens sampling inside the face instead of trusting nine centre
+pixels. It preserves the quality/accuracy gate and rejects a patch with insufficient valid
+pixels or broad depth scatter. Synthetic regressions cover isolated bad centre pixels and
+mixed foreground/background surfaces. On the follow-up Xcode Run (thermal baseline 0), the owner confirmed the readout became
+stable at the approximately 3 m position. A stationary scalar segment read approximately
+3.41–3.43 m. The real position was not measured, so this is functional stability evidence,
+not an accuracy result. The debug session then showed Finished running; post-check thermal
+was unavailable. Physical reference comparison and the native 3.0 m green/tone check remain
+incomplete.

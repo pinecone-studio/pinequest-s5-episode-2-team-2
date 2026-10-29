@@ -12,7 +12,7 @@ jest.mock("expo-audio", () => ({
 jest.mock("../../../assets/sounds/correct.wav", () => 3, { virtual: true });
 jest.mock("expo-linear-gradient", () => ({ LinearGradient: "LinearGradient" }));
 jest.mock("@expo/vector-icons/Ionicons", () => "Ionicons");
-jest.mock("../scaffold/EyeHero", () => ({ EyeHero: "EyeHero" }));
+jest.mock("../../components/Mascot", () => ({ Mascot: "Mascot" }));
 jest.mock("./QuizGame", () => ({ QuizGame: "QuizGame" }));
 const mockSay = jest.fn();
 jest.mock("../voice/useVoice", () => ({
@@ -214,4 +214,10 @@ test("without a child profile the games work but no star is saved", async () => 
   await act(async () => startOf(rest.title).props.onPress());
   await act(async () => jest.advanceTimersByTime(rest.steps[0]!.seconds * 1000));
   expect(mockAddStar).not.toHaveBeenCalled();
+});
+
+test("the hero shows the Нүдхэн mascot instead of the eye mark", () => {
+  const mascots = renderer.root.findAll((node) => String(node.type) === "Mascot");
+  expect(mascots).toHaveLength(1);
+  expect(mascots[0]!.props.variant).toBe("idle_happy");
 });

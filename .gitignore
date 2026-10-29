@@ -40,7 +40,6 @@ ml/runs/
 *.onnx
 *.tflite
 *.task
-*.bin
 *.mlmodel
 *.mlpackage/
 

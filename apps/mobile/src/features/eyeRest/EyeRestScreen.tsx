@@ -6,10 +6,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 import chime from "../../../assets/sounds/correct.wav";
 import { Button, Screen, Text } from "../../components/ui";
+import { Mascot } from "../../components/Mascot";
 import { theme } from "../../theme";
 import { addStar, starSummary, type StarSummary } from "../../storage/play";
 import { useActiveChildId } from "../children/useActiveChildId";
-import { EyeHero } from "../scaffold/EyeHero";
 import { exercises, eyeRestCopy as copy, type Exercise } from "./content";
 import { QuizGame } from "./QuizGame";
 import { useVoice } from "../voice/useVoice";
@@ -174,7 +174,7 @@ function StarEarned() {
   );
 }
 
-/** Playful banner with the brand eye, so the tab feels like a game rather than a checklist. */
+/** Playful banner with the Нүдхэн mascot, so the tab feels like a game rather than a checklist. */
 function Hero() {
   return (
     <LinearGradient
@@ -189,7 +189,7 @@ function Hero() {
         </Text>
         <Text style={styles.heroSubtitle}>{copy.heroSubtitle}</Text>
       </View>
-      <EyeHero size={110} />
+      <Mascot variant="idle_happy" size={120} maxScreenShare={0.34} motion="float" />
     </LinearGradient>
   );
 }
