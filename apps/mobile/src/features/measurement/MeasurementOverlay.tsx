@@ -4,8 +4,9 @@ import { StyleSheet, Text, View } from "react-native";
 import { coverTransform, debugLines, eyeMarks } from "./overlay";
 import type { Size } from "./overlay";
 
-const IRIS = "#00ff80";
-const REFLEX = "#ff3b30";
+// The web demo's colours: teal iris, amber reflex.
+const IRIS = "#14B8A6";
+const REFLEX = "#F59E0B";
 const DOT = 6;
 
 export interface MeasurementOverlayProps {
@@ -14,17 +15,20 @@ export interface MeasurementOverlayProps {
   latencyMs: number | null;
   /** Why there are no eyes this frame, e.g. MODEL_UNAVAILABLE. */
   failure: string | null;
+  /** Show the per-frame values; off when the marks are shown to parents. */
+  values?: boolean;
 }
 
 /**
- * Developer-only overlay for tuning the measurement on device (#20): iris circle and centre
- * plus the reflex, drawn over the live preview, and the per-frame values underneath.
+ * Iris circle and centre plus the reflex, drawn over the live preview like the web demo (#274),
+ * and for tuning on device (#20) the per-frame values underneath.
  */
 export function MeasurementOverlay({
   frameSize,
   eyes,
   latencyMs,
   failure,
+  values = true,
 }: MeasurementOverlayProps) {
   const [view, setView] = useState<Size>({ width: 0, height: 0 });
   const t = coverTransform(frameSize, view);
@@ -70,13 +74,15 @@ export function MeasurementOverlay({
             </View>
           );
         })}
-      <View style={styles.panel}>
-        {debugLines(eyes, latencyMs, failure).map((line) => (
-          <Text key={line} style={styles.line}>
-            {line}
-          </Text>
-        ))}
-      </View>
+      {values && (
+        <View style={styles.panel}>
+          {debugLines(eyes, latencyMs, failure).map((line) => (
+            <Text key={line} style={styles.line}>
+              {line}
+            </Text>
+          ))}
+        </View>
+      )}
     </View>
   );
 }

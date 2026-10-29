@@ -1,6 +1,6 @@
 import type { Point } from "@app/core";
 import type { Frame, FramePlane } from "react-native-vision-camera";
-import { inferEyes } from "./eyeCrops";
+import { heuristicEyes, inferEyes } from "./eyeCrops";
 import type { EyePrediction } from "./eyeCrops";
 import type { InferenceModel } from "./facePipeline";
 import type { PixelSource } from "./pixels";
@@ -20,7 +20,16 @@ export function analyzeEyePixels(
 ): EyeFrameResult {
   "worklet";
   if (!landmarks.length) return { eyes: null, eyeFailure: "EYE_NOT_FOUND" };
-  if (!model) return { eyes: null, eyeFailure: "MODEL_UNAVAILABLE" };
+  if (!model) {
+    // No keypoint model installed: measure with the web demo's heuristic (#274). A crop it
+    // cannot measure only rejects this frame.
+    try {
+      const eyes = heuristicEyes(source, landmarks);
+      return { eyes, eyeFailure: eyes ? null : "EYE_NOT_FOUND" };
+    } catch {
+      return { eyes: null, eyeFailure: "EYE_NOT_FOUND" };
+    }
+  }
   try {
     const eyes = inferEyes(source, landmarks, model);
     return { eyes, eyeFailure: eyes ? null : "EYE_NOT_FOUND" };
@@ -36,7 +45,6 @@ export function analyzeEyes(
 ): EyeFrameResult {
   "worklet";
   if (!landmarks.length) return { eyes: null, eyeFailure: "EYE_NOT_FOUND" };
-  if (!model) return { eyes: null, eyeFailure: "MODEL_UNAVAILABLE" };
   try {
     if (frame.pixelFormat !== "yuv-420-8-bit-full") throw new Error("Expected full-range NV12");
     const planes = frame.getPlanes();

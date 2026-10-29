@@ -47,11 +47,20 @@ test("reads full-range two-plane frames and returns only eye predictions", () =>
   expect(result.eyes![1].irisCenter).toEqual({ x: 3, y: 2 });
 });
 
-test("missing landmarks or weights do not read pixel buffers", () => {
-  const { frame, landmarks, model } = setup();
+test("missing landmarks do not read pixel buffers", () => {
+  const { frame, model } = setup();
   expect(analyzeEyes(frame, [], model).eyeFailure).toBe("EYE_NOT_FOUND");
-  expect(analyzeEyes(frame, landmarks, undefined).eyeFailure).toBe("MODEL_UNAVAILABLE");
   expect(frame.getPlanes).not.toHaveBeenCalled();
+});
+
+test("without weights the heuristic measures the eyes from the frame (#274)", () => {
+  const { frame, landmarks, model } = setup();
+  const result = analyzeEyes(frame, landmarks, undefined);
+  expect(result.eyeFailure).toBeNull();
+  expect(frame.getPlanes).toHaveBeenCalled();
+  expect(model.runSync).not.toHaveBeenCalled();
+  // A flat grey frame has no reflex.
+  expect(result.eyes!.map((eye) => eye.reflex)).toEqual([null, null]);
 });
 
 test("unsupported layouts and model failures are contained within the frame", () => {

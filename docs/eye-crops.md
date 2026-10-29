@@ -25,6 +25,21 @@ can move that folder when Xcode reinstalls the app, so a copied `file://` path g
 model URLs are not accepted by this developer hook. The eye model loads only after both
 face models have loaded: on an iPhone 12 Pro Max, loading all three at once handed the face
 detector's bytes to the eye-model request and the face model failed to load. The hook validates the tensor contract
-before publishing the model. Without weights, frame metadata reports `MODEL_UNAVAILABLE`;
-the face preview remains usable and completed scans return `NOT_ASSESSED` with an explicit
-[unvalidated-demo notice](real-scan-results.md).
+before publishing the model. While a configured model is still loading, frames report
+`MODEL_UNAVAILABLE`.
+
+Without a configured model, `heuristicEyes` measures the same two crops with the web demo's
+heuristic (#274): the port of `ml/hirschberg` from `demo/web-poc` in
+`apps/mobile/src/features/vision/heuristic.ts`. It starts from the Face Landmarker iris at the
+crop centre (radius one fifth of the crop), fits a circle to the dark iris blob and takes the
+largest bright blob inside it as the reflex. Its confidence (1 for one bright blob, 0.5 for
+several, halved without an iris fit) and thresholds are the demo's `TODO(tune)` placeholders,
+so results stay unvalidated; see the [demo notice](real-scan-results.md). The heuristic is
+used until a keypoint model trained on torch captures exists (#17, #29).
+
+Like the web demo, these scans count a frame when it has one face, both eyes and a reflex in
+each (`withWebDemoQuality`). The head pose, gaze, distance and crop pixel limits were set for
+the keypoint model; with the heuristic they only drive the live guidance, not the result. The
+scan screen also shows the demo's live checks (`ScanChecks`: face, both eyes, reflex) and its
+iris and reflex marks over the preview, and the camera takes the next frame as soon as the
+previous one is measured, as the demo did.

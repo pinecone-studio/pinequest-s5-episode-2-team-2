@@ -3,6 +3,14 @@ import type { EyeMeasure, ScanFailure } from "@app/core";
 import type { EyePrediction } from "../vision/eyeCrops";
 import type { EyeFrameResult } from "../vision/eyeFrame";
 
+/** No keypoint model is configured, so eyes are measured with the web demo's heuristic (#274). */
+export const HEURISTIC_MEASUREMENT = !process.env.EXPO_PUBLIC_KEYPOINT_MODEL_URI;
+
+/** What measured a scan, saved with it: the configured keypoint model or the heuristic. */
+export const MEASUREMENT_VERSION = HEURISTIC_MEASUREMENT
+  ? "heuristic-web-demo"
+  : "keypoints-local-unversioned";
+
 /**
  * One keypoint-model prediction as the shared `EyeMeasure` contract, in frame pixels.
  * `confidence` is the model's reflex-visible probability, 0 when it reports no reflex,

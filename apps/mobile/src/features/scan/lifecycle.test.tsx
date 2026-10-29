@@ -33,6 +33,7 @@ jest.mock("../vision/useLandmarks", () => ({
   },
 }));
 jest.mock("expo-sqlite", () => ({ useSQLiteContext: () => mockDb }));
+jest.mock("./ScanChecks", () => ({ ScanChecks: "ScanChecks" }));
 jest.mock("../children/useActiveChildId", () => ({ useActiveChildId: () => mockChildId }));
 jest.mock("../../storage/sessions", () => ({
   saveSession: (db: unknown, result: ScanResult) => mockSave(db, result),
@@ -397,17 +398,28 @@ test.each([
 
 test("too few usable frames saves RETAKE rather than a successful assessment", async () => {
   await start();
+  await frames(measuredFrame(), measuredFrame(0, { eyes: null, eyeFailure: "EYE_NOT_FOUND" }));
+  await advance(3100);
+  expect(mockSave.mock.calls[0]![1]).toMatchObject({
+    outcome: "RETAKE",
+    reasons: ["EYE_NOT_FOUND", "TOO_FEW_FRAMES"],
+    summary: { framesTotal: 2, framesUsed: 1 },
+  });
+});
+
+test("without a model, frames count by the web demo's checks, not the guidance limits", async () => {
+  await start();
   await frames(
     measuredFrame(),
     measuredFrame(0, {
-      quality: mockFrameQuality({ ok: false, reasons: ["BLUR"] }),
+      quality: mockFrameQuality({ ok: false, reasons: ["BLUR", "HEAD_TURNED", "NOT_LOOKING"] }),
     }),
   );
   await advance(3100);
   expect(mockSave.mock.calls[0]![1]).toMatchObject({
-    outcome: "RETAKE",
-    reasons: ["BLUR", "TOO_FEW_FRAMES"],
-    summary: { framesTotal: 2, framesUsed: 1 },
+    modelVersion: "heuristic-web-demo",
+    reasons: ["TOO_FEW_FRAMES"],
+    summary: { framesTotal: 2, framesUsed: 2 },
   });
 });
 
@@ -421,6 +433,7 @@ test("an aligning model failure does not contaminate the following scan", async 
   await press("3 секунд");
   await frames(
     measuredFrame(0, {
+      faceCount: 0,
       eyes: null,
       eyeFailure: "EYE_NOT_FOUND",
       quality: mockFrameQuality({ ok: false, reasons: ["NO_FACE"] }),

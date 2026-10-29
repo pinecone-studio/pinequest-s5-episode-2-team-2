@@ -17,6 +17,7 @@ jest.mock("react-native", () => ({
   StyleSheet: { absoluteFill: {}, create: (styles: unknown) => styles },
 }));
 jest.mock("./LiveGuidance", () => ({ LiveGuidance: "LiveGuidance" }));
+jest.mock("./ScanChecks", () => ({ ScanChecks: "ScanChecks" }));
 jest.mock("../vision/LandmarkOverlay", () => ({ LandmarkOverlay: "LandmarkOverlay" }));
 jest.mock("../measurement/MeasurementOverlay", () => ({
   MeasurementOverlay: "MeasurementOverlay",
@@ -73,4 +74,13 @@ test("works without a listener and ignores frames after unmount", async () => {
   await act(async () => renderer.unmount());
   report(frame);
   expect(listener).not.toHaveBeenCalled();
+});
+
+test("without a model, shows the web demo's checks and marks but not the debug values", async () => {
+  await act(async () => {
+    renderer = create(camera());
+  });
+  await act(async () => mockReports.at(-1)!(frame));
+  expect(renderer.root.findByType("ScanChecks" as never).props.frame).toBe(frame);
+  expect(renderer.root.findByType("MeasurementOverlay" as never).props.values).toBe(false);
 });

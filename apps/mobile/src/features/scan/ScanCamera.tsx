@@ -6,8 +6,10 @@ import { useLandmarks } from "../vision/useLandmarks";
 import { LandmarkOverlay } from "../vision/LandmarkOverlay";
 import { MeasurementOverlay } from "../measurement/MeasurementOverlay";
 import { measurementDebugEnabled, measurementOverlayProps } from "../measurement/debug";
+import { HEURISTIC_MEASUREMENT } from "../measurement/eyeMeasure";
 import type { LandmarkFrame } from "../vision/facePipeline";
 import { LiveGuidance } from "./LiveGuidance";
+import { ScanChecks } from "./ScanChecks";
 import { ScanPreview } from "./ScanPreview";
 
 export function ScanCamera({
@@ -64,8 +66,17 @@ export function ScanCamera({
   useEffect(() => {
     if (started && previewStarted && ready && live.current) onReady();
   }, [started, previewStarted, ready, onReady]);
+  const debug = measurementDebugEnabled();
   return (
-    <ScanPreview guidance={<LiveGuidance frame={frame} speak={speakGuidance} />}>
+    <ScanPreview
+      guidance={
+        <>
+          {/* Without a model the scan works like the web demo: its checks and marks (#274). */}
+          {HEURISTIC_MEASUREMENT && <ScanChecks frame={frame} />}
+          <LiveGuidance frame={frame} speak={speakGuidance} />
+        </>
+      }
+    >
       <Camera
         style={StyleSheet.absoluteFill}
         device={device}
@@ -86,8 +97,8 @@ export function ScanCamera({
       {__DEV__ && process.env.EXPO_PUBLIC_LANDMARK_DEBUG === "1" && (
         <LandmarkOverlay frame={frame} />
       )}
-      {measurementDebugEnabled() && frame && (
-        <MeasurementOverlay {...measurementOverlayProps(frame)} />
+      {(debug || HEURISTIC_MEASUREMENT) && frame && (
+        <MeasurementOverlay {...measurementOverlayProps(frame)} values={debug} />
       )}
     </ScanPreview>
   );
