@@ -36,3 +36,7 @@ largest bright blob inside it as the reflex. Its confidence (1 for one bright bl
 several, halved without an iris fit) and thresholds are the demo's `TODO(tune)` placeholders,
 so results stay unvalidated; see the [demo notice](real-scan-results.md). The heuristic is
 used until a keypoint model trained on torch captures exists (#17, #29).
+
+Like the web demo, these scans count a frame when it has one face, both eyes and a reflex in
+each (`withWebDemoQuality`). The head pose, gaze, distance and crop pixel limits were set for
+the keypoint model; with the heuristic they only drive the live guidance, not the result.

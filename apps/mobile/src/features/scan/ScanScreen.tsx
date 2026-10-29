@@ -14,7 +14,8 @@ import type { LandmarkFrame } from "../vision/facePipeline";
 import { saveSession } from "../../storage/sessions";
 import { emptyRecording, finishScan, recordFrame } from "./recorder";
 import type { ScanMeta, ScanRecording } from "./recorder";
-import { MEASUREMENT_VERSION } from "../measurement/eyeMeasure";
+import { HEURISTIC_MEASUREMENT, MEASUREMENT_VERSION } from "../measurement/eyeMeasure";
+import { withWebDemoQuality } from "../vision/frameQuality";
 import { SCAN_POLICY, SCAN_POLICY_VERSION } from "./scanPolicy";
 import { resultCopy } from "./resultCopy";
 import { useVoice } from "../voice/useVoice";
@@ -78,7 +79,11 @@ export default function ScanScreen() {
   const record = useCallback((frame: LandmarkFrame) => {
     const current = scan.current;
     if (current && performance.now() < current.endsAtMs) {
-      current.recording = recordFrame(current.recording, frame);
+      // Heuristic scans count frames by the web demo's checks; guidance keeps the full ones.
+      current.recording = recordFrame(
+        current.recording,
+        HEURISTIC_MEASUREMENT ? withWebDemoQuality(frame) : frame,
+      );
     }
   }, []);
 

@@ -3,7 +3,7 @@ import { GUIDANCE, guidanceForFrame } from "../scan/guidance";
 import { toFrameAnalysis } from "../scan/recorder";
 import type { EyePrediction } from "./eyeCrops";
 import type { LandmarkFrame } from "./facePipeline";
-import { withFrameQuality } from "./frameQuality";
+import { withFrameQuality, withWebDemoQuality } from "./frameQuality";
 
 function frontalFace(): Point[] {
   const points = Array.from({ length: 478 }, () => ({ x: 500, y: 550 }));
@@ -110,5 +110,53 @@ test.each<[CropStats, QualityReason]>([
   expect(withFrameQuality({ ...frame, eyes }).quality).toMatchObject({
     sharpness: null,
     exposure: null,
+  });
+});
+
+function measuredEyes(reflex = true): [EyePrediction, EyePrediction] {
+  return (["imageLeft", "imageRight"] as const).map((side, index): EyePrediction => ({
+    side,
+    irisCenter: { x: 430 + index * 140, y: 500 },
+    irisRadius: 40,
+    reflex: reflex || index === 0 ? { x: 431 + index * 140, y: 500 } : null,
+    reflexVisibleProbability: 0.9,
+    crop: { side, x: 330 + index * 140, y: 400, size: 200 },
+    cropStats: { sharpness: 0, exposure: 0.9, clipped: 0.2 },
+  })) as [EyePrediction, EyePrediction];
+}
+
+test("web demo checks pass a turned, blurred, sideways-looking frame with both reflexes", () => {
+  const landmarks = frontalFace();
+  // Nose tip far to the side and both irises off-centre: head turned and looking away.
+  landmarks[1] = { x: 620, y: 590 };
+  landmarks[468] = { x: 450, y: 500 };
+  landmarks[473] = { x: 590, y: 500 };
+  const measured = withFrameQuality({
+    ...frame,
+    landmarks,
+    eyes: measuredEyes(),
+    eyeFailure: null,
+  });
+  expect(measured.quality?.reasons).toEqual(
+    expect.arrayContaining(["HEAD_TURNED", "NOT_LOOKING", "BLUR"]),
+  );
+  const result = withWebDemoQuality(measured);
+  expect(result.quality).toEqual({ ...measured.quality, ok: true, reasons: [] });
+  expect(toFrameAnalysis(result).quality.ok).toBe(true);
+  expect(measured.quality?.ok).toBe(false);
+});
+
+test.each<[Partial<LandmarkFrame>, QualityReason]>([
+  [{ faceCount: 0, landmarks: [] }, "NO_FACE"],
+  [{ faceCount: 2, landmarks: [] }, "MULTIPLE_FACES"],
+  [{ eyes: null, eyeFailure: "EYE_NOT_FOUND" }, "EYE_NOT_FOUND"],
+  [{ eyes: measuredEyes(false), eyeFailure: null }, "REFLEX_NOT_FOUND"],
+])("web demo checks reject %p as %s", (overrides, reason) => {
+  expect(withWebDemoQuality({ ...frame, ...overrides }).quality).toEqual({
+    ok: false,
+    reasons: [reason],
+    sharpness: null,
+    exposure: null,
+    headPose: null,
   });
 });
