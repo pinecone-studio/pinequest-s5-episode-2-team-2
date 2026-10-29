@@ -28,14 +28,16 @@ export default function TipsScreen() {
           message={adviceCopy.missing}
           action={{ label: adviceCopy.browse, onPress: () => router.replace("/tips") }}
         />
-      ) : sections.map((section) => (
-        <Card key={section.key}>
-          <Text variant="caption" accessibilityRole="header" style={styles.heading}>
-            {section.title}
-          </Text>
-          <TipSources tips={section.tips} />
-        </Card>
-      ))}
+      ) : (
+        sections.map((section) => (
+          <Card key={section.key}>
+            <Text variant="caption" accessibilityRole="header" style={styles.heading}>
+              {section.title}
+            </Text>
+            <TipSources tips={section.tips} />
+          </Card>
+        ))
+      )}
       <Button
         label={eyeRestCopy.openFromTips}
         variant="secondary"
