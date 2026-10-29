@@ -291,6 +291,7 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontFamily: fonts.black,
+    fontWeight: "900",
     fontSize: 16,
     lineHeight: 21,
     color: world.navy,
@@ -310,7 +311,13 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
   },
-  bubbleText: { fontFamily: fonts.extraBold, fontSize: 17, lineHeight: 23, color: world.navy },
+  bubbleText: {
+    fontFamily: fonts.extraBold,
+    fontWeight: "800",
+    fontSize: 17,
+    lineHeight: 23,
+    color: world.navy,
+  },
   choice: {
     flex: 1,
     minHeight: 120,
@@ -332,6 +339,7 @@ const styles = StyleSheet.create({
   choiceEmoji: { fontSize: 44, lineHeight: 52 },
   choiceLabel: {
     fontFamily: fonts.bold,
+    fontWeight: "700",
     fontSize: 14,
     lineHeight: 19,
     color: world.navy,
@@ -340,6 +348,7 @@ const styles = StyleSheet.create({
   intro: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingVertical: 12 },
   story: {
     fontFamily: fonts.extraBold,
+    fontWeight: "800",
     fontSize: 20,
     lineHeight: 27,
     color: world.navy,
@@ -349,6 +358,7 @@ const styles = StyleSheet.create({
   wide: { alignSelf: "stretch", gap: 10 },
   finished: {
     fontFamily: fonts.black,
+    fontWeight: "900",
     fontSize: 28,
     lineHeight: 34,
     color: world.purpleDeep,
@@ -356,6 +366,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     fontFamily: fonts.extraBold,
+    fontWeight: "800",
     fontSize: 16,
     color: world.peachDeep,
     backgroundColor: world.peach,

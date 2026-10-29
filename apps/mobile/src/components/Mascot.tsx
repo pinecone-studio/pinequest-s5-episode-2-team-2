@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Animated, Easing, Image, StyleSheet, View, useWindowDimensions } from "react-native";
 import { mascotCopy } from "./mascotCopy";
 import { useReduceMotion } from "./useReduceMotion";
 import { mascotSources, type MascotVariant } from "./mascots";
@@ -97,13 +97,24 @@ export function Mascot({
           ]}
         />
       )}
-      <Animated.Image
-        testID={`mascot-${variant}`}
-        source={mascotSources[variant]}
-        resizeMode="contain"
-        accessible={false}
-        style={{ width: side * 0.86, height: side * 0.86, opacity: enter, transform }}
-      />
+      {motion === "none" ? (
+        // A still mascot is a plain image: nothing animated can hide it.
+        <Image
+          testID={`mascot-${variant}`}
+          source={mascotSources[variant]}
+          resizeMode="contain"
+          accessible={false}
+          style={{ width: side * 0.86, height: side * 0.86 }}
+        />
+      ) : (
+        <Animated.Image
+          testID={`mascot-${variant}`}
+          source={mascotSources[variant]}
+          resizeMode="contain"
+          accessible={false}
+          style={{ width: side * 0.86, height: side * 0.86, transform }}
+        />
+      )}
     </View>
   );
 }

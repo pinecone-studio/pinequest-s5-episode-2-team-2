@@ -292,6 +292,7 @@ const styles = StyleSheet.create({
   abs: { position: "absolute" },
   heading: {
     fontFamily: fonts.black,
+    fontWeight: "900",
     fontSize: 24,
     color: world.purpleDeep,
     textAlign: "center",
@@ -347,7 +348,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tabOn: { backgroundColor: world.purple },
-  tabText: { fontFamily: fonts.extraBold, fontSize: 15, color: world.navy },
+  tabText: { fontFamily: fonts.extraBold, fontWeight: "800", fontSize: 15, color: world.navy },
   tabTextOn: { color: world.white },
   tray: { flexDirection: "row", gap: 8, marginBottom: 12 },
   item: {
@@ -368,6 +369,7 @@ const styles = StyleSheet.create({
   itemEmoji: { fontSize: 34, lineHeight: 42 },
   itemLabel: {
     fontFamily: fonts.bold,
+    fontWeight: "700",
     fontSize: 12,
     lineHeight: 16,
     color: world.navy,

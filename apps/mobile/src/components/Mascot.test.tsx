@@ -30,6 +30,7 @@ jest.mock("react-native", () => {
     Easing: { inOut: () => undefined, sin: undefined },
     StyleSheet: { create: (styles: unknown) => styles },
     View: "View",
+    Image: "Image",
     useWindowDimensions: () => ({ width: 300, height: 700 }),
   };
 });
@@ -48,7 +49,8 @@ async function render(element: React.ReactElement) {
     renderer = create(element);
   });
 }
-const image = () => renderer.root.find((node) => String(node.type) === "AnimatedImage");
+const image = () =>
+  renderer.root.find((node) => ["AnimatedImage", "Image"].includes(String(node.type)));
 
 test("draws the chosen pose and shrinks to fit a narrow screen", async () => {
   await render(<Mascot variant="wave" size={240} />);

@@ -139,7 +139,13 @@ const styles = StyleSheet.create({
   },
   animal: { fontSize: 56, lineHeight: 64 },
   says: { flex: 1, gap: 4 },
-  name: { fontFamily: fonts.black, fontSize: 17, color: world.purpleDeep },
-  quote: { fontFamily: fonts.extraBold, fontSize: 18, lineHeight: 25, color: world.navy },
+  name: { fontFamily: fonts.black, fontWeight: "900", fontSize: 17, color: world.purpleDeep },
+  quote: {
+    fontFamily: fonts.extraBold,
+    fontWeight: "800",
+    fontSize: 18,
+    lineHeight: 25,
+    color: world.navy,
+  },
   choices: { flexDirection: "row", gap: 8 },
 });
