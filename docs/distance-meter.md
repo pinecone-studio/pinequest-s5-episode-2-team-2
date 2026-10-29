@@ -41,3 +41,22 @@ on-screen stale-number clearing, continuation and remaining lifecycle acceptance
 Primary references: [AVDepthData](https://developer.apple.com/documentation/avfoundation/avdepthdata),
 [depth accuracy](https://developer.apple.com/documentation/avfoundation/avdepthdata/depthdataaccuracy),
 [LiDAR capture](https://developer.apple.com/documentation/avfoundation/capturing-depth-using-the-lidar-camera).
+
+## Display stability and ready cue
+
+A bounded, in-memory window needs at least three coherent samples over 400 ms before showing
+metres. It uses their median and a small rounding dead band to reduce tenth-place flicker.
+A large jump hides the old value until new samples agree. Invalid data, gaps, stale/queued
+samples, backgrounding and retry reset the filter. Face-loss metadata clears the number
+immediately; an acquisition/loss generation rejects older queued depth replies.
+
+The green state requires one continuous second of fresh samples rounding to the existing
+3.0 m target. A short local tone plays once per capture attempt; retry rearms it. Loss of
+readiness/background/unmount cancels pending audio. Manual continuation is always available,
+including when audio fails. These time/noise limits are UI behaviour, not calibrated error
+bounds or clinical tolerances. No screening thresholds or optotype sizes change.
+
+Regression tests cover jitter, isolated spikes, real movement, stale and non-monotonic
+samples, target-hold reset, face-loss races, cue repetition/cancellation and audio failure.
+The earlier iPhone evidence predates these changes: native stability, green state and tone
+need a fresh Xcode Run. Known-distance accuracy still needs a physical reference.
