@@ -36,8 +36,9 @@ type Card = {
   key: WorldGameKey;
   title: string;
   summary: string;
-  time: string;
-  ages: string;
+  /** Shown as chips when given; the eye exercise has none. */
+  time?: string;
+  ages?: string;
   pose: MascotVariant;
   art: string;
   colors: readonly [string, string];
@@ -63,12 +64,12 @@ const WHO_PLAY = {
 export const WORLD_CARDS: Card[] = [
   {
     key: "eyeMoves",
-    ...pick(eyeMovesCopy),
+    title: eyeMovesCopy.title,
+    summary: eyeMovesCopy.summary,
     pose: "guide",
     art: "🦋👀",
     colors: ["#DCEBFF", world.lavender],
     section: "top",
-    source: AAP_SCREENS,
   },
   {
     key: "rescue",
@@ -282,7 +283,13 @@ export function GameCard({
     <View style={styles.cardWrap}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${card.title}. ${card.summary}. ${card.time}, ${card.ages}`}
+        accessibilityLabel={[
+          card.title,
+          card.summary,
+          [card.time, card.ages].filter(Boolean).join(", "),
+        ]
+          .filter(Boolean)
+          .join(". ")}
         accessibilityHint={copy.play}
         onPress={onStart}
         style={({ pressed }) => [pressed && styles.pressed]}
@@ -296,14 +303,20 @@ export function GameCard({
           <View style={styles.cardText}>
             <Text style={styles.cardTitle}>{card.title}</Text>
             <Text style={styles.cardSummary}>{card.summary}</Text>
-            <View style={styles.chips}>
-              <Text variant="caption" style={styles.chip}>
-                ⏱ {card.time}
-              </Text>
-              <Text variant="caption" style={styles.chip}>
-                {card.ages}
-              </Text>
-            </View>
+            {card.time || card.ages ? (
+              <View style={styles.chips}>
+                {card.time ? (
+                  <Text variant="caption" style={styles.chip}>
+                    ⏱ {card.time}
+                  </Text>
+                ) : null}
+                {card.ages ? (
+                  <Text variant="caption" style={styles.chip}>
+                    {card.ages}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
             <View style={styles.start}>
               <Ionicons name={done ? "star" : "play"} size={16} color={world.white} />
               <Text style={styles.startText}>{done ? `${copy.play} ✓` : copy.play}</Text>

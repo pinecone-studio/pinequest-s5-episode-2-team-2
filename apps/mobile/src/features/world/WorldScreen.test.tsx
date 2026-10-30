@@ -65,9 +65,19 @@ test("shows Нүдхэний ертөнц with today's stars, two sections and a
   expect(WORLD_CARDS.filter((c) => c.section === "rest").map((c) => c.key)).toEqual(["garden"]);
   const shown = text();
   expect(shown.indexOf(eyeMovesCopy.title)).toBeLessThan(shown.indexOf(worldCopy.playSection));
+  // The eye exercise card shows no time or age chips and no source line.
+  const eyeCard = card(eyeMovesCopy.title);
+  expect(eyeCard.props.accessibilityLabel).toBe(`${eyeMovesCopy.title}. ${eyeMovesCopy.summary}`);
+  expect(
+    JSON.stringify(eyeCard.findAll((n) => String(n.type) === "Text").map((n) => n.props.children)),
+  ).not.toContain("⏱");
+  expect(WORLD_CARDS[0]!.source).toBeUndefined();
+  expect(shown.split(worldCopy.sourcePrefix).length - 1).toBe(
+    WORLD_CARDS.filter((c) => c.source).length,
+  );
   for (const game of WORLD_CARDS) {
     expect(text()).toContain(game.title);
-    expect(text()).toContain(game.ages);
+    if (game.ages) expect(text()).toContain(game.ages);
     if (game.source) expect(text()).toContain(game.source.label);
   }
   // Honest notes for parents stay on the tab.
