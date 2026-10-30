@@ -324,8 +324,45 @@ export function eyeRoutine(): EyeStep[] {
   ];
 }
 
+/**
+ * Before each move the butterfly waits at its start while it says "Эрвээхэйг дагаарай!"
+ * (the clip is about 1.6 s with its quiet tail), so the first direction word never talks over it.
+ */
+export const MOVE_LEAD_SECONDS = 1.8;
+
+/** How long a step lasts on screen: a move adds its short lead before the flight. */
+export const stepSeconds = (step: EyeStep) =>
+  step.seconds + (step.kind === "move" ? MOVE_LEAD_SECONDS : 0);
+
 export const routineSeconds = (steps: readonly EyeStep[]) =>
-  steps.reduce((sum, step) => sum + step.seconds, 0);
+  steps.reduce((sum, step) => sum + stepSeconds(step), 0);
+
+/**
+ * The words the butterfly says as it reaches an edge in its first round: which way it went,
+ * read off the same path it flies, so voice and flight never drift apart. Corners say up or
+ * down. The second round is quiet, so the child follows on their own.
+ */
+export function eyeMoveCues(move: EyeMove): { phase: number; direction: Direction }[] {
+  const cues: { phase: number; direction: Direction }[] = [];
+  for (const phase of [0, 0.25, 0.5, 0.75]) {
+    const p = eyeMovePoint(move, phase);
+    if (Math.abs(p.y) > 0.9) cues.push({ phase, direction: p.y < 0 ? "up" : "down" });
+    else if (Math.abs(p.x) > 0.9) cues.push({ phase, direction: p.x > 0 ? "right" : "left" });
+  }
+  return cues;
+}
+
+/** Spoken a little early, so the word lands as the butterfly arrives. */
+export const CUE_EARLY_SECONDS = 0.15;
+
+/** When each direction word is said, in seconds from the start of a move step. */
+export function eyeCueTimes(step: Extract<EyeStep, { kind: "move" }>) {
+  const round = step.seconds / step.cycles;
+  return eyeMoveCues(step.move).map(({ phase, direction }) => ({
+    at: MOVE_LEAD_SECONDS + phase * round - CUE_EARLY_SECONDS,
+    direction,
+  }));
+}
 
 /**
  * Where the butterfly is `phase` rounds into a move, with x and y in -1..1 and y growing

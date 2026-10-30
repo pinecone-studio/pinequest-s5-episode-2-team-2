@@ -244,4 +244,17 @@ export const eyeMovesCopy = {
   step: (current: number, total: number) => `${current}/${total}`,
   finished: "Дасгалаа дуусгалаа!",
   message: "Дэлгэц ашиглах үедээ ойр ойрхон амралт хийгээрэй.",
+  // What the butterfly says, recorded in assets/sounds/voice/eyes-*.m4a (one speaker).
+  voice: {
+    "eyes-start":
+      "Сайн уу, найзаа! Би бяцхан эрвээхэй. Толгойгоо хөдөлгөхгүй, зөвхөн нүдээрээ намайг дагаарай!",
+    "eyes-follow": "Эрвээхэйг дагаарай!",
+    "eyes-left": "Зүүн!",
+    "eyes-right": "Баруун!",
+    "eyes-up": "Дээш!",
+    "eyes-down": "Доош!",
+    "eyes-blink": "Эрвээхэйн далавч шиг нүдээ хурдан хурдан анивчаарай!",
+    "eyes-rest": "Нүдээ аниад амраарай. Хонх дуугарахаар нүдээ нээгээрэй.",
+    "eyes-done": "Ура! Дасгал дууслаа!",
+  },
 } as const;

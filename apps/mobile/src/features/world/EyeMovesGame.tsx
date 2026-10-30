@@ -4,7 +4,19 @@ import { Button, Text } from "../../components/ui";
 import { useReduceMotion } from "../../components/useReduceMotion";
 import { fonts } from "../../theme";
 import { eyeMovesCopy as copy, worldCopy } from "./copy";
-import { eyeMovePath, eyeMovePoint, eyeRoutine, type EyeMove, type EyeStep } from "./logic";
+import type { VoiceKey } from "../voice/clips";
+import { useVoice } from "../voice/useVoice";
+import {
+  MOVE_LEAD_SECONDS,
+  eyeCueTimes,
+  eyeMovePath,
+  eyeMovePoint,
+  eyeRoutine,
+  stepSeconds,
+  type Direction,
+  type EyeMove,
+  type EyeStep,
+} from "./logic";
 import { GameCompletion, GameIntro, GameShell, useSuccessSound, world } from "./ui";
 
 const BUTTERFLY = 56;
@@ -22,6 +34,15 @@ const ARROW: Record<EyeMove, string> = {
   eight: "∞",
 };
 type Area = { width: number; height: number };
+/** The butterfly's recorded words for each direction it flies. */
+const CUE_VOICE: Record<Direction, VoiceKey> = {
+  left: "eyes-left",
+  right: "eyes-right",
+  up: "eyes-up",
+  down: "eyes-down",
+};
+/** The "done" line waits for the chime that opens the eyes. */
+const DONE_VOICE_DELAY_MS = 700;
 
 /**
  * Эрвээхэйтэй нүдний дасгал: follow a butterfly with the eyes, head still, through every
@@ -43,6 +64,19 @@ export function EyeMovesGame({
   const step = steps[index]!;
   const still = useReduceMotion();
   const success = useSuccessSound();
+  const { say } = useVoice();
+  // The voice is a bonus: a clip that fails to play must never stop the exercise.
+  const sayRef = useRef(say);
+  useEffect(() => {
+    sayRef.current = say;
+  });
+  const speak = useCallback((key: VoiceKey) => {
+    try {
+      sayRef.current(key);
+    } catch {
+      // The words on screen still guide the child.
+    }
+  }, []);
 
   const advance = useCallback(() => {
     if (index + 1 < steps.length) return setIndex(index + 1);
@@ -59,9 +93,31 @@ export function EyeMovesGame({
   });
   useEffect(() => {
     if (stage !== "play") return;
-    const timer = setTimeout(() => latest.current(), step.seconds * 1000);
+    const timer = setTimeout(() => latest.current(), Math.round(stepSeconds(step) * 1000));
     return () => clearTimeout(timer);
-  }, [stage, index, step.seconds]);
+  }, [stage, index, step]);
+
+  // The butterfly talks: hello on the intro screen, "Эрвээхэйг дагаарай!" before each move and
+  // the direction as it reaches each edge in the first round, then the blink, rest and goodbye.
+  // A new step, skip or leaving the game cancels any word still waiting.
+  useEffect(() => {
+    if (stage === "intro") speak("eyes-start");
+    if (stage === "done") {
+      const timer = setTimeout(() => speak("eyes-done"), DONE_VOICE_DELAY_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [stage, speak]);
+  useEffect(() => {
+    if (stage !== "play") return;
+    const current = steps[index]!;
+    if (current.kind !== "move")
+      return speak(current.kind === "blink" ? "eyes-blink" : "eyes-rest");
+    speak("eyes-follow");
+    const timers = eyeCueTimes(current).map(({ at, direction }) =>
+      setTimeout(() => speak(CUE_VOICE[direction]), Math.round(at * 1000)),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [stage, index, steps, speak]);
 
   if (stage === "intro") {
     return (
@@ -215,12 +271,16 @@ function FlyingButterfly({
     [step.move, step.cycles, still],
   );
   useEffect(() => {
-    const flight = Animated.timing(progress, {
-      toValue: 1,
-      duration: step.seconds * 1000,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    });
+    // It hovers at the start while it says "Эрвээхэйг дагаарай!", then flies.
+    const flight = Animated.sequence([
+      Animated.delay(MOVE_LEAD_SECONDS * 1000),
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: step.seconds * 1000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    ]);
     flight.start();
     const wings = still
       ? null
