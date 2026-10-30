@@ -65,21 +65,15 @@ test("shows Нүдхэний ертөнц with today's stars, two sections and a
   expect(WORLD_CARDS.filter((c) => c.section === "rest").map((c) => c.key)).toEqual(["garden"]);
   const shown = text();
   expect(shown.indexOf(eyeMovesCopy.title)).toBeLessThan(shown.indexOf(worldCopy.playSection));
-  // The eye exercise card shows no time or age chips and no source line.
-  const eyeCard = card(eyeMovesCopy.title);
-  expect(eyeCard.props.accessibilityLabel).toBe(`${eyeMovesCopy.title}. ${eyeMovesCopy.summary}`);
-  expect(
-    JSON.stringify(eyeCard.findAll((n) => String(n.type) === "Text").map((n) => n.props.children)),
-  ).not.toContain("⏱");
-  expect(WORLD_CARDS[0]!.source).toBeUndefined();
-  expect(shown.split(worldCopy.sourcePrefix).length - 1).toBe(
-    WORLD_CARDS.filter((c) => c.source).length,
-  );
+  // Every card is plain: its title, one line and a start button; no time, ages or source line.
   for (const game of WORLD_CARDS) {
-    expect(text()).toContain(game.title);
-    if (game.ages) expect(text()).toContain(game.ages);
-    if (game.source) expect(text()).toContain(game.source.label);
+    expect(shown).toContain(game.title);
+    expect(card(game.title).props.accessibilityLabel).toBe(`${game.title}. ${game.summary}`);
   }
+  expect(shown).not.toContain("⏱");
+  expect(shown).not.toContain("Эх сурвалж");
+  expect(shown).not.toMatch(/\d+\+? ?(–\d+ )?нас/);
+  expect(renderer.root.findAll((n) => n.props.accessibilityRole === "link")).toHaveLength(0);
   // Honest notes for parents stay on the tab.
   expect(text()).toContain(worldCopy.gamesNote);
   expect(text()).toContain(eyeRestCopy.notice);

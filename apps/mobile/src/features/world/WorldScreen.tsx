@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
-import { Linking, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Mascot } from "../../components/Mascot";
 import type { MascotVariant } from "../../components/mascots";
 import { Screen, Text } from "../../components/ui";
@@ -36,36 +36,17 @@ type Card = {
   key: WorldGameKey;
   title: string;
   summary: string;
-  /** Shown as chips when given; the eye exercise has none. */
-  time?: string;
-  ages?: string;
   pose: MascotVariant;
   art: string;
   colors: readonly [string, string];
   /** "top" cards come first, above the sections. */
   section: "top" | "play" | "rest";
-  source?: { label: string; url: string };
-};
-
-// Eye-health lessons keep their source (CONTRIBUTING.md); the others teach no health claim.
-const AAP_SCREENS = {
-  label: "AAP HealthyChildren: Avoid eye and back strain from the computer",
-  url: "https://www.healthychildren.org/English/tips-tools/ask-the-pediatrician/Pages/avoid-eye-and-back-strain-from-the-computer.aspx",
-};
-const AAP_SIGNS = {
-  label: "AAP HealthyChildren: Warning signs of vision problems in children",
-  url: "https://www.healthychildren.org/English/health-issues/conditions/eyes/Pages/Warning-Signs-of-Vison-Problems-in-Children.aspx",
-};
-const WHO_PLAY = {
-  label: "WHO: To grow up healthy, children need to sit less and play more",
-  url: "https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more",
 };
 
 export const WORLD_CARDS: Card[] = [
   {
     key: "eyeMoves",
-    title: eyeMovesCopy.title,
-    summary: eyeMovesCopy.summary,
+    ...pick(eyeMovesCopy),
     pose: "guide",
     art: "🦋👀",
     colors: ["#DCEBFF", world.lavender],
@@ -78,7 +59,6 @@ export const WORLD_CARDS: Card[] = [
     art: "🚪✨",
     colors: [world.lavender, "#E3D6FF"],
     section: "play",
-    source: AAP_SCREENS,
   },
   {
     key: "space",
@@ -103,7 +83,6 @@ export const WORLD_CARDS: Card[] = [
     art: "🐰🦊",
     colors: [world.peach, "#FFF3E4"],
     section: "play",
-    source: AAP_SIGNS,
   },
   {
     key: "style",
@@ -120,12 +99,11 @@ export const WORLD_CARDS: Card[] = [
     art: "🌷🌳",
     colors: [world.mint, world.cream],
     section: "rest",
-    source: WHO_PLAY,
   },
 ];
 
-function pick(source: { title: string; summary: string; time: string; ages: string }) {
-  return { title: source.title, summary: source.summary, time: source.time, ages: source.ages };
+function pick(source: { title: string; summary: string }) {
+  return { title: source.title, summary: source.summary };
 }
 
 /**
@@ -268,7 +246,7 @@ function Section({ title, hint }: { title: string; hint: string }) {
   );
 }
 
-/** A large illustrated card: art, title, one line, time, age, a start button and its source. */
+/** A large illustrated card: art, title, one line and a start button. */
 export function GameCard({
   card,
   done,
@@ -278,18 +256,11 @@ export function GameCard({
   done: boolean;
   onStart: () => void;
 }) {
-  const source = card.source;
   return (
     <View style={styles.cardWrap}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={[
-          card.title,
-          card.summary,
-          [card.time, card.ages].filter(Boolean).join(", "),
-        ]
-          .filter(Boolean)
-          .join(". ")}
+        accessibilityLabel={`${card.title}. ${card.summary}`}
         accessibilityHint={copy.play}
         onPress={onStart}
         style={({ pressed }) => [pressed && styles.pressed]}
@@ -303,20 +274,6 @@ export function GameCard({
           <View style={styles.cardText}>
             <Text style={styles.cardTitle}>{card.title}</Text>
             <Text style={styles.cardSummary}>{card.summary}</Text>
-            {card.time || card.ages ? (
-              <View style={styles.chips}>
-                {card.time ? (
-                  <Text variant="caption" style={styles.chip}>
-                    ⏱ {card.time}
-                  </Text>
-                ) : null}
-                {card.ages ? (
-                  <Text variant="caption" style={styles.chip}>
-                    {card.ages}
-                  </Text>
-                ) : null}
-              </View>
-            ) : null}
             <View style={styles.start}>
               <Ionicons name={done ? "star" : "play"} size={16} color={world.white} />
               <Text style={styles.startText}>{done ? `${copy.play} ✓` : copy.play}</Text>
@@ -334,18 +291,6 @@ export function GameCard({
           </View>
         </LinearGradient>
       </Pressable>
-      {source ? (
-        <Pressable
-          accessibilityRole="link"
-          accessibilityHint={source.url}
-          onPress={() => void Linking.openURL(source.url)}
-          style={styles.source}
-        >
-          <Text variant="caption" style={styles.sourceText}>
-            {copy.sourcePrefix} {source.label}
-          </Text>
-        </Pressable>
-      ) : null}
     </View>
   );
 }
@@ -432,15 +377,6 @@ const styles = StyleSheet.create({
     color: world.navy,
   },
   cardSummary: { fontSize: 14, lineHeight: 19, color: "#4C4A6A" },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  chip: {
-    color: world.navy,
-    backgroundColor: "rgba(255,255,255,0.75)",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    overflow: "hidden",
-  },
   start: {
     flexDirection: "row",
     alignItems: "center",
@@ -455,7 +391,5 @@ const styles = StyleSheet.create({
   startText: { fontFamily: fonts.extraBold, fontWeight: "800", fontSize: 15, color: world.white },
   art: { alignItems: "center", width: 104 },
   artEmoji: { fontSize: 26, lineHeight: 32 },
-  source: { minHeight: 32, justifyContent: "center", paddingHorizontal: 8 },
-  sourceText: { color: "#5D5A7A", textDecorationLine: "underline", fontWeight: "500" },
   notes: { gap: 8, marginTop: 8 },
 });

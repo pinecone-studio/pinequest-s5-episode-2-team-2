@@ -14,7 +14,6 @@ export const worldCopy = {
   todayProgress: (done: number, goal: number) => `${done}/${goal} од`,
   totalStars: (count: number) => `${count} од`,
   noChild: "Од хадгалахын тулд хүүхдийн профайл нэмээрэй",
-  sourcePrefix: "Эх сурвалж:",
   play: "Тоглох",
   exit: "Гарах",
   next: "Дараах",
@@ -28,11 +27,11 @@ export const worldCopy = {
     "Эдгээр нь сургалтын болон амралтын тоглоом. Нүд шалгахгүй, хэмжихгүй, эмчлэхгүй. Нүдний шалгалтыг «Шалгах» хэсгээс хийнэ.",
 } as const;
 
+// Based on AAP HealthyChildren, "Avoid eye and back strain from the computer":
+// https://www.healthychildren.org/English/tips-tools/ask-the-pediatrician/Pages/avoid-eye-and-back-strain-from-the-computer.aspx
 export const rescueCopy = {
   title: "Нүдхэний аврах ажиллагаа",
   summary: "Шидэт өрөөнөөс Нүдхэнийг гаргахад туслаарай!",
-  time: "1–2 мин",
-  ages: "4–12 нас",
   intro: "Нүдхэн шидэт өрөөнд түгжигдчихлээ! Гурван оньсгыг тайлж туслаарай.",
   start: "Туслая!",
   phone: {
@@ -66,8 +65,6 @@ export const rescueCopy = {
 export const spaceCopy = {
   title: "Э үсгийн сансрын аялал",
   summary: "Пуужинг Э үсгийн заасан зүг рүү хөтлөөрэй!",
-  time: "1 мин",
-  ages: "5–12 нас",
   intro: "Нүдхэн сансрын аялагч боллоо! Пуужинг гаригууд руу хөтлөөрэй.",
   note: "Энэ бол дадлага тоглоом. Хараа шалгахгүй, оноо хадгалахгүй.",
   start: "Нисье!",
@@ -79,11 +76,11 @@ export const spaceCopy = {
   lesson: "Одоо чи Э үсгийн чиглэлийг заах дасгал хийлээ.",
 } as const;
 
+// Based on WHO, "To grow up healthy, children need to sit less and play more":
+// https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more
 export const gardenCopy = {
   title: "Нүдхэний шидэт цэцэрлэг",
   summary: "Дэлгэцээс амраад цэцэрлэгээ ургуулаарай.",
-  time: "Амралтын дараа",
-  ages: "3–12 нас",
   seeds: (count: number) => `${count} үр`,
   takeBreak: "Амралт хийх",
   chooseBreak: "Ямар амралт хийх вэ?",
@@ -125,8 +122,6 @@ export const gardenCopy = {
 export const photoCopy = {
   title: "Зургийн мастер",
   summary: "Нүдхэнд зөв зураг авахад туслаарай.",
-  time: "1–1.5 мин",
-  ages: "4–10 нас",
   intro: "Нүдхэн зураг авахуулах гэж байна. Чи түүний зургийн туслах боллоо!",
   note: "Камер ашиглахгүй. Зөвхөн зурган жишээ.",
   start: "Эхэлье!",
@@ -137,11 +132,11 @@ export const photoCopy = {
   finished: "Чи зураг авахад бэлэн боллоо!",
 } as const;
 
+// Based on AAP HealthyChildren, "Warning signs of vision problems in children":
+// https://www.healthychildren.org/English/health-issues/conditions/eyes/Pages/Warning-Signs-of-Vison-Problems-in-Children.aspx
 export const clinicCopy = {
   title: "Бяцхан нүдний эмч",
   summary: "Нүдхэний туслах болж, амьтдад зөвлөгөө өгөөрэй.",
-  time: "2 мин",
-  ages: "6–12 нас",
   intro: "Нүдхэний шидэт эмнэлэгт тавтай морил! Амьтдад туслах цаг боллоо.",
   note: "Чи Нүдхэний туслах. Санаа зовох юм байвал том хүнд хэлэх нь хамгийн зөв.",
   start: "Эхэлье!",
@@ -191,8 +186,6 @@ export const clinicCopy = {
 export const styleCopy = {
   title: "Нүдхэний стилийн студи",
   summary: "Нүдхэнээ өөрийнхөөрөө чимээрэй.",
-  time: "1–2 мин",
-  ages: "3–12 нас",
   heading: "Миний Нүдхэн",
   save: "Хадгалах",
   saved: "Хадгаллаа!",
