@@ -19,6 +19,8 @@ interface Props {
   onAnswer: (answer: GestureAnswer) => void;
   /** Shown only when the camera cannot answer: no permission, no camera, a failure or a pause. */
   manual: ReactNode;
+  /** Answers for both ways, e.g. "can't see": right below the camera or the arrows. */
+  actions?: ReactNode;
 }
 /** The child answers with the front camera; touch is the fallback when it cannot run. */
 export function AcuityGestureInput(props: Props) {
@@ -70,6 +72,7 @@ export function AcuityGestureInput(props: Props) {
       ) : (
         props.manual
       )}
+      {props.actions}
       {blocked && <Text>{copy.gesture.unavailable}</Text>}
       {blocked && (
         <Button
@@ -200,7 +203,7 @@ function GestureCamera({
 }
 const styles = StyleSheet.create({
   mirrorPreview: { transform: [{ scaleX: -1 }] },
-  input: { gap: 4 },
+  input: { gap: 8 },
   panel: { flexDirection: "row", gap: 12, alignItems: "center" },
   preview: { width: 72, height: 96, overflow: "hidden", borderRadius: 12, backgroundColor: "#111" },
   hint: { flex: 1 },

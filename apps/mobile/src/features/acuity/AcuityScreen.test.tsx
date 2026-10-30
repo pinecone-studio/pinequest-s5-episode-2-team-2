@@ -1,5 +1,6 @@
 import { act, type ReactNode } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
+import { HeaderHeightContext } from "expo-router/react-navigation";
 import AcuityScreen from "./AcuityScreen";
 import { acuityCopy as copy } from "./copy";
 import { Optotype } from "./Optotype";
@@ -10,8 +11,11 @@ jest.mock("../../components/Mascot", () => ({ Mascot: "Mascot" }));
 jest.mock("expo-router", () => ({ router: { back: () => mockBack() } }));
 jest.mock("./SaveAcuityButton", () => ({ SaveAcuityButton: "SaveAcuityButton" }));
 jest.mock("./AcuityGestureInput", () => ({
-  AcuityGestureInput: ({ manual, ...props }: { manual: ReactNode }) =>
-    jest.requireActual("react").createElement("GestureInput", props, manual),
+  AcuityGestureInput: ({ manual, actions, ...props }: { manual: ReactNode; actions: ReactNode }) =>
+    jest.requireActual("react").createElement("GestureInput", props, manual, actions),
+}));
+jest.mock("expo-router/react-navigation", () => ({
+  HeaderHeightContext: jest.requireActual("react").createContext(undefined),
 }));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 const mockSay = jest.fn();
@@ -39,6 +43,7 @@ jest.mock("../../components/ui", () => ({
 jest.mock("react-native", () => ({
   View: "View",
   Pressable: "Pressable",
+  ScrollView: "ScrollView",
   PixelRatio: { get: () => 3 },
   useWindowDimensions: () => ({ width: 390, height: 844 }),
   StyleSheet: { create: (styles: unknown) => styles },
@@ -176,4 +181,79 @@ test("camera answers share practice feedback, thumbs-up readiness and silent tes
   for (const key of spoken()) expect(NEUTRAL).toContain(key);
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
   jest.useRealTimers();
+});
+
+test("every test letter and its crowding bars fit one fixed space above the controls", () => {
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.adult);
+  press(copy.practice.skip);
+  const letters = () => renderer.root.findAllByType(Optotype);
+  const has = (label: string) =>
+    renderer.root.findAll((n) => n.type === ("Button" as never) && n.props.label === label).length;
+  // 390 × 844 points: the square is min(390 - 40, 844 / 2) = 350 points; the largest letter
+  // shown is the crowded 0.7 line, 2.4 × 132 = 317 points, so the space is that tall.
+  const heights = new Set<number>();
+  let checked = 0;
+  for (let i = 0; i < 80; i++) {
+    if (letters().length) {
+      const { size, crowded } = letters()[0]!.props;
+      const box = letters()[0]!.parent!;
+      const height = box.props.style[1].height;
+      heights.add(height);
+      expect(crowded ? (size * 12) / 5 : size).toBeLessThanOrEqual(height + 1e-9);
+      expect(height).toBeLessThanOrEqual(350);
+      // The answers sit in a scroll view after the letter's space, never inside it.
+      expect(all("ScrollView")).toHaveLength(1);
+      expect(box.findAll((n) => n.type === ("GestureInput" as never))).toHaveLength(0);
+      checked += 1;
+      // Right answers walk down every level to the smallest, crowded letters.
+      press(labels[shown()]);
+    } else if (has(copy.ready)) press(copy.ready);
+    else break;
+  }
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.resultTitle);
+  expect(checked).toBe(2 * 8);
+  expect([...heights]).toHaveLength(1);
+  expect([...heights][0]).toBeCloseTo(317, 0);
+});
+
+test("the practice letter fits the space the controls leave", () => {
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.adult);
+  expect(renderer.root.findByType(Optotype).props.size).toBeCloseTo(844 * 0.3, 5);
+  const area = renderer.root.find((n) => n.props.testID === "practice-letter");
+  act(() =>
+    area.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 350, height: 120 } } }),
+  );
+  expect(renderer.root.findByType(Optotype).props.size).toBe(120);
+});
+
+test("can't see sits right after the arrows; below a header the top inset is the header's", () => {
+  const edges = () => all("SafeAreaView")[0]!.props.edges;
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.adult);
+  expect(edges()).toEqual(["top", "bottom"]);
+  press(copy.practice.skip);
+  press(copy.ready);
+  const input = all("GestureInput")[0]!;
+  const kinds = input.children.map((child) =>
+    typeof child === "string" ? child : (child.props.label ?? child.type),
+  );
+  expect(kinds.indexOf(copy.cantSee)).toBe(kinds.length - 1);
+  act(() => renderer.unmount());
+  act(() => {
+    renderer = create(
+      <HeaderHeightContext.Provider value={100}>
+        <AcuityScreen />
+      </HeaderHeightContext.Provider>,
+    );
+  });
+  press(copy.groups.adult);
+  expect(edges()).toEqual(["bottom"]);
 });
