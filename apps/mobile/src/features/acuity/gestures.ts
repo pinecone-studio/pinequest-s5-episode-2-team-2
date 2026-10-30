@@ -133,7 +133,7 @@ export function handRegion(pose: Landmark[], w: number, h: number) {
   if (!valid(pose, 33, w, h)) return null;
   const l = pose[11];
   const r = pose[12];
-  if (!l || !r || (l.visibility ?? 1) < 0.5 || (r.visibility ?? 1) < 0.5) return null;
+  if (!l || !r) return null;
   const shoulders = Math.hypot((l.x - r.x) * w, (l.y - r.y) * h);
   // A hand covering an eye has its fingers up and must not be read as pointing or a thumbs-up.
   const onEye = (p: Landmark) =>

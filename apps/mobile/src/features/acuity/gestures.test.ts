@@ -108,11 +108,11 @@ test("the hand crop follows the raised wrist and ignores hanging or eye-covering
   expect(handRegion(pose({ x: 0.53, y: 0.22 }, { x: 0.53, y: 0.2 }), W, H)).toBeNull();
 });
 
-test("an occluded shoulder or wrist cannot locate an answering hand", () => {
+test("an occluded wrist cannot locate an answering hand; shoulders need not be visible", () => {
   const p = pose({ x: 0.3, y: 0.3 }, { x: 0.28, y: 0.28 });
+  // As in the web demo, only the wrist's visibility is checked.
   p[11]!.visibility = 0;
-  expect(handRegion(p, W, H)).toBeNull();
-  p[11]!.visibility = 1;
+  expect(handRegion(p, W, H)).not.toBeNull();
   p[15]!.visibility = 0;
   expect(handRegion(p, W, H)).toBeNull();
 });

@@ -82,3 +82,8 @@ the crop now falls back to that wrist when the index is uncertain. Palm/hand mod
 still independently confirm a hand. Debug-only crop/palm status counts distinguish a
 missing region from rejected palm/hand inference, without logging landmark coordinates.
 The revised 3 m check is pending; keep #254 open and do not claim distance reliability.
+
+On 2026-10-30 two gates stricter than the web demo were removed: a pose point's visibility
+also took the model's presence output (MediaPipe's PoseLandmarker, which the web demo uses,
+reports the visibility output alone), and both shoulders had to be visible. Only the raised
+wrist's visibility is checked now, as in the web demo.

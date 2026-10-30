@@ -61,7 +61,8 @@ test("pose uses [-1,1] detector input and maps the ROI out of a portrait letterb
   const d = detector(true),
     m = landmarks(true);
   m.output[0]![0] = 192; // 1/4 ROI width to the image's right.
-  m.output[0]![4] = -2;
+  m.output[0]![3] = -2;
+  m.output[0]![4] = -6; // presence does not lower visibility, as in MediaPipe's PoseLandmarker
   const points = inferPose(new Float32Array(512 * 512 * 3).fill(0.75), d, m, 320, 640);
   expect(points).toHaveLength(33);
   expect(points[0]!.x).toBeCloseTo(0.8125);

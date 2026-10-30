@@ -157,7 +157,9 @@ export function inferPose(
     return {
       x: p.x / width,
       y: p.y / height,
-      visibility: Math.min(sigmoid(points![i * 5 + 3]!), sigmoid(points![i * 5 + 4]!)),
+      // As MediaPipe's PoseLandmarker reports it to the web demo: the visibility output alone.
+      // Also taking the presence output made distant wrists read as hidden.
+      visibility: sigmoid(points![i * 5 + 3]!),
     };
   });
 }
