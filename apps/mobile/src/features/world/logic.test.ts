@@ -22,6 +22,10 @@ import {
   cleanGarden,
   cleanOutfit,
   curtainLight,
+  CUE_EARLY_SECONDS,
+  MOVE_LEAD_SECONDS,
+  eyeCueTimes,
+  eyeMoveCues,
   eyeMovePath,
   eyeMovePoint,
   eyeRoutine,
@@ -192,4 +196,32 @@ test("eye move keyframes run 0..1 and end where they start; held ones only hop",
   // Before every jump the butterfly waits where it was.
   for (let i = 1; i < held.x.length; i += 2) expect(held.x[i]).toBe(held.x[i - 1]);
   expect(new Set(held.x.map((v) => Math.round(v * 1000) / 1000))).toEqual(new Set([0, 1, -1]));
+});
+
+test("the butterfly names each edge it reaches, read off its own path", () => {
+  const words = (move: (typeof EYE_MOVES)[number]) => eyeMoveCues(move).map((c) => c.direction);
+  expect(words("sideways")).toEqual(["right", "left"]);
+  expect(words("upDown")).toEqual(["up", "down"]);
+  // Corners are called up or down.
+  expect(words("diagonalUp")).toEqual(["up", "down"]);
+  expect(words("diagonalDown")).toEqual(["down", "up"]);
+  // Circles start at the top and go round one way or the other.
+  expect(words("circleRight")).toEqual(["up", "right", "down", "left"]);
+  expect(words("circleLeft")).toEqual(["up", "left", "down", "right"]);
+  expect(words("eight")).toEqual(["right", "left"]);
+});
+
+test("direction words come after 'follow me', only in the first round, one a second at most", () => {
+  for (const step of eyeRoutine()) {
+    if (step.kind !== "move") continue;
+    const times = eyeCueTimes(step).map((c) => c.at);
+    expect(times.length).toBeGreaterThan(0);
+    // The lead clip has finished speaking by the first word.
+    expect(times[0]!).toBeGreaterThanOrEqual(MOVE_LEAD_SECONDS - CUE_EARLY_SECONDS);
+    // The second round stays quiet.
+    expect(times.at(-1)!).toBeLessThan(MOVE_LEAD_SECONDS + step.seconds / step.cycles);
+    for (let i = 1; i < times.length; i++) {
+      expect(times[i]! - times[i - 1]!).toBeGreaterThanOrEqual(1 - 1e-9);
+    }
+  }
 });

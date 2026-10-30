@@ -3,7 +3,15 @@ import { create, type ReactTestInstance, type ReactTestRenderer } from "react-te
 import { ClinicGame } from "./ClinicGame";
 import { clinicCopy, eyeMovesCopy, photoCopy, rescueCopy, spaceCopy, worldCopy } from "./copy";
 import { EyeMovesGame } from "./EyeMovesGame";
-import { CLINIC_CASES, PHOTO_ROUNDS, eyeRoutine, type Direction } from "./logic";
+import {
+  CLINIC_CASES,
+  PHOTO_ROUNDS,
+  eyeCueTimes,
+  eyeRoutine,
+  stepSeconds,
+  type Direction,
+  type EyeStep,
+} from "./logic";
 import { PhotoGame } from "./PhotoGame";
 import { RescueGame } from "./RescueGame";
 import { SpaceGame } from "./SpaceGame";
@@ -18,6 +26,10 @@ jest.mock("../../../assets/sounds/correct.wav", () => 1, { virtual: true });
 jest.mock("expo-linear-gradient", () => ({ LinearGradient: "LinearGradient" }));
 jest.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 jest.mock("@expo/vector-icons/Ionicons", () => "Ionicons");
+const mockSay = jest.fn();
+jest.mock("../voice/useVoice", () => ({
+  useVoice: () => ({ say: (...keys: string[]) => mockSay(...keys), stop: jest.fn() }),
+}));
 
 const mockPlay = jest.fn();
 let renderer: ReactTestRenderer;
@@ -38,6 +50,7 @@ beforeEach(() => {
   onComplete.mockClear();
   onExit.mockClear();
   mockPlay.mockReset();
+  mockSay.mockReset();
 });
 afterEach(async () => {
   await act(async () => renderer.unmount());
@@ -181,8 +194,8 @@ test("eye moves: follow every move, blink, rest and finish with a chime", async 
       expect(text()).toContain(eyeMovesCopy.rest);
       expect(text()).toContain(eyeMovesCopy.seconds(step.seconds));
     }
-    // A step lasts its time: nothing moves on a moment early.
-    await act(async () => jest.advanceTimersByTime(step.seconds * 1000 - 1));
+    // A step lasts its time (a move adds its short spoken lead): nothing moves on early.
+    await act(async () => jest.advanceTimersByTime(Math.round(stepSeconds(step) * 1000) - 1));
     expect(text()).toContain(eyeMovesCopy.step(i + 1, steps.length));
     expect(onComplete).not.toHaveBeenCalled();
     await act(async () => jest.advanceTimersByTime(1));
@@ -212,4 +225,80 @@ test("eye moves: skip moves on and the rest counts down", async () => {
   expect(text()).toContain(eyeMovesCopy.finished);
   await press(buttonByLabel(worldCopy.backToWorld));
   expect(onExit).toHaveBeenCalledTimes(1);
+});
+
+type MoveStep = Extract<EyeStep, { kind: "move" }>;
+const eyeVoice = { up: "eyes-up", down: "eyes-down", left: "eyes-left", right: "eyes-right" };
+
+async function startEyeMoves() {
+  await render(<EyeMovesGame onComplete={onComplete} onExit={onExit} />);
+  await press(buttonByLabel(eyeMovesCopy.start));
+  const sky = renderer.root.find((n) => typeof n.props.onLayout === "function");
+  await act(async () =>
+    sky.props.onLayout({ nativeEvent: { layout: { width: 340, height: 480 } } }),
+  );
+}
+
+test("eye moves voice: hello, 'follow me', then each direction as the butterfly gets there", async () => {
+  await render(<EyeMovesGame onComplete={onComplete} onExit={onExit} />);
+  expect(mockSay).toHaveBeenLastCalledWith("eyes-start");
+  await press(buttonByLabel(eyeMovesCopy.start));
+  const first = eyeRoutine()[0] as MoveStep;
+  expect(mockSay).toHaveBeenLastCalledWith("eyes-follow");
+
+  let now = 0;
+  for (const cue of eyeCueTimes(first)) {
+    mockSay.mockClear();
+    await act(async () => jest.advanceTimersByTime(Math.round(cue.at * 1000) - now - 1));
+    expect(mockSay).not.toHaveBeenCalled();
+    await act(async () => jest.advanceTimersByTime(1));
+    expect(mockSay).toHaveBeenLastCalledWith(eyeVoice[cue.direction]);
+    now = Math.round(cue.at * 1000);
+  }
+  // The second round is quiet; the next move starts with "follow me" again.
+  mockSay.mockClear();
+  await act(async () => jest.advanceTimersByTime(Math.round(stepSeconds(first) * 1000) - now - 1));
+  expect(mockSay).not.toHaveBeenCalled();
+  await act(async () => jest.advanceTimersByTime(1));
+  expect(mockSay).toHaveBeenLastCalledWith("eyes-follow");
+});
+
+test("eye moves voice: skip drops waiting words; blink, rest and done have their lines", async () => {
+  await startEyeMoves();
+  const [first, second] = eyeRoutine() as MoveStep[];
+  await press(buttonByLabel(worldCopy.skip));
+  expect(mockSay).toHaveBeenLastCalledWith("eyes-follow");
+  mockSay.mockClear();
+  // Only the new move's words are said, never the skipped one's.
+  await act(async () => jest.advanceTimersByTime(Math.round(stepSeconds(second!) * 1000) - 1));
+  const said = mockSay.mock.calls.map(([key]) => key);
+  expect(said).toEqual(eyeCueTimes(second!).map((c) => eyeVoice[c.direction]));
+  for (const cue of eyeCueTimes(first!)) {
+    if (!eyeCueTimes(second!).some((c) => c.direction === cue.direction)) {
+      expect(said).not.toContain(eyeVoice[cue.direction]);
+    }
+  }
+
+  const steps = eyeRoutine();
+  // Skip to the blinks, then to the rest.
+  for (let i = 1; i < steps.length - 2; i++) await press(buttonByLabel(worldCopy.skip));
+  expect(mockSay).toHaveBeenLastCalledWith("eyes-blink");
+  await press(buttonByLabel(worldCopy.skip));
+  expect(mockSay).toHaveBeenLastCalledWith("eyes-rest");
+  await act(async () => jest.advanceTimersByTime(steps.at(-1)!.seconds * 1000));
+  expect(text()).toContain(eyeMovesCopy.finished);
+  // "Done" waits for the chime that opens the eyes.
+  expect(mockSay).toHaveBeenLastCalledWith("eyes-rest");
+  await act(async () => jest.advanceTimersByTime(700));
+  expect(mockSay).toHaveBeenLastCalledWith("eyes-done");
+});
+
+test("eye moves voice: leaving mid-move cancels the words still waiting", async () => {
+  await startEyeMoves();
+  mockSay.mockClear();
+  await act(async () => renderer.unmount());
+  await act(async () => jest.advanceTimersByTime(20_000));
+  expect(mockSay).not.toHaveBeenCalled();
+  // afterEach unmounts again; render a fresh tree so that is safe.
+  await render(<EyeMovesGame onComplete={onComplete} onExit={onExit} />);
 });

@@ -25,6 +25,15 @@ import acuityCoverRight from "../../../assets/sounds/voice/acuity-cover-right.m4
 import acuityThumb from "../../../assets/sounds/voice/acuity-thumb.m4a";
 import acuityNext from "../../../assets/sounds/voice/acuity-next.m4a";
 import acuityDone from "../../../assets/sounds/voice/acuity-done.m4a";
+import eyesStart from "../../../assets/sounds/voice/eyes-start.m4a";
+import eyesFollow from "../../../assets/sounds/voice/eyes-follow.m4a";
+import eyesLeft from "../../../assets/sounds/voice/eyes-left.m4a";
+import eyesRight from "../../../assets/sounds/voice/eyes-right.m4a";
+import eyesUp from "../../../assets/sounds/voice/eyes-up.m4a";
+import eyesDown from "../../../assets/sounds/voice/eyes-down.m4a";
+import eyesBlink from "../../../assets/sounds/voice/eyes-blink.m4a";
+import eyesRest from "../../../assets/sounds/voice/eyes-rest.m4a";
+import eyesDone from "../../../assets/sounds/voice/eyes-done.m4a";
 
 export const VOICE_CLIPS = {
   "blink-start": blinkStart,
@@ -52,6 +61,16 @@ export const VOICE_CLIPS = {
   "acuity-thumb": acuityThumb,
   "acuity-next": acuityNext,
   "acuity-done": acuityDone,
+  // Эрвээхэйтэй нүдний дасгал: the butterfly's voice. Lines are in world/voiceScript.ts.
+  "eyes-start": eyesStart,
+  "eyes-follow": eyesFollow,
+  "eyes-left": eyesLeft,
+  "eyes-right": eyesRight,
+  "eyes-up": eyesUp,
+  "eyes-down": eyesDown,
+  "eyes-blink": eyesBlink,
+  "eyes-rest": eyesRest,
+  "eyes-done": eyesDone,
 } as const;
 
 export type VoiceKey = keyof typeof VOICE_CLIPS;
