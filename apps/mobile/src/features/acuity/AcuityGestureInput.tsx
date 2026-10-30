@@ -9,9 +9,11 @@ import {
 } from "react-native-vision-camera";
 import { Button, Text } from "../../components/ui";
 import { acuityCopy as copy } from "./copy";
-import { openPalm, pointing, thumbsUp } from "./gestures";
+import { fist, openPalm, pointing, thumbsUp } from "./gestures";
 import { emptyHold, holdGesture, type Gesture, type GestureAnswer } from "./gestureHold";
 import { useGestureFrames, type GestureFrame } from "./useGestureFrames";
+
+const ARROW = { 0: "→", 90: "↓", 180: "←", 270: "↑" } as const;
 
 interface Props {
   round: string;
@@ -96,6 +98,12 @@ function GestureCamera({
   const [started, setStarted] = useState(false),
     [preview, setPreview] = useState(false);
   const [gesture, setGesture] = useState<Gesture>("noBody");
+  // The last hold, for the hint, and a short "✓" after each answer, as in the web demo.
+  const [shown, setShown] = useState<{ armed: boolean; candidate: GestureAnswer | null }>({
+    armed: false,
+    candidate: null,
+  });
+  const [recorded, setRecorded] = useState(false);
   const accepting = useRef(false);
   const live = useRef(true),
     hold = useRef(emptyHold()),
@@ -109,7 +117,13 @@ function GestureCamera({
   useLayoutEffect(() => {
     hold.current = emptyHold();
     setGesture("noBody");
+    setShown({ armed: false, candidate: null });
   }, [round]);
+  useEffect(() => {
+    if (!recorded) return;
+    const timer = setTimeout(() => setRecorded(false), 500);
+    return () => clearTimeout(timer);
+  }, [recorded]);
   useLayoutEffect(() => {
     listener.current = onAnswer;
   }, [onAnswer]);
@@ -120,21 +134,28 @@ function GestureCamera({
     (frame: GestureFrame) => {
       if (!live.current || !accepting.current) return;
       const hand = frame.hand;
-      const value: Gesture = !frame.body
-        ? "noBody"
-        : !hand.length
+      // As in the web demo: an open palm is "can't see", a fist arms the next answer.
+      const value: Gesture = !hand.length
+        ? frame.body
           ? "none"
-          : cover
-            ? thumbsUp(hand, 256, 256)
-              ? "ready"
-              : "none"
-            : openPalm(hand, 256, 256)
-              ? "palm"
+          : "noBody"
+        : cover
+          ? thumbsUp(hand, 256, 256)
+            ? "ready"
+            : "other"
+          : openPalm(hand, 256, 256)
+            ? "palm"
+            : fist(hand, 256, 256)
+              ? "fist"
               : (pointing(hand, 256, 256) ?? "other");
       setGesture(value);
       const step = holdGesture(hold.current, value, frame.timestampMs, cover);
       hold.current = step.hold;
-      if (step.answer !== null) listener.current(step.answer);
+      setShown({ armed: step.hold.armed, candidate: step.hold.candidate });
+      if (step.answer !== null) {
+        setRecorded(true);
+        listener.current(step.answer);
+      }
       if (__DEV__ && process.env.EXPO_PUBLIC_LANDMARK_DEBUG === "1")
         console.info("gesture-frame", {
           timestampMs: frame.timestampMs,
@@ -153,16 +174,23 @@ function GestureCamera({
   useLayoutEffect(() => {
     accepting.current = started && preview && ready;
   }, [started, preview, ready]);
-  const icon =
-    !cover && !hold.current.armed
-      ? "✋"
-      : typeof gesture === "number"
-        ? ({ 0: "→", 90: "↓", 180: "←", 270: "↑" } as const)[gesture]
-        : gesture === "ready"
-          ? "👍"
-          : gesture === "palm"
-            ? "✋"
-            : "·";
+  const loading = !started || !preview || !ready;
+  // The web demo's feedback: ✊ to arm, 👉 to point, the arrow while holding, ✓ when recorded.
+  const [icon, hint] = loading
+    ? ["·", copy.gesture.loading]
+    : recorded
+      ? ["✓", copy.gesture.done]
+      : gesture === "noBody"
+        ? ["🧍", copy.gesture.noBody]
+        : cover
+          ? ["👍", copy.gesture.thumb]
+          : !shown.armed
+            ? ["✊", copy.gesture.fist]
+            : shown.candidate === "cant"
+              ? ["✋", copy.gesture.cant]
+              : typeof shown.candidate === "number"
+                ? [ARROW[shown.candidate], copy.gesture.hold]
+                : ["👉", copy.gesture.point];
   return (
     <View style={styles.panel}>
       <View style={styles.preview}>
@@ -188,15 +216,7 @@ function GestureCamera({
         <Text accessibilityLiveRegion="polite" style={styles.icon}>
           {icon}
         </Text>
-        <Text>
-          {!started || !preview || !ready
-            ? copy.gesture.loading
-            : gesture === "noBody"
-              ? copy.gesture.noBody
-              : cover
-                ? copy.gesture.thumb
-                : copy.gesture.point}
-        </Text>
+        <Text style={styles.hintText}>{hint}</Text>
       </View>
     </View>
   );
@@ -208,4 +228,6 @@ const styles = StyleSheet.create({
   preview: { width: 72, height: 96, overflow: "hidden", borderRadius: 12, backgroundColor: "#111" },
   hint: { flex: 1 },
   icon: { fontSize: 38, textAlign: "center" },
+  // Big enough to read from 3 m, like the web demo's feedback.
+  hintText: { fontSize: 20, lineHeight: 26, fontWeight: "800", textAlign: "center" },
 });

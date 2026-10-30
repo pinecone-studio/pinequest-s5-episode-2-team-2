@@ -17,14 +17,20 @@ interpreters across camera remounts; only one frame may await RN per camera. Bus
 frames and resized buffers are released. No image, landmark or gesture history is saved.
 Optional development logs contain only counts, gesture labels, timestamps and latency.
 
-A pointing direction holds for at least 600 ms; a thumbs-up holds
-for 800 ms on the cover screen. An initially held answer cannot submit until an open palm or a
-lowered hand rearms input (400 ms absent-hand observation). A thumb must drop once after
-entering the cover screen. Missing body, a changed candidate, non-monotonic timestamps and
-observation gaps over two seconds reset the hold. The two-second gap guard accommodates
-the roughly one-second native callback cadence observed in the initial CPU check; it remains
-a UI tuning limit, not a clinical threshold. The same pose cannot answer the next letter. At the owner's request, an open palm is neutral
-and does not mean cannot-see; the cannot-see button is always available in the test.
+Answers follow the web demo's loop (demo/web-poc `acuity.ts`), at the owner's request on
+2026-10-30: close the hand (or lower it out of view for 400 ms) to arm, then point with the
+index finger, or show an open palm for "can't see", and hold for 600 ms; after each answer the
+hand closes again, so the same pose cannot answer the next letter. A thumbs-up held 800 ms on
+the cover screen means ready, after the thumb has dropped once. The hint shows the web demo's
+feedback: ✊ "Гараа атгана уу", 👉 "Хуруугаараа заана уу", the arrow with "Барина уу…",
+✋ "Харагдахгүй" and ✓ "Бүртгэгдлээ". (Before, an open palm only rearmed and meant nothing.)
+A changed candidate, non-monotonic timestamps and observation gaps over two seconds reset the
+hold. The two-second gap guard is a UI tuning limit, not a clinical threshold.
+
+As in the web demo, a body without a raised, free hand has no answer, and when the body model
+finds no body at all (close to the phone it often finds none), the hand is looked for in the
+whole frame. The next frame is taken as soon as the previous one is processed (before, the
+interval was twice the processing time), so answers come about twice as fast.
 
 Round identities accompany worker results. Changing letter/stage discards old results;
 disabling input, losing focus, backgrounding, interruption or unmount tears down capture

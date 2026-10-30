@@ -257,3 +257,18 @@ test("can't see sits right after the arrows; below a header the top inset is the
   press(copy.groups.adult);
   expect(edges()).toEqual(["bottom"]);
 });
+
+test("an open palm from the camera answers can't see, like the button", () => {
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.adult);
+  press(copy.practice.skip);
+  press(copy.ready);
+  const gesture = (value: GestureAnswer) =>
+    act(() => all("GestureInput")[0]!.props.onAnswer(value));
+  // Two misses finish the right eye at the first level, as with the button.
+  gesture("cant");
+  gesture("cant");
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
+});

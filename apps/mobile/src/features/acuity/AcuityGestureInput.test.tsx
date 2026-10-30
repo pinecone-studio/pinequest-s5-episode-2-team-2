@@ -5,7 +5,8 @@ import { acuityCopy as copy } from "./copy";
 import type { GestureFrame } from "./useGestureFrames";
 const mockAnswer = jest.fn(),
   mockRequest = jest.fn();
-let mockPalm = false;
+let mockPalm = false,
+  mockFist = false;
 let mockPermission = true,
   mockCanRequest = true,
   mockFocused = true,
@@ -42,7 +43,8 @@ jest.mock("./useGestureFrames", () => ({
 }));
 jest.mock("./gestures", () => ({
   openPalm: () => mockPalm,
-  pointing: () => 0,
+  fist: () => mockFist,
+  pointing: () => (mockPalm || mockFist ? null : 0),
   thumbsUp: () => false,
 }));
 let renderer: ReactTestRenderer;
@@ -77,6 +79,7 @@ beforeEach(async () => {
   mockPermission = true;
   mockCanRequest = true;
   mockPalm = false;
+  mockFist = false;
   mockFocused = true;
   round = "practice-1";
   await act(async () => {
@@ -168,7 +171,7 @@ test("preview-ready observations submit once, then a new round needs a fresh rel
   expect(JSON.stringify(renderer.toJSON())).toContain("touch controls");
 });
 
-test("an open palm rearms without answering; only the preview is mirrored", async () => {
+test("as in the web demo, a fist arms and an open palm answers can't see; only the preview is mirrored", async () => {
   const camera = cameras()[0]!;
   expect(camera.props.mirrorMode).toBe("off");
   expect(camera.props.style).toEqual(expect.arrayContaining([{ transform: [{ scaleX: -1 }] }]));
@@ -176,19 +179,51 @@ test("an open palm rearms without answering; only the preview is mirrored", asyn
     camera.props.onStarted();
     camera.props.onPreviewStarted();
   });
+  // An open palm before arming is not an answer; the hint asks for a fist.
   mockPalm = true;
   await act(async () => {
     mockReport(frame(0));
     mockReport(frame(600));
   });
   expect(mockAnswer).not.toHaveBeenCalled();
+  expect(text()).toContain(copy.gesture.fist);
+  mockPalm = false;
+  mockFist = true;
+  await act(async () => mockReport(frame(700)));
+  expect(text()).toContain(copy.gesture.point);
+  mockFist = false;
+  mockPalm = true;
+  await act(async () => mockReport(frame(800)));
+  expect(text()).toContain(copy.gesture.cant);
+  await act(async () => mockReport(frame(1400)));
+  expect(mockAnswer).toHaveBeenCalledWith("cant");
+  expect(text()).toContain(copy.gesture.done);
+  // The next answer needs a fist (or a lowered hand) first.
   mockPalm = false;
   await act(async () => {
-    mockReport(frame(700));
-    mockReport(frame(1400));
+    mockReport(frame(1500));
+    mockReport(frame(2100));
   });
-  expect(mockAnswer).toHaveBeenCalledWith(0);
   expect(mockAnswer).toHaveBeenCalledTimes(1);
+});
+
+test("pointing shows the hold hint, and with no body at all the hint asks to step into view", async () => {
+  await act(async () => {
+    cameras()[0]!.props.onStarted();
+    cameras()[0]!.props.onPreviewStarted();
+  });
+  await act(async () => {
+    mockReport({ ...frame(0, false), body: false });
+  });
+  expect(text()).toContain(copy.gesture.noBody);
+  mockFist = true;
+  await act(async () => mockReport(frame(100)));
+  mockFist = false;
+  await act(async () => mockReport(frame(200)));
+  expect(text()).toContain(copy.gesture.hold);
+  // A hand found without a body (close to the phone) still answers.
+  await act(async () => mockReport({ ...frame(800), body: false }));
+  expect(mockAnswer).toHaveBeenCalledWith(0);
 });
 
 test("30 seconds without progressing pauses capture, while a new round renews the limit", async () => {

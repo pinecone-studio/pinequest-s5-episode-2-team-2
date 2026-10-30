@@ -1,4 +1,4 @@
-import { analyzeGestureFrame } from "./gestureFrame";
+import { analyzeGestureFrame, wholeFrame } from "./gestureFrame";
 import type { Frame } from "react-native-vision-camera";
 
 const mockPose = jest.fn(),
@@ -74,4 +74,16 @@ test("mirrored/rotated frames and invalid planes fail rather than reversing an a
   const input = frame();
   input.getPlanes.mockReturnValue([]);
   expect(() => analyzeGestureFrame(input as unknown as Frame, rgb, models)).toThrow("planes");
+});
+
+test("with no body at all, as close to the phone, the hand is looked for in the whole frame", () => {
+  const input = frame();
+  mockPose.mockReturnValue([]);
+  const result = analyzeGestureFrame(input as unknown as Frame, rgb, models);
+  expect(mockRegion).not.toHaveBeenCalled();
+  // An 80 × 100 frame sits in a 100-pixel square, padded black on the sides.
+  expect(mockCrop).toHaveBeenCalledWith(expect.anything(), { x: -10, y: 0, size: 100 }, 256, true);
+  expect(result).toMatchObject({ body: false, hand: [{ x: 0.2, y: 0.3 }] });
+  expect(result.diagnostics).toMatchObject({ fullFrame: true, cropFound: false });
+  expect(wholeFrame(2160, 3840)).toEqual({ x: -840, y: 0, size: 3840 });
 });

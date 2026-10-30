@@ -17,6 +17,8 @@ export interface GestureFrame {
     cropSizePx: number;
     visibleWrists: number;
     visibleIndices: number;
+    /** No body was found, so the hand was looked for in the whole frame. */
+    fullFrame: boolean;
     palmFound: boolean;
     handPresent: boolean;
   };
@@ -110,7 +112,8 @@ export function useGestureFrames(
                 models,
               );
               const latencyMs = performance.now() - started;
-              next.setBlocking(timestampMs + Math.max(150, latencyMs * 2));
+              // Like the web demo's loop, take the next frame as soon as this one is done.
+              next.setBlocking(timestampMs + Math.max(150, latencyMs));
               scheduleOnRN(report, { ...result, timestampMs, latencyMs }, key);
             } finally {
               resized.dispose();

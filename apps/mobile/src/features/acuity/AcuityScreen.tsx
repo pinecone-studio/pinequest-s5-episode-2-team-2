@@ -140,9 +140,13 @@ export default function AcuityScreen() {
         round={`${session.stage}:${session.eye}:${session.direction}:${session.practiceCorrect}:${session.test.level}:${session.test.shown}`}
         cover={session.stage === "cover"}
         onAnswer={(shown) => {
-          if (shown === "ready") setSession((current) => (current ? beginEye(current) : current));
-          else if (session.stage === "practice") practiceAnswer(shown);
-          else setSession((current) => (current ? respond(current, shown, Math.random) : current));
+          if (shown === "ready")
+            return setSession((current) => (current ? beginEye(current) : current));
+          // The open palm answers "can't see", like the button.
+          const direction = shown === "cant" ? null : shown;
+          if (session.stage === "practice") practiceAnswer(direction);
+          else
+            setSession((current) => (current ? respond(current, direction, Math.random) : current));
         }}
         manual={manual}
         actions={actions}
