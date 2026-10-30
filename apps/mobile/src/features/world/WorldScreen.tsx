@@ -41,7 +41,8 @@ type Card = {
   pose: MascotVariant;
   art: string;
   colors: readonly [string, string];
-  section: "play" | "rest";
+  /** "top" cards come first, above the sections. */
+  section: "top" | "play" | "rest";
   source?: { label: string; url: string };
 };
 
@@ -60,6 +61,15 @@ const WHO_PLAY = {
 };
 
 export const WORLD_CARDS: Card[] = [
+  {
+    key: "eyeMoves",
+    ...pick(eyeMovesCopy),
+    pose: "guide",
+    art: "🦋👀",
+    colors: ["#DCEBFF", world.lavender],
+    section: "top",
+    source: AAP_SCREENS,
+  },
   {
     key: "rescue",
     ...pick(rescueCopy),
@@ -111,15 +121,6 @@ export const WORLD_CARDS: Card[] = [
     section: "rest",
     source: WHO_PLAY,
   },
-  {
-    key: "eyeMoves",
-    ...pick(eyeMovesCopy),
-    pose: "guide",
-    art: "🦋👀",
-    colors: ["#DCEBFF", world.lavender],
-    section: "rest",
-    source: AAP_SCREENS,
-  },
 ];
 
 function pick(source: { title: string; summary: string; time: string; ages: string }) {
@@ -163,6 +164,20 @@ export default function WorldScreen() {
     [award, childId],
   );
   const exit = () => setOpen(null);
+  // Garden breaks earn `garden-<break>` stars; every other game earns its own key.
+  const doneToday = (card: Card) =>
+    (card.key === "garden"
+      ? stars?.today.some((g) => g.startsWith(GARDEN_STAR_PREFIX))
+      : stars?.today.includes(card.key)) ?? false;
+  const cards = (section: Card["section"]) =>
+    WORLD_CARDS.filter((c) => c.section === section).map((card) => (
+      <GameCard
+        key={card.key}
+        card={card}
+        done={doneToday(card)}
+        onStart={() => setOpen(card.key)}
+      />
+    ));
 
   switch (open) {
     case "rescue":
@@ -221,28 +236,11 @@ export default function WorldScreen() {
         </View>
       </View>
 
+      {cards("top")}
       <Section title={copy.playSection} hint={copy.playSectionHint} />
-      {WORLD_CARDS.filter((c) => c.section === "play").map((card) => (
-        <GameCard
-          key={card.key}
-          card={card}
-          done={stars?.today.includes(card.key) ?? false}
-          onStart={() => setOpen(card.key)}
-        />
-      ))}
+      {cards("play")}
       <Section title={copy.restSection} hint={copy.restSectionHint} />
-      {WORLD_CARDS.filter((c) => c.section === "rest").map((card) => (
-        <GameCard
-          key={card.key}
-          card={card}
-          done={
-            (card.key === "garden"
-              ? stars?.today.some((g) => g.startsWith(GARDEN_STAR_PREFIX))
-              : stars?.today.includes(card.key)) ?? false
-          }
-          onStart={() => setOpen(card.key)}
-        />
-      ))}
+      {cards("rest")}
 
       <View style={styles.notes}>
         <Text variant="caption" style={styles.muted}>
