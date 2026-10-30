@@ -4,6 +4,7 @@
 // the line appears. The text always comes from copy.ts, so script and screen never drift.
 import {
   clinicCopy,
+  eyeMovesCopy,
   gardenCopy,
   photoCopy,
   rescueCopy,
@@ -42,4 +43,9 @@ export const worldVoiceScript: { file: string; text: string }[] = [
   { file: "clinic-good.m4a", text: clinicCopy.good },
   { file: "clinic-done.m4a", text: clinicCopy.finished },
   { file: "style-welcome.m4a", text: styleCopy.heading },
+  { file: "eyemoves-intro.m4a", text: eyeMovesCopy.story },
+  { file: "eyemoves-follow.m4a", text: eyeMovesCopy.follow },
+  { file: "eyemoves-blink.m4a", text: eyeMovesCopy.blink },
+  { file: "eyemoves-rest.m4a", text: eyeMovesCopy.rest },
+  { file: "eyemoves-done.m4a", text: eyeMovesCopy.finished },
 ];

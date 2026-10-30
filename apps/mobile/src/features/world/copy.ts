@@ -223,3 +223,34 @@ export const styleCopy = {
     night: "Одтой тэнгэр",
   },
 } as const;
+
+// Нүдний дасгал: following a butterfly with the eyes as a screen break, for children and adults.
+// It moves and rests the eyes; it never claims to strengthen, train or treat them.
+export const eyeMovesCopy = {
+  title: "Эрвээхэйтэй нүдний дасгал",
+  summary: "Толгойгоо хөдөлгөлгүй, нүдээрээ эрвээхэйг дагаарай.",
+  time: "1–2 мин",
+  ages: "4+ нас, том хүн",
+  story:
+    "Эрвээхэй нисэхэд толгойгоо хөдөлгөлгүй, зөвхөн нүдээрээ дагаарай. Төгсгөлд нь нүдээ аниад амарна.",
+  note: "Дэлгэцээс түр амрах дасгал. Нүдийг эмчлэхгүй. Толгой эргэх эсвэл нүд өвдвөл зогсоогоод амраарай.",
+  start: "Эхлэх",
+  follow: "Толгойгоо хөдөлгөлгүй нүдээрээ дагаарай",
+  moves: {
+    sideways: "Зүүн, баруун",
+    upDown: "Дээш, доош",
+    diagonalUp: "Ташуу дээш",
+    diagonalDown: "Ташуу доош",
+    circleRight: "Тойрог",
+    circleLeft: "Эсрэг тойрог",
+    eight: "Хэвтээ найм",
+  },
+  blinkTitle: "Анивчих",
+  blink: "Эрвээхэйн далавч шиг нүдээ хурдан анивчаарай",
+  restTitle: "Нүдээ аних",
+  rest: "Нүдээ аниад амраарай. Хонх дуугарахад нүдээ нээгээрэй.",
+  seconds: (count: number) => `${count} сек`,
+  step: (current: number, total: number) => `${current}/${total}`,
+  finished: "Дасгалаа дуусгалаа!",
+  message: "Дэлгэц ашиглах үедээ ойр ойрхон амралт хийгээрэй.",
+} as const;

@@ -11,8 +11,10 @@ import { fonts } from "../../theme";
 import { useActiveChildId } from "../children/useActiveChildId";
 import { eyeRestCopy } from "../eyeRest/content";
 import { ClinicGame } from "./ClinicGame";
+import { EyeMovesGame } from "./EyeMovesGame";
 import {
   clinicCopy,
+  eyeMovesCopy,
   gardenCopy,
   photoCopy,
   rescueCopy,
@@ -21,7 +23,7 @@ import {
   worldCopy as copy,
 } from "./copy";
 import { GardenGame } from "./GardenGame";
-import type { WorldGameKey } from "./logic";
+import { GARDEN_STAR_PREFIX, type WorldGameKey } from "./logic";
 import { PhotoGame } from "./PhotoGame";
 import { RescueGame } from "./RescueGame";
 import { SpaceGame } from "./SpaceGame";
@@ -39,7 +41,8 @@ type Card = {
   pose: MascotVariant;
   art: string;
   colors: readonly [string, string];
-  section: "play" | "rest";
+  /** "top" cards come first, above the sections. */
+  section: "top" | "play" | "rest";
   source?: { label: string; url: string };
 };
 
@@ -58,6 +61,15 @@ const WHO_PLAY = {
 };
 
 export const WORLD_CARDS: Card[] = [
+  {
+    key: "eyeMoves",
+    ...pick(eyeMovesCopy),
+    pose: "guide",
+    art: "🦋👀",
+    colors: ["#DCEBFF", world.lavender],
+    section: "top",
+    source: AAP_SCREENS,
+  },
   {
     key: "rescue",
     ...pick(rescueCopy),
@@ -152,6 +164,20 @@ export default function WorldScreen() {
     [award, childId],
   );
   const exit = () => setOpen(null);
+  // Garden breaks earn `garden-<break>` stars; every other game earns its own key.
+  const doneToday = (card: Card) =>
+    (card.key === "garden"
+      ? stars?.today.some((g) => g.startsWith(GARDEN_STAR_PREFIX))
+      : stars?.today.includes(card.key)) ?? false;
+  const cards = (section: Card["section"]) =>
+    WORLD_CARDS.filter((c) => c.section === section).map((card) => (
+      <GameCard
+        key={card.key}
+        card={card}
+        done={doneToday(card)}
+        onStart={() => setOpen(card.key)}
+      />
+    ));
 
   switch (open) {
     case "rescue":
@@ -166,6 +192,8 @@ export default function WorldScreen() {
       return <GardenGame childId={childId} award={award} onExit={exit} />;
     case "style":
       return <StyleStudio childId={childId} totalStars={stars?.total ?? 0} onExit={exit} />;
+    case "eyeMoves":
+      return <EyeMovesGame onComplete={complete("eyeMoves")} onExit={exit} />;
   }
 
   const today = Math.min(stars?.today.length ?? 0, DAILY_GOAL);
@@ -208,24 +236,11 @@ export default function WorldScreen() {
         </View>
       </View>
 
+      {cards("top")}
       <Section title={copy.playSection} hint={copy.playSectionHint} />
-      {WORLD_CARDS.filter((c) => c.section === "play").map((card) => (
-        <GameCard
-          key={card.key}
-          card={card}
-          done={stars?.today.includes(card.key) ?? false}
-          onStart={() => setOpen(card.key)}
-        />
-      ))}
+      {cards("play")}
       <Section title={copy.restSection} hint={copy.restSectionHint} />
-      {WORLD_CARDS.filter((c) => c.section === "rest").map((card) => (
-        <GameCard
-          key={card.key}
-          card={card}
-          done={stars?.today.some((g) => g.startsWith("garden-")) ?? false}
-          onStart={() => setOpen(card.key)}
-        />
-      ))}
+      {cards("rest")}
 
       <View style={styles.notes}>
         <Text variant="caption" style={styles.muted}>

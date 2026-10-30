@@ -6,10 +6,12 @@ import {
   photoCopy,
   clinicCopy,
   styleCopy,
+  eyeMovesCopy,
 } from "./copy";
 import {
   CLINIC_CASES,
   DIRECTIONS,
+  EYE_MOVES,
   EMPTY_GARDEN,
   GARDEN_BREAKS,
   GARDEN_SIZE,
@@ -20,8 +22,12 @@ import {
   cleanGarden,
   cleanOutfit,
   curtainLight,
+  eyeMovePath,
+  eyeMovePoint,
+  eyeRoutine,
   inZone,
   plant,
+  routineSeconds,
   seedsLeft,
   spaceRounds,
   toggleItem,
@@ -115,6 +121,7 @@ test("the games never claim to check, treat or improve eyes", () => {
     photoCopy,
     clinicCopy,
     styleCopy,
+    eyeMovesCopy,
   ]);
   for (const word of banned) expect(all).not.toMatch(word);
 });
@@ -126,4 +133,63 @@ test("every voice clip has a unique file name and a line to say", () => {
     expect(line.file).toMatch(/^[a-z]+(-[a-z]+)*\.m4a$/);
     expect(line.text.trim().length).toBeGreaterThan(0);
   }
+});
+
+test("eye moves: every direction slowly, then blinks and a rest, in about a minute and a half", () => {
+  const steps = eyeRoutine();
+  expect(steps.flatMap((s) => (s.kind === "move" ? [s.move] : []))).toEqual(EYE_MOVES);
+  expect(steps.slice(-2).map((s) => s.kind)).toEqual(["blink", "rest"]);
+  // Slow enough to follow: at least four seconds a round.
+  for (const s of steps)
+    if (s.kind === "move") expect(s.seconds / s.cycles).toBeGreaterThanOrEqual(4);
+  expect(routineSeconds(steps)).toBeGreaterThanOrEqual(60);
+  expect(routineSeconds(steps)).toBeLessThanOrEqual(120);
+});
+
+test("eye moves stay in the sky and trace their shapes", () => {
+  for (const move of EYE_MOVES) {
+    for (let i = 0; i <= 40; i++) {
+      const p = eyeMovePoint(move, i / 40);
+      expect(Math.abs(p.x)).toBeLessThanOrEqual(1 + 1e-9);
+      expect(Math.abs(p.y)).toBeLessThanOrEqual(1 + 1e-9);
+    }
+  }
+  expect(eyeMovePoint("sideways", 0.25)).toEqual({ x: 1, y: 0 });
+  // Up first (y grows downwards), staying in the middle.
+  expect(eyeMovePoint("upDown", 0.25)).toEqual({ x: 0, y: -1 });
+  const up = eyeMovePoint("diagonalUp", 0.2);
+  expect(up.y).toBeCloseTo(-up.x);
+  const down = eyeMovePoint("diagonalDown", 0.2);
+  expect(down.y).toBeCloseTo(down.x);
+  for (const phase of [0, 0.1, 0.37, 0.8]) {
+    const c = eyeMovePoint("circleRight", phase);
+    expect(Math.hypot(c.x, c.y)).toBeCloseTo(1);
+  }
+  // From the top, clockwise goes right and the other circle goes left.
+  expect(eyeMovePoint("circleRight", 0.25).x).toBeCloseTo(1);
+  expect(eyeMovePoint("circleLeft", 0.25).x).toBeCloseTo(-1);
+  // The sideways eight crosses the middle twice a round and reaches both sides.
+  expect(eyeMovePoint("eight", 0)).toEqual({ x: 0, y: 0 });
+  expect(eyeMovePoint("eight", 0.5).x).toBeCloseTo(0);
+  expect(eyeMovePoint("eight", 0.25).x).toBeCloseTo(1);
+  expect(eyeMovePoint("eight", 0.75).x).toBeCloseTo(-1);
+});
+
+test("eye move keyframes run 0..1 and end where they start; held ones only hop", () => {
+  const path = eyeMovePath("circleRight", 3);
+  expect(path.input[0]).toBe(0);
+  expect(path.input.at(-1)).toBe(1);
+  for (let i = 1; i < path.input.length; i++) {
+    expect(path.input[i]!).toBeGreaterThan(path.input[i - 1]!);
+  }
+  expect(path.x.at(-1)).toBeCloseTo(path.x[0]!);
+  expect(path.y.at(-1)).toBeCloseTo(path.y[0]!);
+
+  const held = eyeMovePath("sideways", 2, 4, true);
+  for (let i = 1; i < held.input.length; i++) {
+    expect(held.input[i]!).toBeGreaterThan(held.input[i - 1]!);
+  }
+  // Before every jump the butterfly waits where it was.
+  for (let i = 1; i < held.x.length; i += 2) expect(held.x[i]).toBe(held.x[i - 1]);
+  expect(new Set(held.x.map((v) => Math.round(v * 1000) / 1000))).toEqual(new Set([0, 1, -1]));
 });
