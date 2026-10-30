@@ -52,12 +52,16 @@ afterEach(async () => {
   await act(async () => renderer.unmount());
 });
 
-test("shows Нүдхэний ертөнц with today's stars, two sections and all six games", () => {
+test("shows Нүдхэний ертөнц with today's stars, two sections and all seven games", () => {
   expect(text()).toContain(worldCopy.title);
   expect(text()).toContain(worldCopy.todayStars);
   expect(text()).toContain(worldCopy.playSection);
   expect(text()).toContain(worldCopy.restSection);
-  expect(WORLD_CARDS).toHaveLength(6);
+  expect(WORLD_CARDS).toHaveLength(7);
+  expect(WORLD_CARDS.filter((c) => c.section === "rest").map((c) => c.key)).toEqual([
+    "garden",
+    "eyeMoves",
+  ]);
   for (const game of WORLD_CARDS) {
     expect(text()).toContain(game.title);
     expect(text()).toContain(game.ages);

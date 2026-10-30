@@ -6,6 +6,7 @@ import {
   photoCopy,
   clinicCopy,
   styleCopy,
+  eyeMovesCopy,
 } from "./copy";
 import {
   CLINIC_CASES,
@@ -115,6 +116,7 @@ test("the games never claim to check, treat or improve eyes", () => {
     photoCopy,
     clinicCopy,
     styleCopy,
+    eyeMovesCopy,
   ]);
   for (const word of banned) expect(all).not.toMatch(word);
 });

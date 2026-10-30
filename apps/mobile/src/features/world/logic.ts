@@ -6,7 +6,8 @@ import { clinicCopy, photoCopy } from "./copy";
 
 // ── Shared ──────────────────────────────────────────────────────────────────────────────────────
 
-export type WorldGameKey = "rescue" | "space" | "garden" | "photo" | "clinic" | "style";
+export type WorldGameKey =
+  "rescue" | "space" | "garden" | "photo" | "clinic" | "style" | "eyeMoves";
 /** Star keys in play_stars. Garden breaks use `garden-<break>` so each break counts once a day. */
 export const GARDEN_STAR_PREFIX = "garden-";
 
@@ -291,4 +292,93 @@ export function cleanOutfit(saved: unknown, totalStars: number): Outfit {
     if (item && isUnlocked(item, totalStars)) outfit[item.category] = item.id;
   }
   return outfit;
+}
+
+// ── Eye moves ───────────────────────────────────────────────────────────────────────────────────
+
+/** Who follows the butterfly: children do fewer, slower rounds and shorter breaks. */
+export type EyeMoveWho = "child" | "adult";
+export type EyeMove =
+  "sideways" | "upDown" | "diagonalUp" | "diagonalDown" | "circleRight" | "circleLeft" | "eight";
+export const EYE_MOVES: EyeMove[] = [
+  "sideways",
+  "upDown",
+  "diagonalUp",
+  "diagonalDown",
+  "circleRight",
+  "circleLeft",
+  "eight",
+];
+export type EyeStep =
+  | { kind: "move"; move: EyeMove; cycles: number; seconds: number }
+  | { kind: "blink"; seconds: number }
+  | { kind: "rest"; seconds: number };
+
+/** Every move in turn, slow enough to follow with the eyes, then quick blinks and a rest. */
+export function eyeRoutine(who: EyeMoveWho): EyeStep[] {
+  const cycles = who === "child" ? 2 : 3;
+  const perCycle = who === "child" ? 4 : 3.5;
+  return [
+    ...EYE_MOVES.map((move) => ({
+      kind: "move" as const,
+      move,
+      cycles,
+      seconds: cycles * perCycle,
+    })),
+    { kind: "blink", seconds: who === "child" ? 10 : 15 },
+    { kind: "rest", seconds: who === "child" ? 10 : 20 },
+  ];
+}
+
+export const routineSeconds = (steps: readonly EyeStep[]) =>
+  steps.reduce((sum, step) => sum + step.seconds, 0);
+
+/**
+ * Where the butterfly is `phase` rounds into a move, with x and y in -1..1 and y growing
+ * downwards. Lines and diagonals start in the middle; circles start at the top.
+ */
+export function eyeMovePoint(move: EyeMove, phase: number): Point {
+  const a = 2 * Math.PI * phase;
+  const s = Math.sin(a);
+  switch (move) {
+    case "sideways":
+      return { x: s, y: 0 };
+    case "upDown":
+      return { x: 0, y: -s };
+    case "diagonalUp":
+      return { x: s, y: -s };
+    case "diagonalDown":
+      return { x: s, y: s };
+    case "circleRight":
+      return { x: s, y: -Math.cos(a) };
+    case "circleLeft":
+      return { x: -s, y: -Math.cos(a) };
+    case "eight":
+      return { x: s, y: Math.sin(2 * a) / 2 };
+  }
+}
+
+/**
+ * A move as animation keyframes over the whole step: `input` runs 0..1, x and y in -1..1.
+ * With `hold` the butterfly waits at each point and then jumps, for people who reduce motion.
+ */
+export function eyeMovePath(move: EyeMove, cycles: number, perCycle = 24, hold = false) {
+  const count = Math.max(1, Math.round(cycles * perCycle));
+  const input: number[] = [];
+  const x: number[] = [];
+  const y: number[] = [];
+  for (let i = 0; i <= count; i++) {
+    const point = eyeMovePoint(move, (i / count) * cycles);
+    const at = i / count;
+    if (hold && i > 0) {
+      // Stay at the previous point until just before this one, then jump.
+      input.push(at - 1e-4);
+      x.push(x[x.length - 1]!);
+      y.push(y[y.length - 1]!);
+    }
+    input.push(at);
+    x.push(point.x);
+    y.push(point.y);
+  }
+  return { input, x, y };
 }

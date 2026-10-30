@@ -11,8 +11,10 @@ import { fonts } from "../../theme";
 import { useActiveChildId } from "../children/useActiveChildId";
 import { eyeRestCopy } from "../eyeRest/content";
 import { ClinicGame } from "./ClinicGame";
+import { EyeMovesGame } from "./EyeMovesGame";
 import {
   clinicCopy,
+  eyeMovesCopy,
   gardenCopy,
   photoCopy,
   rescueCopy,
@@ -21,7 +23,7 @@ import {
   worldCopy as copy,
 } from "./copy";
 import { GardenGame } from "./GardenGame";
-import type { WorldGameKey } from "./logic";
+import { GARDEN_STAR_PREFIX, type WorldGameKey } from "./logic";
 import { PhotoGame } from "./PhotoGame";
 import { RescueGame } from "./RescueGame";
 import { SpaceGame } from "./SpaceGame";
@@ -109,6 +111,15 @@ export const WORLD_CARDS: Card[] = [
     section: "rest",
     source: WHO_PLAY,
   },
+  {
+    key: "eyeMoves",
+    ...pick(eyeMovesCopy),
+    pose: "guide",
+    art: "🦋👀",
+    colors: ["#DCEBFF", world.lavender],
+    section: "rest",
+    source: AAP_SCREENS,
+  },
 ];
 
 function pick(source: { title: string; summary: string; time: string; ages: string }) {
@@ -166,6 +177,8 @@ export default function WorldScreen() {
       return <GardenGame childId={childId} award={award} onExit={exit} />;
     case "style":
       return <StyleStudio childId={childId} totalStars={stars?.total ?? 0} onExit={exit} />;
+    case "eyeMoves":
+      return <EyeMovesGame onComplete={complete("eyeMoves")} onExit={exit} />;
   }
 
   const today = Math.min(stars?.today.length ?? 0, DAILY_GOAL);
@@ -222,7 +235,11 @@ export default function WorldScreen() {
         <GameCard
           key={card.key}
           card={card}
-          done={stars?.today.some((g) => g.startsWith("garden-")) ?? false}
+          done={
+            (card.key === "garden"
+              ? stars?.today.some((g) => g.startsWith(GARDEN_STAR_PREFIX))
+              : stars?.today.includes(card.key)) ?? false
+          }
           onStart={() => setOpen(card.key)}
         />
       ))}
