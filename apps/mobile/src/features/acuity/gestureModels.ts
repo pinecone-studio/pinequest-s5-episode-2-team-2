@@ -5,6 +5,8 @@ import poseDetector from "../../../assets/models/pose_detector.tflite";
 import pose from "../../../assets/models/pose_landmarks_detector.tflite";
 import palm from "../../../assets/models/hand_detector.tflite";
 import hand from "../../../assets/models/hand_landmarks_detector.tflite";
+import face from "../../../assets/models/face_detector.tflite";
+import mesh from "../../../assets/models/face_landmarks_detector.tflite";
 import type { GestureModels } from "./gestureFrame";
 
 interface Loader extends HybridObject<{ ios: "swift"; android: "kotlin" }> {
@@ -22,11 +24,15 @@ export function loadGestureModels(): Promise<GestureModels> {
     const loader = NitroModules.createHybridObject<Loader>("AssetLoader");
     const module = NitroModules.createHybridObject<Module>("TfliteModule");
     const loaded: TfliteModel[] = [];
+    // Output shapes; the scan's two face models are checked by element count, as their
+    // pipeline checks them (facePipeline.ts).
     const specs = [
       [poseDetector, 224, ["1,2254,12", "1,2254,1"]],
       [pose, 256, ["1,195", "1,1", "1,256,256,1", "1,64,64,39", "1,117"]],
       [palm, 192, ["1,2016,18", "1,2016,1"]],
       [hand, 224, ["1,63", "1,1", "1,1", "1,63"]],
+      [face, 128, [896 * 16, 896]],
+      [mesh, 256, [1434, 1, 1]],
     ] as const;
     try {
       for (const [asset, size, shapes] of specs) {
@@ -40,12 +46,23 @@ export function loadGestureModels(): Promise<GestureModels> {
           model.inputs[0].shape.join(",") !== `1,${size},${size},3` ||
           model.outputs.length !== shapes.length ||
           model.outputs.some(
-            (tensor, i) => tensor.dataType !== "float32" || tensor.shape.join(",") !== shapes[i],
+            (tensor, i) =>
+              tensor.dataType !== "float32" ||
+              (typeof shapes[i] === "number"
+                ? tensor.shape.reduce((a, b) => a * b, 1) !== shapes[i]
+                : tensor.shape.join(",") !== shapes[i]),
           )
         )
           throw new Error("Unexpected gesture model contract");
       }
-      return { poseDetector: loaded[0]!, pose: loaded[1]!, palm: loaded[2]!, hand: loaded[3]! };
+      return {
+        poseDetector: loaded[0]!,
+        pose: loaded[1]!,
+        palm: loaded[2]!,
+        hand: loaded[3]!,
+        face: loaded[4]!,
+        mesh: loaded[5]!,
+      };
     } catch (error) {
       loaded.forEach((model) => model.dispose());
       throw error;

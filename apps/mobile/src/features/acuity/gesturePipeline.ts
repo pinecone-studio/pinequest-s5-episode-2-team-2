@@ -1,5 +1,12 @@
 import type { FaceRegion } from "../vision/faceMath";
-import { cropPoint, sampleCrop, unletterbox } from "../vision/faceMath";
+import {
+  cropPoint,
+  decodeFaces,
+  FACE_INPUT_SIZE,
+  faceRegion,
+  sampleCrop,
+  unletterbox,
+} from "../vision/faceMath";
 import type { InferenceModel } from "../vision/facePipeline";
 
 export interface GesturePoint {
@@ -48,12 +55,14 @@ function iou(a: Detection, b: Detection) {
     Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
   return area / (a.width * a.height + b.width * b.height - area);
 }
+/** The best `limit` detections, each its NMS cluster's score-weighted mean, best first. */
 function detect(
   rgb: Float32Array,
   source: number,
   model: InferenceModel,
   pose: boolean,
-): Detection | null {
+  limit = 1,
+): Detection[] {
   "worklet";
   const size = pose ? 224 : 192,
     grid = pose ? POSE : PALM,
@@ -89,24 +98,29 @@ function detect(
     });
   }
   candidates.sort((a, b) => b.score - a.score);
-  const best = candidates[0];
-  if (!best) return null;
-  // Only one answering person/hand is used; merge the highest-score NMS cluster.
-  const group = candidates.filter((candidate) => iou(best, candidate) > 0.3);
-  const total = group.reduce((sum, d) => sum + d.score, 0);
-  const mean = (value: (d: Detection) => number) =>
-    group.reduce((sum, d) => sum + value(d) * d.score, 0) / total;
-  return {
-    x: mean((d) => d.x),
-    y: mean((d) => d.y),
-    width: mean((d) => d.width),
-    height: mean((d) => d.height),
-    score: best.score,
-    points: best.points.map((_, i) => ({
-      x: mean((d) => d.points[i]!.x),
-      y: mean((d) => d.points[i]!.y),
-    })),
-  };
+  // One answering person/hand, or up to two hands on the face crop for the cover check.
+  const found: Detection[] = [];
+  let left = candidates;
+  while (left.length && found.length < limit) {
+    const best = left[0]!;
+    const group = left.filter((candidate) => iou(best, candidate) > 0.3);
+    left = left.filter((candidate) => iou(best, candidate) <= 0.3);
+    const total = group.reduce((sum, d) => sum + d.score, 0);
+    const mean = (value: (d: Detection) => number) =>
+      group.reduce((sum, d) => sum + value(d) * d.score, 0) / total;
+    found.push({
+      x: mean((d) => d.x),
+      y: mean((d) => d.y),
+      width: mean((d) => d.width),
+      height: mean((d) => d.height),
+      score: best.score,
+      points: best.points.map((_, i) => ({
+        x: mean((d) => d.points[i]!.x),
+        y: mean((d) => d.points[i]!.y),
+      })),
+    });
+  }
+  return found;
 }
 
 function region(d: Detection, pose: boolean): FaceRegion | null {
@@ -139,7 +153,7 @@ export function inferPose(
   "worklet";
   if (![width, height].every((n) => Number.isInteger(n) && n > 0))
     throw new Error("Invalid frame dimensions");
-  const detection = detect(rgb, 512, detector, true);
+  const detection = detect(rgb, 512, detector, true)[0];
   if (!detection) return [];
   const roi = region(detection, true);
   if (!roi) return [];
@@ -157,8 +171,26 @@ export function inferPose(
     return {
       x: p.x / width,
       y: p.y / height,
-      visibility: Math.min(sigmoid(points![i * 5 + 3]!), sigmoid(points![i * 5 + 4]!)),
+      // As MediaPipe's PoseLandmarker reports it to the web demo: the visibility output alone.
+      // Also taking the presence output made distant wrists read as hidden.
+      visibility: sigmoid(points![i * 5 + 3]!),
     };
+  });
+}
+
+// Initialize this worklet before inferHand/inferHands capture it.
+function handPoints(rgb: Float32Array, detection: Detection, model: InferenceModel) {
+  "worklet";
+  const roi = region(detection, false);
+  if (!roi) return [];
+  const crop = sampleCrop(rgb, 256, roi, 224);
+  const [points, presence] = tensors(model.runSync([crop.buffer]), [63, 1, 1, 63]);
+  if (!Number.isFinite(presence![0]) || !points!.every(Number.isFinite))
+    throw new Error("Invalid hand output");
+  if (presence![0]! < 0.5) return [];
+  return Array.from({ length: 21 }, (_, i) => {
+    const p = cropPoint({ x: points![i * 3]!, y: points![i * 3 + 1]! }, roi, 224);
+    return { x: p.x / 256, y: p.y / 256 };
   });
 }
 
@@ -174,22 +206,71 @@ export function inferHand(
   diagnostics?: HandDiagnostics,
 ): GesturePoint[] {
   "worklet";
-  const detection = detect(rgb, 256, detector, false);
+  const detection = detect(rgb, 256, detector, false)[0];
   if (diagnostics) {
     diagnostics.palmFound = !!detection;
     diagnostics.handPresent = false;
   }
   if (!detection) return [];
-  const roi = region(detection, false);
-  if (!roi) return [];
-  const crop = sampleCrop(rgb, 256, roi, 224);
-  const [points, presence] = tensors(model.runSync([crop.buffer]), [63, 1, 1, 63]);
-  if (!Number.isFinite(presence![0]) || !points!.every(Number.isFinite))
-    throw new Error("Invalid hand output");
-  if (presence![0]! < 0.5) return [];
-  if (diagnostics) diagnostics.handPresent = true;
-  return Array.from({ length: 21 }, (_, i) => {
-    const p = cropPoint({ x: points![i * 3]!, y: points![i * 3 + 1]! }, roi, 224);
-    return { x: p.x / 256, y: p.y / 256 };
-  });
+  const points = handPoints(rgb, detection, model);
+  if (diagnostics) diagnostics.handPresent = points.length > 0;
+  return points;
+}
+
+/** Up to two hands, as the web demo's cover hand detector (numHands: 2). */
+export function inferHands(
+  rgb: Float32Array,
+  detector: InferenceModel,
+  model: InferenceModel,
+): GesturePoint[][] {
+  "worklet";
+  return detect(rgb, 256, detector, false, 2)
+    .map((detection) => handPoints(rgb, detection, model))
+    .filter((points) => points.length > 0);
+}
+
+/**
+ * Both iris centres in a square RGB [0,1] crop, in its pixels, as the web demo's FaceLandmarker
+ * finds them on the face crop: the scan's short-range detector and face mesh, best face first.
+ */
+export function inferIrises(
+  rgb: Float32Array,
+  size: number,
+  detector: InferenceModel,
+  mesh: InferenceModel,
+): [GesturePoint, GesturePoint] | null {
+  "worklet";
+  const input = sampleCrop(rgb, size, { x: size / 2, y: size / 2, size, rotation: 0 }, 128);
+  for (let i = 0; i < input.length; i++) input[i] = input[i]! * 2 - 1;
+  const detection = detector.runSync([input.buffer]);
+  if (detection.length !== 2) throw new Error("Unexpected detector outputs");
+  const face = decodeFaces(new Float32Array(detection[0]!), new Float32Array(detection[1]!))[0];
+  if (!face) return null;
+  // faceRegion works in the scan's 512 square; this crop is `size` pixels.
+  const scaled = faceRegion(face),
+    k = size / FACE_INPUT_SIZE;
+  const roi = {
+    x: scaled.x * k,
+    y: scaled.y * k,
+    size: scaled.size * k,
+    rotation: scaled.rotation,
+  };
+  const output = mesh.runSync([sampleCrop(rgb, size, roi, 256).buffer]);
+  if (
+    output.length !== 3 ||
+    output[0]?.byteLength !== 1434 * 4 ||
+    output[1]?.byteLength !== 4 ||
+    output[2]?.byteLength !== 4
+  )
+    throw new Error("Unexpected landmark outputs");
+  const presence = new Float32Array(output[1])[0]!;
+  if (!Number.isFinite(presence)) throw new Error("Invalid face presence");
+  if (presence < 0) return null;
+  const points = new Float32Array(output[0]);
+  const iris = (i: number) => {
+    const p = cropPoint({ x: points[i * 3]!, y: points[i * 3 + 1]! }, roi, 256);
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) throw new Error("Invalid landmarks");
+    return p;
+  };
+  return [iris(468), iris(473)];
 }

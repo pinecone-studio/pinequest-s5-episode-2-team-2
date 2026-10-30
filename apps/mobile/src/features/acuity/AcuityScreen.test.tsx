@@ -1,4 +1,4 @@
-import { act, type ReactNode } from "react";
+import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { HeaderHeightContext } from "expo-router/react-navigation";
 import AcuityScreen from "./AcuityScreen";
@@ -11,8 +11,8 @@ jest.mock("../../components/Mascot", () => ({ Mascot: "Mascot" }));
 jest.mock("expo-router", () => ({ router: { back: () => mockBack() } }));
 jest.mock("./SaveAcuityButton", () => ({ SaveAcuityButton: "SaveAcuityButton" }));
 jest.mock("./AcuityGestureInput", () => ({
-  AcuityGestureInput: ({ manual, actions, ...props }: { manual: ReactNode; actions: ReactNode }) =>
-    jest.requireActual("react").createElement("GestureInput", props, manual, actions),
+  AcuityGestureInput: (props: object) =>
+    jest.requireActual("react").createElement("GestureInput", props),
 }));
 jest.mock("expo-router/react-navigation", () => ({
   HeaderHeightContext: jest.requireActual("react").createContext(undefined),
@@ -50,6 +50,8 @@ jest.mock("react-native", () => ({
 }));
 
 let renderer: ReactTestRenderer;
+// As in the web demo, the ready button shows the thumbs-up that also answers it.
+const READY = `${copy.ready} 👍`;
 const all = (type: string) => renderer.root.findAll((n) => n.type === type);
 // Buttons by label; the age-group choices are Pressables with an accessibility label.
 const press = (label: string) =>
@@ -95,13 +97,13 @@ test("runs both eyes from age group to result", () => {
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.practice.intro);
   press(copy.practice.skip);
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("right"));
-  press(copy.ready);
+  press(READY);
   // Four arrows and "can't see"; two misses finish the right eye.
   expect(all("Pressable")).toHaveLength(4);
   press(copy.cantSee);
   press(copy.cantSee);
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
-  press(copy.ready);
+  press(READY);
   press(copy.cantSee);
   press(copy.cantSee);
   const text = JSON.stringify(renderer.toJSON());
@@ -153,7 +155,7 @@ test("the test itself only gives neutral cues, so it does not reveal correct ans
   });
   press(copy.groups.adult);
   press(copy.practice.skip);
-  press(copy.ready);
+  press(READY);
   mockSay.mockClear();
   press(labels[shown()]);
   press(labels[wrongOf(shown())]);
@@ -210,7 +212,7 @@ test("every test letter and its crowding bars fit one fixed space above the cont
       checked += 1;
       // Right answers walk down every level to the smallest, crowded letters.
       press(labels[shown()]);
-    } else if (has(copy.ready)) press(copy.ready);
+    } else if (has(READY)) press(READY);
     else break;
   }
   expect(JSON.stringify(renderer.toJSON())).toContain(copy.resultTitle);
@@ -232,20 +234,27 @@ test("the practice letter fits the space the controls leave", () => {
   expect(renderer.root.findByType(Optotype).props.size).toBe(120);
 });
 
-test("can't see sits right after the arrows; below a header the top inset is the header's", () => {
+test("as on the web, arrows and can't see sit below the camera; below a header the top inset is the header's", () => {
   const edges = () => all("SafeAreaView")[0]!.props.edges;
   act(() => {
     renderer = create(<AcuityScreen />);
   });
   press(copy.groups.adult);
   expect(edges()).toEqual(["top", "bottom"]);
+  // Practice: the camera, then the four arrows, both always on screen.
+  expect(all("GestureInput")[0]!.props.eye).toBeNull();
+  expect(all("Pressable")).toHaveLength(4);
   press(copy.practice.skip);
-  press(copy.ready);
-  const input = all("GestureInput")[0]!;
-  const kinds = input.children.map((child) =>
-    typeof child === "string" ? child : (child.props.label ?? child.type),
+  expect(all("GestureInput")[0]!.props.eye).toBe("right");
+  press(READY);
+  const controls = all("ScrollView")[0]!.children.map((child) =>
+    typeof child === "string"
+      ? child
+      : (child.props.label ?? child.props.children ?? (child.type as { name?: string }).name),
   );
-  expect(kinds.indexOf(copy.cantSee)).toBe(kinds.length - 1);
+  expect(controls[0]).toBe("AcuityGestureInput");
+  expect(controls.at(-1)).toBe(copy.cantSee);
+  expect(controls).toContain(copy.gestureHint);
   act(() => renderer.unmount());
   act(() => {
     renderer = create(
@@ -256,4 +265,65 @@ test("can't see sits right after the arrows; below a header the top inset is the
   });
   press(copy.groups.adult);
   expect(edges()).toEqual(["bottom"]);
+});
+
+test("the camera's cover reading, pause and held answer show as on the web", () => {
+  jest.useFakeTimers();
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  const text = () => JSON.stringify(renderer.toJSON());
+  const status = (value: object | null) => act(() => all("GestureInput")[0]!.props.onStatus(value));
+  press(copy.groups.adult);
+  expect(text()).toContain(copy.steps.fist);
+  press(copy.practice.skip);
+  status({ cover: "wrongEye", paused: false, detected: null });
+  expect(text()).toContain(copy.coverStatus.wrongEye);
+  status({ cover: "covered", paused: false, detected: "ready" });
+  expect(text()).toContain(copy.coverStatus.covered);
+  act(() => all("GestureInput")[0]!.props.onAnswer("ready"));
+  status(null);
+  const arrow = (d: 0 | 90 | 180 | 270) =>
+    renderer.root.find(
+      (n) => n.type === ("Pressable" as never) && n.props.accessibilityLabel === labels[d],
+    );
+  // Past the base and position styles come the highlight and the pressed/taken flash.
+  const lit = (d: 0 | 90 | 180 | 270) =>
+    (arrow(d).props.style({ pressed: false }) as unknown[]).slice(2).some(Boolean);
+  expect(lit(0)).toBe(false);
+  status({ cover: "covered", paused: false, detected: 0 });
+  expect(lit(0)).toBe(true);
+  expect(lit(90)).toBe(false);
+  expect(text()).not.toContain(copy.coverPaused);
+  // Paused: the note shows above the letter and nothing is highlighted.
+  status({ cover: "open", paused: true, detected: null });
+  expect(text()).toContain(copy.coverPaused);
+  expect(lit(0)).toBe(false);
+  status({ cover: "covered", paused: false, detected: "cant" });
+  const cant = renderer.root.find(
+    (n) => n.type === ("Button" as never) && n.props.label === copy.cantSee,
+  );
+  expect(cant.props.variant).toBe("primary");
+  // A direction the camera takes flashes for a moment.
+  status(null);
+  act(() => all("GestureInput")[0]!.props.onAnswer(90));
+  expect(lit(90)).toBe(true);
+  act(() => jest.advanceTimersByTime(250));
+  expect(lit(90)).toBe(false);
+  jest.useRealTimers();
+});
+
+test("an open palm from the camera answers can't see, like the button", () => {
+  act(() => {
+    renderer = create(<AcuityScreen />);
+  });
+  press(copy.groups.adult);
+  press(copy.practice.skip);
+  press(READY);
+  const gesture = (value: GestureAnswer) =>
+    act(() => all("GestureInput")[0]!.props.onAnswer(value));
+  // Two misses finish the right eye at the first level, as with the button.
+  gesture("cant");
+  gesture("cant");
+  expect(JSON.stringify(renderer.toJSON())).toContain(copy.cover("left"));
 });

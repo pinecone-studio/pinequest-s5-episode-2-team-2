@@ -2,29 +2,63 @@
 
 Practice, eye-cover readiness and the test are answered with the front camera from the start,
 without audio capture; camera permission is asked for when the test opens. There is no
-toggle: touch answers appear only when permission, camera or model loading fails or capture
-pauses, with **Камерыг дахин нээх** to try again. The cover step always asks for a
-thumbs-up. The practice keeps its existing correct/incorrect tones; the test stays silent.
+toggle. As in the web demo, the arrow buttons, **Харагдахгүй байна** and **Бэлэн 👍** stay on
+screen beside the camera, so a helper can answer too; when permission, camera or model
+loading fails or capture pauses, a note and **Камерыг дахин нээх** appear. The practice keeps
+its existing correct/incorrect voice; the test only says the neutral "next" cue.
+
+## Same as the web demo (2026-10-30)
+
+At the owner's request the E test follows the web demo (demo/web-poc `acuity.ts`) screen by
+screen, keeping the app's voice cues:
+
+- Practice and the cover screen show the web demo's three steps (👉 Заана, ✊ Атгана,
+  ✋ Харагдахгүй бол); the test shows its hint line under the camera.
+- The arrow (or **Харагдахгүй байна**) the camera is reading lights up, and the one it takes
+  flashes for 250 ms.
+- Eye cover, as the web demo's `coverChecker`: on cover and test frames the worker crops
+  1.2 shoulder widths around the pose nose to 256 pixels. The scan's short-range face
+  detector and face mesh give both irises, and the palm and hand models up to two hands; a
+  hand point within 0.6 iris spacings of an eye covers it, and the pose eyes tell left from
+  right. Without irises it falls back to the body model's hand points and eye visibility (a
+  patch). Three equal readings change the shown state.
+- The cover screen shows **Зөв нүд хаагдсан** / **Нөгөө нүдээ хаагаарай** / **Зөвхөн нэг
+  нүдээ хаагаарай** / **Нүдээ хаагаарай**; the thumbs-up only counts while the other eye
+  reads covered, or no body is in view (the person then decides).
+- During the test, an eye read uncovered for a second pauses camera answers: the note
+  **Нүд нээгдсэн байна. Нүдээ дахин хаагаад үргэлжлүүлээрэй.** shows above the letter and the
+  hint shows ⏸ **Нүдээ хаана уу** until it reads covered again. Buttons keep working.
+
+The six models load one after the other. The cover check adds the face and hand models to
+cover and test frames, so readings there are slower than in practice; the device latency
+still has to be measured. These limits are the web demo's TODO(tune) values, not validated
+clinical thresholds.
 
 The worker resizes the upright, unmirrored frame to a 512-square letterbox for pose inference.
 It selects a visible raised wrist away from the eyes, samples a 256-square hand crop from
 the native full-resolution NV12 planes, then runs palm and 21-point hand inference. The preview is mirrored as requested by the owner; the native frame output remains
 unmirrored. Gesture directions follow the person's view, as in the web demo.
 
-The four checksum-pinned models load sequentially through a private AssetLoader. A bounded
+The pose, palm, hand, face and face-mesh models load sequentially through a private AssetLoader. A bounded
 model-only cache avoids reloading when changing eyes/stages. RN serialises use of the cached
 interpreters across camera remounts; only one frame may await RN per camera. Busy/throttled
 frames and resized buffers are released. No image, landmark or gesture history is saved.
 Optional development logs contain only counts, gesture labels, timestamps and latency.
 
-A pointing direction holds for at least 600 ms; a thumbs-up holds
-for 800 ms on the cover screen. An initially held answer cannot submit until an open palm or a
-lowered hand rearms input (400 ms absent-hand observation). A thumb must drop once after
-entering the cover screen. Missing body, a changed candidate, non-monotonic timestamps and
-observation gaps over two seconds reset the hold. The two-second gap guard accommodates
-the roughly one-second native callback cadence observed in the initial CPU check; it remains
-a UI tuning limit, not a clinical threshold. The same pose cannot answer the next letter. At the owner's request, an open palm is neutral
-and does not mean cannot-see; the cannot-see button is always available in the test.
+Answers follow the web demo's loop (demo/web-poc `acuity.ts`), at the owner's request on
+2026-10-30: close the hand (or lower it out of view for 400 ms) to arm, then point with the
+index finger, or show an open palm for "can't see", and hold for 600 ms; after each answer the
+hand closes again, so the same pose cannot answer the next letter. A thumbs-up held 800 ms on
+the cover screen means ready, after the thumb has dropped once. The hint shows the web demo's
+feedback: ✊ "Гараа атгана уу", 👉 "Хуруугаараа заана уу", the arrow with "Барина уу…",
+✋ "Харагдахгүй" and ✓ "Бүртгэгдлээ". (Before, an open palm only rearmed and meant nothing.)
+A changed candidate, non-monotonic timestamps and observation gaps over two seconds reset the
+hold. The two-second gap guard is a UI tuning limit, not a clinical threshold.
+
+As in the web demo, a body without a raised, free hand has no answer, and when the body model
+finds no body at all (close to the phone it often finds none), the hand is looked for in the
+whole frame. The next frame is taken as soon as the previous one is processed (before, the
+interval was twice the processing time), so answers come about twice as fast.
 
 Round identities accompany worker results. Changing letter/stage discards old results;
 disabling input, losing focus, backgrounding, interruption or unmount tears down capture
@@ -76,3 +110,29 @@ the crop now falls back to that wrist when the index is uncertain. Palm/hand mod
 still independently confirm a hand. Debug-only crop/palm status counts distinguish a
 missing region from rejected palm/hand inference, without logging landmark coordinates.
 The revised 3 m check is pending; keep #254 open and do not claim distance reliability.
+
+On 2026-10-30 two gates stricter than the web demo were removed: a pose point's visibility
+also took the model's presence output (MediaPipe's PoseLandmarker, which the web demo uses,
+reports the visibility output alone), and both shoulders had to be visible. Only the raised
+wrist's visibility is checked now, as in the web demo.
+
+The owner's subsequent practice failure was traced to the worker stopping with
+`TypeError: undefined is not a function`. The device's scalar QA log recorded this on
+practice, cover and test screens. The production Babel transform captured `nv12`,
+`coverState` and `wholeFrame` before those worklets were initialized; `inferHand` and
+`inferHands` likewise captured an undefined `handPoints`. A raised-hand crop, whole-frame
+fallback or cover check could therefore stop capture before any direction was read.
+Helpers now precede their callers. A regression test compiles both modules with the app's
+production Babel configuration and checks their captured helper graphs; both cases fail
+before the fix and pass after it. The acuity suite passes 93 tests; mobile typecheck, lint
+of changed code and formatting checks pass. The Release build succeeded and was installed
+and launched on the connected iPhone 12 Pro Max. Physical acceptance, including all four
+directions at approximately 3 m, remains pending.
+
+The post-install scalar log at 13:00–13:02 local time recorded 141 processed frames,
+including 32 with 21 hand points. Camera answers 180 (left) and 90 (down) were accepted
+at 13:00:38 and 13:00:41 and advanced the two practice rounds. No live worker/camera error
+was recorded; the six `previewStopped` events had `live: false` during teardown. Later
+frames mostly reported no body and no hand, including the final practice attempt. The
+participant's distance for each segment is unconfirmed, so these observations establish
+two working practice answers, not all four directions or approximately 3 m reliability.

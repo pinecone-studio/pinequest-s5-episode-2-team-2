@@ -1,8 +1,9 @@
 import type { AgeGroup, Eye } from "./acuity";
+import type { CoverState } from "./cover";
 
 // Mongolian app copy, approved by the team lead (CONTRIBUTING.md "App copy"). Wording follows
-// the web demo (demo/web-poc, apps/web-demo/src/strings.ts) except where the app differs: it
-// touch mode lets a helper press arrows. Gesture copy approved by the owner on 2026-10-28.
+// the web demo (demo/web-poc, apps/web-demo/src/strings.ts). Gesture copy approved by the owner
+// on 2026-10-28; the web demo's setup, cover and step wording taken over on 2026-10-30.
 export const acuityCopy = {
   title: "Харааны шалгалт",
   who: "Хэнийг шалгах вэ?",
@@ -13,18 +14,33 @@ export const acuityCopy = {
     adult: "Насанд хүрэгч",
   } satisfies Record<AgeGroup, string>,
   setup:
-    "Утсаа хүүхдийн нүдний түвшинд, 3 метр орчим зайд барина уу. Хүүхэд Е үсгийн хөл аль зүг рүү харж байгааг гараараа заана, та тэр сумыг дарна.",
+    'Утсаа нүдний түвшинд тавиад, шалгуулах хүн 3 метрийн зайд зогсоно. Дэлгэц дээр гарах "Е" үсгийн чиглэлийг хуруугаараа заахад урд камер таньж авна. Хажууд хүн байвал сумтай товчийг дарж болно.',
   under3: "Энэ шалгалт 3 ба түүнээс дээш насныханд зориулагдсан.",
   // Camera-control copy approved by the owner on 2026-10-28.
   gesture: {
     retry: "Камерыг дахин нээх",
     loading: "Камер бэлдэж байна…",
     unavailable: "Камер ашиглах боломжгүй. Сум дарж үргэлжлүүлж болно.",
-    noBody: "Урд камерт бие болон хариулах гараа харуулаарай.",
     thumb: "Бэлэн бол эрхий хуруугаа өргөж 0.8 секунд бариарай.",
-    point:
-      "Эхлээд алгаа дэлгээд, сумыг зааж 0.6 секунд бариарай. Хариулт бүрийн дараа алгаа дэлгэнэ. Харагдахгүй бол товчийг дарна.",
+    // The web demo's live feedback (demo/web-poc strings.ts acuity.feedback).
+    fist: "Гараа атгана уу",
+    point: "Хуруугаараа заана уу",
+    hold: "Барина уу…",
+    cant: "Харагдахгүй",
+    cover: "Нүдээ хаана уу",
+    done: "Бүртгэгдлээ",
   },
+  // The web demo's gesture steps, cover status and pause (demo/web-poc strings.ts).
+  steps: { point: "Заана", fist: "Атгана", cant: "Харагдахгүй бол" },
+  coverStatus: {
+    covered: "Зөв нүд хаагдсан",
+    wrongEye: "Нөгөө нүдээ хаагаарай",
+    both: "Зөвхөн нэг нүдээ хаагаарай",
+    open: "Нүдээ хаагаарай",
+    noBody: "",
+  } satisfies Record<CoverState, string>,
+  coverPaused: "Нүд нээгдсэн байна. Нүдээ дахин хаагаад үргэлжлүүлээрэй.",
+  gestureHint: "Хуруугаараа заагаад барина уу. Харагдахгүй бол алгаа дэлгэнэ үү",
   practice: {
     title: "Дасгал",
     intro: "Эхлээд хоёр нүдээ нээлттэй байлгаад хоёр удаа дасгал хийе.",
@@ -37,7 +53,7 @@ export const acuityCopy = {
   cover: (eye: Eye) =>
     eye === "right" ? "Зүүн нүдээ алгаараа хаагаарай" : "Баруун нүдээ алгаараа хаагаарай",
   coverHow:
-    "Алгаараа нүдээ бүтэн хаана: хуруунууд дээш эсвэл хажуу тийш, нүдээ дарахгүй. Хүүхдэд нүдний наалт хэрэглэвэл илүү найдвартай.",
+    "Алгаараа нүдээ бүтэн хаана: хуруунууд дээш эсвэл хажуу тийш, нүдээ дарахгүй. Нүүрээ камер руу харуулж, нөгөө гараа нүүрнээсээ хол байлгана. Хүүхдэд нүдний наалт хэрэглэвэл илүү найдвартай.",
   ready: "Бэлэн",
   progress: (level: number, total: number) => `Түвшин ${level} / ${total}`,
   up: "Дээш",

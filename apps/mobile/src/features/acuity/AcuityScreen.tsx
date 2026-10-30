@@ -28,7 +28,8 @@ import {
 } from "./acuity";
 import { acuityCopy as copy } from "./copy";
 import { CROWDED_UNITS, Optotype } from "./Optotype";
-import { AcuityGestureInput } from "./AcuityGestureInput";
+import { AcuityGestureInput, type GestureStatus } from "./AcuityGestureInput";
+import type { GestureAnswer } from "./gestureHold";
 import { SaveAcuityButton } from "./SaveAcuityButton";
 import { useVoice } from "../voice/useVoice";
 import type { VoiceKey } from "../voice/clips";
@@ -62,6 +63,10 @@ export default function AcuityScreen() {
   const maxPoints = Math.min(width - 40, height * 0.5);
   const [session, setSession] = useState<Session | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  // What the camera sees, and the answer it just took, for the web demo's cover status, pause
+  // note and arrow highlight.
+  const [status, setStatus] = useState<GestureStatus | null>(null);
+  const [hit, setHit] = useState<GestureAnswer | null>(null);
   // Below the stack header the header already clears the status bar (#163).
   const hasHeader = (useContext(HeaderHeightContext) ?? 0) > 0;
   const edges = hasHeader ? (["bottom"] as const) : (["top", "bottom"] as const);
@@ -134,20 +139,29 @@ export default function AcuityScreen() {
     }
     setSession(next);
   };
-  const input = (manual: React.ReactNode, actions?: React.ReactNode) =>
+  // The camera answers alongside the buttons, as in the web demo.
+  const input = () =>
     session && (
       <AcuityGestureInput
         round={`${session.stage}:${session.eye}:${session.direction}:${session.practiceCorrect}:${session.test.level}:${session.test.shown}`}
         cover={session.stage === "cover"}
+        eye={session.stage === "practice" ? null : session.eye}
+        onStatus={setStatus}
         onAnswer={(shown) => {
-          if (shown === "ready") setSession((current) => (current ? beginEye(current) : current));
-          else if (session.stage === "practice") practiceAnswer(shown);
-          else setSession((current) => (current ? respond(current, shown, Math.random) : current));
+          setHit(shown);
+          later(() => setHit(null), 250);
+          if (shown === "ready")
+            return setSession((current) => (current ? beginEye(current) : current));
+          // The open palm answers "can't see", like the button.
+          const direction = shown === "cant" ? null : shown;
+          if (session.stage === "practice") practiceAnswer(direction);
+          else
+            setSession((current) => (current ? respond(current, direction, Math.random) : current));
         }}
-        manual={manual}
-        actions={actions}
       />
     );
+  // The arrow or "can't see" the camera is reading lights up, and the one it takes flashes.
+  const detected = status && !status.paused ? status.detected : null;
 
   if (!session) {
     return (
@@ -194,6 +208,7 @@ export default function AcuityScreen() {
           <Text style={styles.topText}>{copy.practice.title}</Text>
         </View>
         <Text>{copy.practice.intro}</Text>
+        <Steps />
         <View
           testID="practice-letter"
           style={styles.practiceLetter}
@@ -205,7 +220,8 @@ export default function AcuityScreen() {
           {feedback ?? " "}
         </Text>
         <ScrollView style={styles.fitControls} contentContainerStyle={styles.controlsContent}>
-          {input(<ArrowPad onAnswer={practiceAnswer} />)}
+          {input()}
+          <ArrowPad onAnswer={practiceAnswer} detected={detected} hit={hit} />
           <Button
             label={copy.practice.skip}
             variant="link"
@@ -228,7 +244,17 @@ export default function AcuityScreen() {
         <Card>
           <Text style={styles.coverText}>{copy.cover(session.eye)}</Text>
           <Text>{copy.coverHow}</Text>
-          {input(<Button label={copy.ready} onPress={() => setSession(beginEye(session))} />)}
+          {!!status && !!copy.coverStatus[status.cover] && (
+            <Text
+              accessibilityLiveRegion="polite"
+              style={[styles.coverStatus, status.cover === "covered" && styles.coverOk]}
+            >
+              {copy.coverStatus[status.cover]}
+            </Text>
+          )}
+          <Steps />
+          {input()}
+          <Button label={`${copy.ready} 👍`} onPress={() => setSession(beginEye(session))} />
         </Card>
       </Screen>
     );
@@ -310,20 +336,39 @@ export default function AcuityScreen() {
           {copy.progress(session.test.level + 1, session.levels.length)}
         </Text>
       </View>
+      {status?.paused && (
+        <Text accessibilityLiveRegion="polite" style={styles.coverWarn}>
+          {copy.coverPaused}
+        </Text>
+      )}
       <View style={[styles.letter, { height: letterBox }]}>
         <Optotype size={letter} direction={session.direction} crowded={crowded} />
       </View>
       <ScrollView style={styles.controls} contentContainerStyle={styles.controlsContent}>
-        {input(
-          <ArrowPad onAnswer={answer} />,
-          <Button label={copy.cantSee} variant="outline" onPress={() => answer(null)} />,
-        )}
+        {input()}
+        <Text variant="caption" style={styles.center}>
+          {copy.gestureHint}
+        </Text>
+        <ArrowPad onAnswer={answer} detected={detected} hit={hit} />
+        <Button
+          label={copy.cantSee}
+          variant={detected === "cant" || hit === "cant" ? "primary" : "outline"}
+          onPress={() => answer(null)}
+        />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function ArrowPad({ onAnswer }: { onAnswer: (direction: Direction) => void }) {
+function ArrowPad({
+  onAnswer,
+  detected,
+  hit,
+}: {
+  onAnswer: (direction: Direction) => void;
+  detected: GestureAnswer | null;
+  hit: GestureAnswer | null;
+}) {
   return (
     <View style={styles.pad}>
       {ARROWS.map(({ direction, glyph, label, row, col }) => (
@@ -335,11 +380,36 @@ function ArrowPad({ onAnswer }: { onAnswer: (direction: Direction) => void }) {
           style={({ pressed }) => [
             styles.arrow,
             { top: row * (KEY + GAP), left: col * (KEY + GAP) },
-            pressed && styles.arrowPressed,
+            detected === direction && styles.arrowDetected,
+            (pressed || hit === direction) && styles.arrowPressed,
           ]}
         >
           <Text style={styles.glyph}>{glyph}</Text>
         </Pressable>
+      ))}
+    </View>
+  );
+}
+
+/** The web demo's three gestures: point, close the hand, open palm for "can't see". */
+function Steps() {
+  return (
+    <View
+      style={styles.steps}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      {(
+        [
+          ["👉", copy.steps.point],
+          ["✊", copy.steps.fist],
+          ["✋", copy.steps.cant],
+        ] as const
+      ).map(([icon, label]) => (
+        <View key={label} style={styles.step}>
+          <Text style={styles.stepIcon}>{icon}</Text>
+          <Text style={styles.stepLabel}>{label}</Text>
+        </View>
       ))}
     </View>
   );
@@ -416,5 +486,21 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primarySoft,
   },
   arrowPressed: { backgroundColor: theme.colors.border },
+  arrowDetected: { borderWidth: 3, borderColor: theme.colors.primary },
+  coverStatus: { fontFamily: fonts.extraBold, fontWeight: "800", color: theme.colors.muted },
+  coverOk: { color: theme.colors.primary },
+  // Large, above the letter, as the web demo's pause note.
+  coverWarn: {
+    fontFamily: fonts.extraBold,
+    fontWeight: "800",
+    fontSize: 18,
+    textAlign: "center",
+    color: theme.colors.danger,
+  },
+  center: { textAlign: "center" },
+  steps: { flexDirection: "row", justifyContent: "center", gap: theme.spacing.md },
+  step: { alignItems: "center", flex: 1 },
+  stepIcon: { fontSize: 30 },
+  stepLabel: { fontFamily: fonts.bold, fontWeight: "700", fontSize: 13, textAlign: "center" },
   glyph: { fontFamily: fonts.black, fontWeight: "900", fontSize: 32, color: theme.colors.primary },
 });

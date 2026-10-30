@@ -1,4 +1,4 @@
-import { inferHand, inferPose } from "./gesturePipeline";
+import { inferHand, inferHands, inferIrises, inferPose } from "./gesturePipeline";
 
 function detector(pose: boolean, found = true) {
   const count = pose ? 2254 : 2016,
@@ -61,7 +61,8 @@ test("pose uses [-1,1] detector input and maps the ROI out of a portrait letterb
   const d = detector(true),
     m = landmarks(true);
   m.output[0]![0] = 192; // 1/4 ROI width to the image's right.
-  m.output[0]![4] = -2;
+  m.output[0]![3] = -2;
+  m.output[0]![4] = -6; // presence does not lower visibility, as in MediaPipe's PoseLandmarker
   const points = inferPose(new Float32Array(512 * 512 * 3).fill(0.75), d, m, 320, 640);
   expect(points).toHaveLength(33);
   expect(points[0]!.x).toBeCloseTo(0.8125);
@@ -120,4 +121,67 @@ test("tensor contract errors, non-finite predictions and invalid frames fail exp
   expect(() =>
     inferPose(new Float32Array(512 * 512 * 3), detector(true), landmarks(true), 0, 640),
   ).toThrow("dimensions");
+});
+
+test("the cover check takes up to two separate hands, best first", () => {
+  const d = detector(false),
+    m = landmarks(false);
+  // Two more palms far from the first, in cells (20, 20) and (4, 20) of the 24 grid.
+  for (const [i, logit] of [
+    [2 * (24 * 20 + 20), 8],
+    [2 * (24 * 20 + 4), 6],
+  ] as const) {
+    d.boxes.set([0, 0, 48, 48], i * 18);
+    d.logits[i] = logit;
+  }
+  const hands = inferHands(new Float32Array(256 * 256 * 3), d, m);
+  expect(hands).toHaveLength(2);
+  expect(m.runSync).toHaveBeenCalledTimes(2);
+  expect(hands[0]).toHaveLength(21);
+  m.output[1]![0] = 0.1;
+  expect(inferHands(new Float32Array(256 * 256 * 3), d, m)).toEqual([]);
+});
+
+function face(presence = 8, found = true) {
+  const boxes = new Float32Array(896 * 16);
+  boxes.set([60, 60, 40, 40, 50, 55, 70, 55]);
+  const scores = new Float32Array(896).fill(-100);
+  if (found) scores[0] = 4;
+  const points = new Float32Array(1434);
+  for (let i = 0; i < 478; i++) points.set([128, 128, 0], i * 3);
+  points.set([100, 128, 0], 468 * 3);
+  points.set([156, 128, 0], 473 * 3);
+  return {
+    detector: { runSync: jest.fn((_: ArrayBuffer[]) => [boxes.buffer, scores.buffer]) },
+    mesh: {
+      runSync: jest.fn((_: ArrayBuffer[]) => [
+        points.buffer,
+        new Float32Array([presence]).buffer,
+        new Float32Array([0]).buffer,
+      ]),
+    },
+  };
+}
+
+test("irises are found in the face crop and returned in its pixels", () => {
+  const { detector, mesh } = face();
+  const rgb = new Float32Array(256 * 256 * 3).fill(0.5);
+  // The face box is centred with a 0.3125 side, so its mesh crop is 1.5 × 80 = 120 pixels.
+  const irises = inferIrises(rgb, 256, detector, mesh)!;
+  expect(irises[0].x).toBeCloseTo(128 - (28 / 256) * 120);
+  expect(irises[1].x).toBeCloseTo(128 + (28 / 256) * 120);
+  expect(irises[0].y).toBeCloseTo(128);
+  // Detector input is [-1,1], mesh input [0,1].
+  expect(new Float32Array(detector.runSync.mock.calls[0]![0]![0]!)[0]).toBeCloseTo(0);
+  expect(new Float32Array(mesh.runSync.mock.calls[0]![0]![0]!)[0]).toBeCloseTo(0.5);
+});
+
+test("no face, or a face the mesh rejects, has no irises", () => {
+  const none = face(8, false);
+  expect(inferIrises(new Float32Array(256 * 256 * 3), 256, none.detector, none.mesh)).toBeNull();
+  expect(none.mesh.runSync).not.toHaveBeenCalled();
+  const rejected = face(-1);
+  expect(
+    inferIrises(new Float32Array(256 * 256 * 3), 256, rejected.detector, rejected.mesh),
+  ).toBeNull();
 });
