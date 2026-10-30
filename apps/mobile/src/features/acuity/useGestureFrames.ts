@@ -3,6 +3,8 @@ import { Platform } from "react-native";
 import { useAsyncRunner, useFrameOutput, type Frame } from "react-native-vision-camera";
 import { useResizer } from "react-native-vision-camera-resizer";
 import { createSynchronizable, scheduleOnRN } from "react-native-worklets";
+import type { Eye } from "./acuity";
+import type { CoverState } from "./cover";
 import { analyzeGestureFrame, type GestureModels } from "./gestureFrame";
 import { loadGestureModels } from "./gestureModels";
 import type { GesturePoint } from "./gesturePipeline";
@@ -10,6 +12,8 @@ import type { GesturePoint } from "./gesturePipeline";
 export interface GestureFrame {
   body: boolean;
   hand: GesturePoint[];
+  /** Whether the untested eye is covered, before smoothing; null in practice. */
+  cover: CoverState | null;
   timestampMs: number;
   latencyMs: number;
   diagnostics?: {
@@ -34,10 +38,12 @@ export function useGestureFrames(
   round: string,
   onFrame: (frame: GestureFrame) => void,
   onError: () => void,
+  coverEye: Eye | null = null,
 ) {
   const [models, setModels] = useState<GestureModels>();
   const live = useMemo(() => createSynchronizable(true), []);
   const epoch = useMemo(() => createSynchronizable(round), []);
+  const tested = useMemo(() => createSynchronizable<Eye | null>(coverEye), []);
   const pending = useMemo(() => createSynchronizable(false), []);
   const next = useMemo(() => createSynchronizable(0), []);
   const { resizer, error } = useResizer({
@@ -53,6 +59,9 @@ export function useGestureFrames(
   useLayoutEffect(() => {
     epoch.setBlocking(round);
   }, [round, epoch]);
+  useLayoutEffect(() => {
+    tested.setBlocking(coverEye);
+  }, [coverEye, tested]);
   useLayoutEffect(() => {
     live.setBlocking(true);
     return () => live.setBlocking(false);
@@ -110,6 +119,7 @@ export function useGestureFrames(
                 frame,
                 new Float32Array(resized.getPixelBuffer()),
                 models,
+                tested.getBlocking(),
               );
               const latencyMs = performance.now() - started;
               // Like the web demo's loop, take the next frame as soon as this one is done.
@@ -138,7 +148,7 @@ export function useGestureFrames(
         fail(`dispatch: ${String(error)}`);
       }
     },
-    [live, epoch, models, resizer, runner, pending, next, report, fail],
+    [live, epoch, tested, models, resizer, runner, pending, next, report, fail],
   );
   const output = useFrameOutput({
     targetResolution: resolution,

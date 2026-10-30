@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useIsFocused } from "expo-router";
 import { AppState, Linking, StyleSheet, View } from "react-native";
 import {
@@ -8,23 +8,31 @@ import {
   type CameraDevice,
 } from "react-native-vision-camera";
 import { Button, Text } from "../../components/ui";
+import type { Eye } from "./acuity";
 import { acuityCopy as copy } from "./copy";
+import { coverOk, emptyCover, readCover, UNCOVERED_GRACE_MS, type CoverState } from "./cover";
 import { fist, openPalm, pointing, thumbsUp } from "./gestures";
 import { emptyHold, holdGesture, type Gesture, type GestureAnswer } from "./gestureHold";
 import { useGestureFrames, type GestureFrame } from "./useGestureFrames";
 
 const ARROW = { 0: "→", 90: "↓", 180: "←", 270: "↑" } as const;
 
+/** What the camera sees, for the cover status, the pause note and the arrow highlight. */
+export interface GestureStatus {
+  cover: CoverState;
+  paused: boolean;
+  detected: GestureAnswer | null;
+}
 interface Props {
   round: string;
+  /** The cover screen, where a thumbs-up means ready. */
   cover: boolean;
+  /** The eye being tested, whose other eye must be covered; null in practice. */
+  eye: Eye | null;
   onAnswer: (answer: GestureAnswer) => void;
-  /** Shown only when the camera cannot answer: no permission, no camera, a failure or a pause. */
-  manual: ReactNode;
-  /** Answers for both ways, e.g. "can't see": right below the camera or the arrows. */
-  actions?: ReactNode;
+  onStatus?: (status: GestureStatus | null) => void;
 }
-/** The child answers with the front camera; touch is the fallback when it cannot run. */
+/** The person answers with the front camera; the screen's buttons keep working, as in the web demo. */
 export function AcuityGestureInput(props: Props) {
   const [state, setState] = useState(AppState.currentState);
   const [failed, setFailed] = useState(false);
@@ -69,12 +77,7 @@ export function AcuityGestureInput(props: Props) {
     failed || !device || (!hasPermission && !requesting && (asked || !canRequestPermission));
   return (
     <View style={styles.input}>
-      {running && device ? (
-        <GestureCamera {...props} device={device} onFailure={fail} />
-      ) : (
-        props.manual
-      )}
-      {props.actions}
+      {running && device && <GestureCamera {...props} device={device} onFailure={fail} />}
       {blocked && <Text>{copy.gesture.unavailable}</Text>}
       {blocked && (
         <Button
@@ -92,33 +95,44 @@ function GestureCamera({
   device,
   round,
   cover,
+  eye,
   onAnswer,
+  onStatus,
   onFailure,
 }: Props & { device: CameraDevice; onFailure: () => void }) {
   const [started, setStarted] = useState(false),
     [preview, setPreview] = useState(false);
-  const [gesture, setGesture] = useState<Gesture>("noBody");
   // The last hold, for the hint, and a short "✓" after each answer, as in the web demo.
-  const [shown, setShown] = useState<{ armed: boolean; candidate: GestureAnswer | null }>({
-    armed: false,
-    candidate: null,
-  });
+  const [shown, setShown] = useState<{
+    armed: boolean;
+    candidate: GestureAnswer | null;
+    paused: boolean;
+  }>({ armed: false, candidate: null, paused: false });
   const [recorded, setRecorded] = useState(false);
   const accepting = useRef(false);
   const live = useRef(true),
     hold = useRef(emptyHold()),
-    listener = useRef(onAnswer);
+    listener = useRef(onAnswer),
+    statusListener = useRef(onStatus),
+    status = useRef<GestureStatus | null>(null);
+  // The other eye's cover, smoothed over readings, and since when it has been open.
+  const covered = useRef(emptyCover()),
+    uncoveredSince = useRef<number | null>(null);
   useLayoutEffect(() => {
     live.current = true;
     return () => {
       live.current = false;
+      statusListener.current?.(null);
     };
   }, []);
   useLayoutEffect(() => {
     hold.current = emptyHold();
-    setGesture("noBody");
-    setShown({ armed: false, candidate: null });
+    setShown({ armed: false, candidate: null, paused: false });
   }, [round]);
+  useLayoutEffect(() => {
+    covered.current = emptyCover();
+    uncoveredSince.current = null;
+  }, [eye, cover]);
   useEffect(() => {
     if (!recorded) return;
     const timer = setTimeout(() => setRecorded(false), 500);
@@ -126,14 +140,26 @@ function GestureCamera({
   }, [recorded]);
   useLayoutEffect(() => {
     listener.current = onAnswer;
-  }, [onAnswer]);
+    statusListener.current = onStatus;
+  }, [onAnswer, onStatus]);
   const fail = useCallback(() => {
     if (live.current) onFailure();
   }, [onFailure]);
   const report = useCallback(
     (frame: GestureFrame) => {
       if (!live.current || !accepting.current) return;
-      const hand = frame.hand;
+      const now = frame.timestampMs;
+      if (eye && frame.cover) covered.current = readCover(covered.current, frame.cover);
+      const coverShown = eye ? covered.current.shown : "noBody";
+      const ok = coverOk(coverShown);
+      // As in the web demo, the thumbs-up only counts with the other eye covered, and during the
+      // test an eye open for over a second pauses answers.
+      uncoveredSince.current = ok ? null : (uncoveredSince.current ?? now);
+      const paused =
+        !cover &&
+        uncoveredSince.current !== null &&
+        now - uncoveredSince.current >= UNCOVERED_GRACE_MS;
+      const hand = cover && !ok ? [] : frame.hand;
       // As in the web demo: an open palm is "can't see", a fist arms the next answer.
       const value: Gesture = !hand.length
         ? frame.body
@@ -148,10 +174,20 @@ function GestureCamera({
             : fist(hand, 256, 256)
               ? "fist"
               : (pointing(hand, 256, 256) ?? "other");
-      setGesture(value);
-      const step = holdGesture(hold.current, value, frame.timestampMs, cover);
+      const step = holdGesture(hold.current, value, now, cover, paused);
       hold.current = step.hold;
-      setShown({ armed: step.hold.armed, candidate: step.hold.candidate });
+      setShown({ armed: step.hold.armed, candidate: step.hold.candidate, paused });
+      const next = { cover: coverShown, paused, detected: step.hold.candidate };
+      const last = status.current;
+      if (
+        !last ||
+        last.cover !== next.cover ||
+        last.paused !== next.paused ||
+        last.detected !== next.detected
+      ) {
+        status.current = next;
+        statusListener.current?.(next);
+      }
       if (step.answer !== null) {
         setRecorded(true);
         listener.current(step.answer);
@@ -163,27 +199,30 @@ function GestureCamera({
           body: frame.body,
           handPoints: hand.length,
           gesture: value,
+          cover: frame.cover,
+          paused,
           armed: step.hold.armed,
           answer: step.answer,
           ...frame.diagnostics,
         });
     },
-    [cover],
+    [cover, eye],
   );
-  const { output, ready } = useGestureFrames(round, report, fail);
+  const { output, ready } = useGestureFrames(round, report, fail, eye);
   useLayoutEffect(() => {
     accepting.current = started && preview && ready;
   }, [started, preview, ready]);
   const loading = !started || !preview || !ready;
-  // The web demo's feedback: ✊ to arm, 👉 to point, the arrow while holding, ✓ when recorded.
+  // The web demo's feedback: ⏸ while paused, ✊ to arm, 👉 to point, the arrow while holding,
+  // ✓ when recorded.
   const [icon, hint] = loading
     ? ["·", copy.gesture.loading]
     : recorded
       ? ["✓", copy.gesture.done]
-      : gesture === "noBody"
-        ? ["🧍", copy.gesture.noBody]
-        : cover
-          ? ["👍", copy.gesture.thumb]
+      : cover
+        ? ["👍", copy.gesture.thumb]
+        : shown.paused
+          ? ["⏸", copy.gesture.cover]
           : !shown.armed
             ? ["✊", copy.gesture.fist]
             : shown.candidate === "cant"

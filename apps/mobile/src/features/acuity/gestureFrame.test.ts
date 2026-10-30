@@ -4,10 +4,14 @@ import type { Frame } from "react-native-vision-camera";
 const mockPose = jest.fn(),
   mockRegion = jest.fn(),
   mockHand = jest.fn(),
+  mockHands = jest.fn(),
+  mockIrises = jest.fn(),
   mockCrop = jest.fn();
 jest.mock("./gesturePipeline", () => ({
   inferPose: (...args: unknown[]) => mockPose(...args),
   inferHand: (...args: unknown[]) => mockHand(...args),
+  inferHands: (...args: unknown[]) => mockHands(...args),
+  inferIrises: (...args: unknown[]) => mockIrises(...args),
 }));
 jest.mock("./gestures", () => ({ handRegion: (...args: unknown[]) => mockRegion(...args) }));
 jest.mock("../vision/pixels", () => ({ cropPixels: (...args: unknown[]) => mockCrop(...args) }));
@@ -16,6 +20,8 @@ const models = {
   pose: { runSync: jest.fn() },
   palm: { runSync: jest.fn() },
   hand: { runSync: jest.fn() },
+  face: { runSync: jest.fn() },
+  mesh: { runSync: jest.fn() },
 };
 const rgb = new Float32Array(512 * 512 * 3);
 function frame() {
@@ -86,4 +92,66 @@ test("with no body at all, as close to the phone, the hand is looked for in the 
   expect(result).toMatchObject({ body: false, hand: [{ x: 0.2, y: 0.3 }] });
   expect(result.diagnostics).toMatchObject({ fullFrame: true, cropFound: false });
   expect(wholeFrame(2160, 3840)).toEqual({ x: -840, y: 0, size: 3840 });
+});
+
+/** A person facing the camera: nose at the centre, shoulders 0.2 of the 80-pixel width apart. */
+function person() {
+  const p = Array.from({ length: 33 }, () => ({ x: 0.5, y: 0.9, visibility: 0.9 }));
+  p[0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+  p[2] = { x: 0.58, y: 0.28, visibility: 0.9 }; // the person's left eye, on the image's right
+  p[5] = { x: 0.42, y: 0.28, visibility: 0.9 };
+  p[11] = { x: 0.6, y: 0.5, visibility: 0.9 };
+  p[12] = { x: 0.4, y: 0.5, visibility: 0.9 };
+  return p;
+}
+
+test("practice has no cover check and runs no face inference", () => {
+  expect(analyzeGestureFrame(frame() as unknown as Frame, rgb, models).cover).toBeNull();
+  expect(mockIrises).not.toHaveBeenCalled();
+});
+
+test("the cover check crops 1.2 shoulder widths around the nose and finds the hand on the eye", () => {
+  mockPose.mockReturnValue(person());
+  mockRegion.mockReturnValue(null);
+  // Irises in the 256 crop: the image's right one is the person's left eye.
+  mockIrises.mockReturnValue([
+    { x: 160, y: 100 },
+    { x: 96, y: 100 },
+  ]);
+  mockHands.mockReturnValue([[{ x: 165 / 256, y: 105 / 256 }]]);
+  const result = analyzeGestureFrame(frame() as unknown as Frame, rgb, models, "right");
+  // 1.2 × 16 px shoulders = 19.2 px, centred on the nose at (40, 30).
+  expect(mockCrop).toHaveBeenCalledWith(
+    expect.anything(),
+    { x: expect.closeTo(30.4), y: expect.closeTo(20.4), size: expect.closeTo(19.2) },
+    256,
+    true,
+  );
+  expect(mockIrises).toHaveBeenCalledWith(
+    mockCrop.mock.results[0]!.value,
+    256,
+    models.face,
+    models.mesh,
+  );
+  expect(result.cover).toBe("covered");
+  // Testing the left eye, the same hand covers the wrong one.
+  expect(analyzeGestureFrame(frame() as unknown as Frame, rgb, models, "left").cover).toBe(
+    "wrongEye",
+  );
+});
+
+test("without irises the cover falls back to the body model; without a body there is none", () => {
+  const pose = person();
+  pose[15] = { x: 0.58, y: 0.29, visibility: 0.9 }; // a wrist on the person's left eye
+  mockPose.mockReturnValue(pose);
+  mockRegion.mockReturnValue(null);
+  mockIrises.mockReturnValue(null);
+  expect(analyzeGestureFrame(frame() as unknown as Frame, rgb, models, "right").cover).toBe(
+    "covered",
+  );
+  expect(mockHands).not.toHaveBeenCalled();
+  mockPose.mockReturnValue([]);
+  expect(analyzeGestureFrame(frame() as unknown as Frame, rgb, models, "right").cover).toBe(
+    "noBody",
+  );
 });

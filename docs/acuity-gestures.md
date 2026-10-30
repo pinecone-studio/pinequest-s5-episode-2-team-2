@@ -2,16 +2,44 @@
 
 Practice, eye-cover readiness and the test are answered with the front camera from the start,
 without audio capture; camera permission is asked for when the test opens. There is no
-toggle: touch answers appear only when permission, camera or model loading fails or capture
-pauses, with **Камерыг дахин нээх** to try again. The cover step always asks for a
-thumbs-up. The practice keeps its existing correct/incorrect tones; the test stays silent.
+toggle. As in the web demo, the arrow buttons, **Харагдахгүй байна** and **Бэлэн 👍** stay on
+screen beside the camera, so a helper can answer too; when permission, camera or model
+loading fails or capture pauses, a note and **Камерыг дахин нээх** appear. The practice keeps
+its existing correct/incorrect voice; the test only says the neutral "next" cue.
+
+## Same as the web demo (2026-10-30)
+
+At the owner's request the E test follows the web demo (demo/web-poc `acuity.ts`) screen by
+screen, keeping the app's voice cues:
+
+- Practice and the cover screen show the web demo's three steps (👉 Заана, ✊ Атгана,
+  ✋ Харагдахгүй бол); the test shows its hint line under the camera.
+- The arrow (or **Харагдахгүй байна**) the camera is reading lights up, and the one it takes
+  flashes for 250 ms.
+- Eye cover, as the web demo's `coverChecker`: on cover and test frames the worker crops
+  1.2 shoulder widths around the pose nose to 256 pixels. The scan's short-range face
+  detector and face mesh give both irises, and the palm and hand models up to two hands; a
+  hand point within 0.6 iris spacings of an eye covers it, and the pose eyes tell left from
+  right. Without irises it falls back to the body model's hand points and eye visibility (a
+  patch). Three equal readings change the shown state.
+- The cover screen shows **Зөв нүд хаагдсан** / **Нөгөө нүдээ хаагаарай** / **Зөвхөн нэг
+  нүдээ хаагаарай** / **Нүдээ хаагаарай**; the thumbs-up only counts while the other eye
+  reads covered, or no body is in view (the person then decides).
+- During the test, an eye read uncovered for a second pauses camera answers: the note
+  **Нүд нээгдсэн байна. Нүдээ дахин хаагаад үргэлжлүүлээрэй.** shows above the letter and the
+  hint shows ⏸ **Нүдээ хаана уу** until it reads covered again. Buttons keep working.
+
+The six models load one after the other. The cover check adds the face and hand models to
+cover and test frames, so readings there are slower than in practice; the device latency
+still has to be measured. These limits are the web demo's TODO(tune) values, not validated
+clinical thresholds.
 
 The worker resizes the upright, unmirrored frame to a 512-square letterbox for pose inference.
 It selects a visible raised wrist away from the eyes, samples a 256-square hand crop from
 the native full-resolution NV12 planes, then runs palm and 21-point hand inference. The preview is mirrored as requested by the owner; the native frame output remains
 unmirrored. Gesture directions follow the person's view, as in the web demo.
 
-The four checksum-pinned models load sequentially through a private AssetLoader. A bounded
+The pose, palm, hand, face and face-mesh models load sequentially through a private AssetLoader. A bounded
 model-only cache avoids reloading when changing eyes/stages. RN serialises use of the cached
 interpreters across camera remounts; only one frame may await RN per camera. Busy/throttled
 frames and resized buffers are released. No image, landmark or gesture history is saved.

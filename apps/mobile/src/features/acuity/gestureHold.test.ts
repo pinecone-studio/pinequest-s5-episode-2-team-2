@@ -83,3 +83,23 @@ test("a slow native cadence still completes a held answer without repeating it",
   expect(answered.answer).toBe(0);
   expect(holdGesture(answered.hold, 0, 3201, false).answer).toBeNull();
 });
+
+test("an uncovered eye pauses answers: nothing is held or armed until it is covered again", () => {
+  let hold = emptyHold();
+  const step = (gesture: Gesture, at: number, paused = false) => {
+    const result = holdGesture(hold, gesture, at, false, paused);
+    hold = result.hold;
+    return result.answer;
+  };
+  step("fist", 0);
+  step(0, 100);
+  // Paused just before the hold completes: no answer, and the hold starts over.
+  expect(step(0, 600, true)).toBeNull();
+  expect(hold.candidate).toBeNull();
+  expect(step(0, 800)).toBeNull();
+  expect(step(0, 1300)).toBeNull();
+  expect(step(0, 1400)).toBe(0);
+  // A fist while paused does not arm the next answer.
+  step("fist", 1500, true);
+  expect(hold.armed).toBe(false);
+});

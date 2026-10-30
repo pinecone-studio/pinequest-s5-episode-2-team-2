@@ -1,16 +1,23 @@
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { AcuityGestureInput } from "./AcuityGestureInput";
+import type { Eye } from "./acuity";
 import { acuityCopy as copy } from "./copy";
+import type { CoverState } from "./cover";
 import type { GestureFrame } from "./useGestureFrames";
 const mockAnswer = jest.fn(),
-  mockRequest = jest.fn();
+  mockRequest = jest.fn(),
+  mockStatus = jest.fn(),
+  mockFramesEye = jest.fn();
 let mockPalm = false,
-  mockFist = false;
+  mockFist = false,
+  mockThumb = false;
 let mockPermission = true,
   mockCanRequest = true,
   mockFocused = true,
-  round = "practice-1";
+  round = "practice-1",
+  cover = false,
+  eye: Eye | null = null;
 let mockStateListener: (state: string) => void, mockReport: (frame: GestureFrame) => void;
 jest.mock("expo-router", () => ({ useIsFocused: () => mockFocused }));
 jest.mock("react-native", () => ({
@@ -36,8 +43,9 @@ jest.mock("react-native-vision-camera", () => ({
   }),
 }));
 jest.mock("./useGestureFrames", () => ({
-  useGestureFrames: (_: string, listener: typeof mockReport) => {
+  useGestureFrames: (_: string, listener: typeof mockReport, __: unknown, tested: Eye | null) => {
     mockReport = listener;
+    mockFramesEye(tested);
     return { output: {}, ready: true };
   },
 }));
@@ -45,17 +53,17 @@ jest.mock("./gestures", () => ({
   openPalm: () => mockPalm,
   fist: () => mockFist,
   pointing: () => (mockPalm || mockFist ? null : 0),
-  thumbsUp: () => false,
+  thumbsUp: () => mockThumb,
 }));
 let renderer: ReactTestRenderer;
 function Harness() {
   return (
     <AcuityGestureInput
       round={round}
-      cover={false}
+      cover={cover}
+      eye={eye}
       onAnswer={mockAnswer}
-      manual={"touch controls"}
-      actions={"can't see"}
+      onStatus={mockStatus}
     />
   );
 }
@@ -66,16 +74,26 @@ const press = async (label: string) =>
       .find((n) => n.type === ("Button" as never) && n.props.label === label)
       .props.onPress();
   });
-const frame = (timestampMs: number, hand = true): GestureFrame => ({
+const frame = (
+  timestampMs: number,
+  hand = true,
+  state: CoverState | null = null,
+): GestureFrame => ({
   timestampMs,
   hand: hand ? [{ x: 0.5, y: 0.5 }] : [],
   body: true,
+  cover: state,
   latencyMs: 20,
 });
 beforeEach(async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   mockAnswer.mockReset();
   mockRequest.mockReset();
+  mockStatus.mockReset();
+  mockFramesEye.mockReset();
+  mockThumb = false;
+  cover = false;
+  eye = null;
   mockPermission = true;
   mockCanRequest = true;
   mockPalm = false;
@@ -90,15 +108,15 @@ afterEach(async () => {
   await act(async () => renderer.unmount());
 });
 const text = () => JSON.stringify(renderer.toJSON());
-test("the camera answers from the start, with no touch controls or toggle", async () => {
+test("the camera answers from the start, with no toggle; the screen keeps its own buttons", async () => {
   expect(cameras()).toHaveLength(1);
-  expect(text()).toContain("can't see");
-  expect(text()).not.toContain("touch controls");
   expect(text()).not.toContain(copy.gesture.unavailable);
+  // Practice has no cover check.
+  expect(mockFramesEye).toHaveBeenLastCalledWith(null);
   expect(renderer.root.findAll((n) => n.type === ("Button" as never))).toHaveLength(0);
   expect(mockRequest).not.toHaveBeenCalled();
 });
-test("without permission it asks once; denial leaves touch controls and a retry", async () => {
+test("without permission it asks once; denial leaves a note and a retry", async () => {
   await act(async () => renderer.unmount());
   mockPermission = false;
   await act(async () => {
@@ -108,15 +126,11 @@ test("without permission it asks once; denial leaves touch controls and a retry"
   await act(async () => renderer.update(<Harness />));
   expect(mockRequest).toHaveBeenCalledTimes(1);
   expect(cameras()).toHaveLength(0);
-  expect(text()).toContain("touch controls");
   expect(text()).toContain(copy.gesture.unavailable);
-  // Answers come right after the arrows; the camera note and retry follow.
-  expect(text().indexOf("touch controls")).toBeLessThan(text().indexOf("can't see"));
-  expect(text().indexOf("can't see")).toBeLessThan(text().indexOf(copy.gesture.unavailable));
   await press(copy.gesture.retry);
   expect(mockRequest).toHaveBeenCalledTimes(2);
 });
-test("a permanent denial shows touch controls without asking", async () => {
+test("a permanent denial shows the note without asking", async () => {
   await act(async () => renderer.unmount());
   mockPermission = false;
   mockCanRequest = false;
@@ -124,7 +138,6 @@ test("a permanent denial shows touch controls without asking", async () => {
     renderer = create(<Harness />);
   });
   expect(mockRequest).not.toHaveBeenCalled();
-  expect(text()).toContain("touch controls");
   expect(text()).toContain(copy.gesture.unavailable);
 });
 test("backgrounding and navigation tear down capture and suppress old callbacks", async () => {
@@ -168,7 +181,8 @@ test("preview-ready observations submit once, then a new round needs a fresh rel
   expect(mockAnswer).toHaveBeenCalledTimes(1);
   await act(async () => cameras()[0]!.props.onInterruptionStarted());
   expect(cameras()).toHaveLength(0);
-  expect(JSON.stringify(renderer.toJSON())).toContain("touch controls");
+  expect(text()).toContain(copy.gesture.unavailable);
+  expect(mockStatus).toHaveBeenLastCalledWith(null);
 });
 
 test("as in the web demo, a fist arms and an open palm answers can't see; only the preview is mirrored", async () => {
@@ -207,7 +221,7 @@ test("as in the web demo, a fist arms and an open palm answers can't see; only t
   expect(mockAnswer).toHaveBeenCalledTimes(1);
 });
 
-test("pointing shows the hold hint, and with no body at all the hint asks to step into view", async () => {
+test("pointing shows the hold hint; a hand out of view for 400 ms asks to point, as on the web", async () => {
   await act(async () => {
     cameras()[0]!.props.onStarted();
     cameras()[0]!.props.onPreviewStarted();
@@ -215,7 +229,11 @@ test("pointing shows the hold hint, and with no body at all the hint asks to ste
   await act(async () => {
     mockReport({ ...frame(0, false), body: false });
   });
-  expect(text()).toContain(copy.gesture.noBody);
+  expect(text()).toContain(copy.gesture.fist);
+  await act(async () => mockReport({ ...frame(400, false), body: false }));
+  expect(text()).toContain(copy.gesture.point);
+  round = "practice-2";
+  await act(async () => renderer.update(<Harness />));
   mockFist = true;
   await act(async () => mockReport(frame(100)));
   mockFist = false;
@@ -224,6 +242,8 @@ test("pointing shows the hold hint, and with no body at all the hint asks to ste
   // A hand found without a body (close to the phone) still answers.
   await act(async () => mockReport({ ...frame(800), body: false }));
   expect(mockAnswer).toHaveBeenCalledWith(0);
+  // The screen hears what is being held, to light up that arrow.
+  expect(mockStatus).toHaveBeenCalledWith({ cover: "noBody", paused: false, detected: 0 });
 });
 
 test("30 seconds without progressing pauses capture, while a new round renews the limit", async () => {
@@ -236,7 +256,7 @@ test("30 seconds without progressing pauses capture, while a new round renews th
   expect(cameras()).toHaveLength(1);
   await act(async () => jest.advanceTimersByTime(1));
   expect(cameras()).toHaveLength(0);
-  expect(JSON.stringify(renderer.toJSON())).toContain("touch controls");
+  expect(text()).toContain(copy.gesture.unavailable);
   act(() => {
     oldReport(frame(0, false));
     oldReport(frame(400, false));
@@ -245,4 +265,61 @@ test("30 seconds without progressing pauses capture, while a new round renews th
   });
   expect(mockAnswer).not.toHaveBeenCalled();
   jest.useRealTimers();
+});
+
+async function start() {
+  await act(async () => renderer.update(<Harness />));
+  await act(async () => {
+    cameras()[0]!.props.onStarted();
+    cameras()[0]!.props.onPreviewStarted();
+  });
+}
+
+test("on the cover screen the thumbs-up counts only once the other eye reads covered 3 times", async () => {
+  cover = true;
+  eye = "right";
+  round = "cover-right";
+  await start();
+  expect(mockFramesEye).toHaveBeenLastCalledWith("right");
+  mockThumb = true;
+  // The eye is open: the thumbs-up is ignored however long it is held.
+  await act(async () => {
+    for (let t = 0; t <= 1200; t += 200) mockReport(frame(t, true, "open"));
+  });
+  expect(mockAnswer).not.toHaveBeenCalled();
+  expect(mockStatus).toHaveBeenLastCalledWith({ cover: "open", paused: false, detected: null });
+  await act(async () => {
+    for (let t = 1400; t <= 2200; t += 200) mockReport(frame(t, true, "covered"));
+  });
+  expect(mockStatus).toHaveBeenCalledWith({ cover: "covered", paused: false, detected: "ready" });
+  // Covered from the third reading (1800), held 800 ms from there.
+  expect(mockAnswer).not.toHaveBeenCalled();
+  await act(async () => mockReport(frame(2600, true, "covered")));
+  expect(mockAnswer).toHaveBeenCalledWith("ready");
+});
+
+test("during the test an eye open for over a second pauses answers until it is covered again", async () => {
+  eye = "left";
+  round = "test-left-1";
+  await start();
+  mockFist = true;
+  await act(async () => {
+    for (let t = 0; t <= 400; t += 200) mockReport(frame(t, true, "covered"));
+    // The eye opens: it reads open from the third reading (1000), and pauses a second later.
+    for (let t = 600; t <= 2000; t += 200) mockReport(frame(t, true, "open"));
+  });
+  expect(mockStatus).toHaveBeenLastCalledWith({ cover: "open", paused: true, detected: null });
+  mockFist = false;
+  await act(async () => {
+    for (let t = 2200; t <= 3000; t += 200) mockReport(frame(t, true, "open"));
+  });
+  expect(mockAnswer).not.toHaveBeenCalled();
+  expect(text()).toContain(copy.gesture.cover);
+  await act(async () => {
+    for (let t = 3200; t <= 3600; t += 200) mockReport(frame(t, true, "covered"));
+  });
+  expect(text()).not.toContain(copy.gesture.cover);
+  expect(mockAnswer).not.toHaveBeenCalled();
+  await act(async () => mockReport(frame(4200, true, "covered")));
+  expect(mockAnswer).toHaveBeenCalledWith(0);
 });

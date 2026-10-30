@@ -36,11 +36,20 @@ export function holdGesture(
   gesture: Gesture,
   now: number,
   cover: boolean,
+  paused = false,
 ): { hold: Hold; answer: GestureAnswer | null } {
   if (!Number.isFinite(now) || now <= previous.last) return { hold: previous, answer: null };
   // A gap over 2 s (the app was paused) starts over (TODO(tune)).
   const base = now - previous.last > 2000 ? emptyHold() : previous;
   const hold = { ...base, last: now };
+  // As in the web demo, an uncovered eye pauses answers: nothing is held and arming waits.
+  if (paused) {
+    if (hold.candidate !== null) {
+      hold.candidate = null;
+      hold.since = now;
+    }
+    return { hold, answer: null };
+  }
   const handInView = gesture !== "none" && gesture !== "noBody";
   hold.noHandSince = handInView ? null : (hold.noHandSince ?? now);
   if (cover) {
