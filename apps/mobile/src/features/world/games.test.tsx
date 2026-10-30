@@ -1,8 +1,9 @@
 import { act } from "react";
 import { create, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer";
 import { ClinicGame } from "./ClinicGame";
-import { clinicCopy, photoCopy, rescueCopy, spaceCopy, worldCopy } from "./copy";
-import { CLINIC_CASES, PHOTO_ROUNDS, type Direction } from "./logic";
+import { clinicCopy, eyeMovesCopy, photoCopy, rescueCopy, spaceCopy, worldCopy } from "./copy";
+import { EyeMovesGame } from "./EyeMovesGame";
+import { CLINIC_CASES, PHOTO_ROUNDS, eyeRoutine, type Direction } from "./logic";
 import { PhotoGame } from "./PhotoGame";
 import { RescueGame } from "./RescueGame";
 import { SpaceGame } from "./SpaceGame";
@@ -152,4 +153,64 @@ test("the close button leaves any game at any time without a star", async () => 
   await press(byLabel(worldCopy.exit));
   expect(onExit).toHaveBeenCalledTimes(1);
   expect(onComplete).not.toHaveBeenCalled();
+});
+
+test("eye moves: choose who, follow every move, blink, rest and finish with a chime", async () => {
+  await render(<EyeMovesGame onComplete={onComplete} onExit={onExit} />);
+  expect(text()).toContain(eyeMovesCopy.story);
+  expect(text()).toContain(eyeMovesCopy.note);
+  expect(byLabel(eyeMovesCopy.child).props.accessibilityState).toEqual({ selected: true });
+  await press(byLabel(eyeMovesCopy.adult));
+  expect(byLabel(eyeMovesCopy.adult).props.accessibilityState).toEqual({ selected: true });
+  await press(buttonByLabel(eyeMovesCopy.start));
+
+  // The sky is measured before the butterfly flies.
+  const sky = renderer.root.find((n) => typeof n.props.onLayout === "function");
+  await act(async () =>
+    sky.props.onLayout({ nativeEvent: { layout: { width: 340, height: 480 } } }),
+  );
+  const steps = eyeRoutine("adult");
+  for (const [i, step] of steps.entries()) {
+    expect(text()).toContain(eyeMovesCopy.step(i + 1, steps.length));
+    if (step.kind === "move") {
+      expect(text()).toContain(eyeMovesCopy.moves[step.move]);
+      expect(text()).toContain(eyeMovesCopy.follow);
+      expect(text()).toContain("🦋");
+    }
+    if (step.kind === "blink") expect(text()).toContain(eyeMovesCopy.blink);
+    if (step.kind === "rest") {
+      expect(text()).toContain(eyeMovesCopy.rest);
+      expect(text()).toContain(eyeMovesCopy.seconds(step.seconds));
+    }
+    // A step lasts its time: nothing moves on a moment early.
+    await act(async () => jest.advanceTimersByTime(step.seconds * 1000 - 1));
+    expect(text()).toContain(eyeMovesCopy.step(i + 1, steps.length));
+    expect(onComplete).not.toHaveBeenCalled();
+    await act(async () => jest.advanceTimersByTime(1));
+  }
+  // The chime calls closed eyes open, and the star is for taking part.
+  expect(mockPlay).toHaveBeenCalledTimes(1);
+  expect(onComplete).toHaveBeenCalledTimes(1);
+  expect(text()).toContain(eyeMovesCopy.finished);
+  expect(text()).toContain(worldCopy.starEarned);
+  await press(buttonByLabel(worldCopy.again));
+  expect(text()).toContain(eyeMovesCopy.story);
+});
+
+test("eye moves: children get the shorter routine, skip moves on and the rest counts down", async () => {
+  await render(<EyeMovesGame onComplete={onComplete} onExit={onExit} />);
+  await press(buttonByLabel(eyeMovesCopy.start));
+  const steps = eyeRoutine("child");
+  expect(text()).toContain(eyeMovesCopy.step(1, steps.length));
+  for (let i = 0; i < steps.length - 1; i++) await press(buttonByLabel(worldCopy.skip));
+  const rest = steps.at(-1)!;
+  expect(text()).toContain(eyeMovesCopy.rest);
+  expect(text()).toContain(eyeMovesCopy.seconds(rest.seconds));
+  await act(async () => jest.advanceTimersByTime(3000));
+  expect(text()).toContain(eyeMovesCopy.seconds(rest.seconds - 3));
+  await act(async () => jest.advanceTimersByTime(rest.seconds * 1000));
+  expect(onComplete).toHaveBeenCalledTimes(1);
+  expect(text()).toContain(eyeMovesCopy.finished);
+  await press(buttonByLabel(worldCopy.backToWorld));
+  expect(onExit).toHaveBeenCalledTimes(1);
 });

@@ -1,7 +1,7 @@
 import { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { eyeRestCopy } from "../eyeRest/content";
-import { gardenCopy, worldCopy } from "./copy";
+import { eyeMovesCopy, gardenCopy, worldCopy } from "./copy";
 import WorldScreen, { WORLD_CARDS } from "./WorldScreen";
 
 jest.mock("react-native", () => jest.requireActual("./testMocks").reactNativeMock());
@@ -31,6 +31,7 @@ jest.mock("./PhotoGame", () => ({ PhotoGame: "PhotoGame" }));
 jest.mock("./ClinicGame", () => ({ ClinicGame: "ClinicGame" }));
 jest.mock("./GardenGame", () => ({ GardenGame: "GardenGame" }));
 jest.mock("./StyleStudio", () => ({ StyleStudio: "StyleStudio" }));
+jest.mock("./EyeMovesGame", () => ({ EyeMovesGame: "EyeMovesGame" }));
 
 let renderer: ReactTestRenderer;
 const text = () => JSON.stringify(renderer.toJSON());
@@ -99,4 +100,31 @@ test("without a child profile games still play but nothing is saved", async () =
 test("the garden sits under Амрах and gets the child's id", async () => {
   await act(async () => card(gardenCopy.title).props.onPress());
   expect(renderer.root.find((n) => String(n.type) === "GardenGame").props.childId).toBe("c1");
+});
+
+test("the eye exercise sits under Амрах, earns its own star and has its own done mark", async () => {
+  await act(async () => card(eyeMovesCopy.title).props.onPress());
+  const game = renderer.root.find((n) => String(n.type) === "EyeMovesGame");
+  expect(await game.props.onComplete()).toBe(worldCopy.starEarned);
+  expect(mockAdd).toHaveBeenCalledWith(mockDb, "c1", "eyeMoves");
+  await act(async () => game.props.onExit());
+
+  const playLabel = (title: string) =>
+    JSON.stringify(
+      card(title)
+        .findAll((n) => String(n.type) === "Text")
+        .map((n) => n.props.children),
+    );
+  for (const [today, eyeDone, gardenDone] of [
+    [["eyeMoves"], true, false],
+    [["garden-walk"], false, true],
+  ] as const) {
+    await act(async () => renderer.unmount());
+    mockToday = [...today];
+    await act(async () => {
+      renderer = create(<WorldScreen />);
+    });
+    expect(playLabel(eyeMovesCopy.title).includes(`${worldCopy.play} ✓`)).toBe(eyeDone);
+    expect(playLabel(gardenCopy.title).includes(`${worldCopy.play} ✓`)).toBe(gardenDone);
+  }
 });
