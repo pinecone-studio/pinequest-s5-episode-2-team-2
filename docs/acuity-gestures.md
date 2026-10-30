@@ -115,3 +115,24 @@ On 2026-10-30 two gates stricter than the web demo were removed: a pose point's 
 also took the model's presence output (MediaPipe's PoseLandmarker, which the web demo uses,
 reports the visibility output alone), and both shoulders had to be visible. Only the raised
 wrist's visibility is checked now, as in the web demo.
+
+The owner's subsequent practice failure was traced to the worker stopping with
+`TypeError: undefined is not a function`. The device's scalar QA log recorded this on
+practice, cover and test screens. The production Babel transform captured `nv12`,
+`coverState` and `wholeFrame` before those worklets were initialized; `inferHand` and
+`inferHands` likewise captured an undefined `handPoints`. A raised-hand crop, whole-frame
+fallback or cover check could therefore stop capture before any direction was read.
+Helpers now precede their callers. A regression test compiles both modules with the app's
+production Babel configuration and checks their captured helper graphs; both cases fail
+before the fix and pass after it. The acuity suite passes 93 tests; mobile typecheck, lint
+of changed code and formatting checks pass. The Release build succeeded and was installed
+and launched on the connected iPhone 12 Pro Max. Physical acceptance, including all four
+directions at approximately 3 m, remains pending.
+
+The post-install scalar log at 13:00–13:02 local time recorded 141 processed frames,
+including 32 with 21 hand points. Camera answers 180 (left) and 90 (down) were accepted
+at 13:00:38 and 13:00:41 and advanced the two practice rounds. No live worker/camera error
+was recorded; the six `previewStopped` events had `live: false` during teardown. Later
+frames mostly reported no body and no hand, including the final practice attempt. The
+participant's distance for each segment is unconfirmed, so these observations establish
+two working practice answers, not all four directions or approximately 3 m reliability.

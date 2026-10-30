@@ -178,6 +178,22 @@ export function inferPose(
   });
 }
 
+// Initialize this worklet before inferHand/inferHands capture it.
+function handPoints(rgb: Float32Array, detection: Detection, model: InferenceModel) {
+  "worklet";
+  const roi = region(detection, false);
+  if (!roi) return [];
+  const crop = sampleCrop(rgb, 256, roi, 224);
+  const [points, presence] = tensors(model.runSync([crop.buffer]), [63, 1, 1, 63]);
+  if (!Number.isFinite(presence![0]) || !points!.every(Number.isFinite))
+    throw new Error("Invalid hand output");
+  if (presence![0]! < 0.5) return [];
+  return Array.from({ length: 21 }, (_, i) => {
+    const p = cropPoint({ x: points![i * 3]!, y: points![i * 3 + 1]! }, roi, 224);
+    return { x: p.x / 256, y: p.y / 256 };
+  });
+}
+
 /** RGB [0,1], square 256 hand crop; output is normalised to that same crop, unmirrored. */
 export interface HandDiagnostics {
   palmFound: boolean;
@@ -211,21 +227,6 @@ export function inferHands(
   return detect(rgb, 256, detector, false, 2)
     .map((detection) => handPoints(rgb, detection, model))
     .filter((points) => points.length > 0);
-}
-
-function handPoints(rgb: Float32Array, detection: Detection, model: InferenceModel) {
-  "worklet";
-  const roi = region(detection, false);
-  if (!roi) return [];
-  const crop = sampleCrop(rgb, 256, roi, 224);
-  const [points, presence] = tensors(model.runSync([crop.buffer]), [63, 1, 1, 63]);
-  if (!Number.isFinite(presence![0]) || !points!.every(Number.isFinite))
-    throw new Error("Invalid hand output");
-  if (presence![0]! < 0.5) return [];
-  return Array.from({ length: 21 }, (_, i) => {
-    const p = cropPoint({ x: points![i * 3]!, y: points![i * 3 + 1]! }, roi, 224);
-    return { x: p.x / 256, y: p.y / 256 };
-  });
 }
 
 /**
