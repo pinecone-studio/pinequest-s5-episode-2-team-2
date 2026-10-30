@@ -4,15 +4,8 @@ import { Button, Text } from "../../components/ui";
 import { useReduceMotion } from "../../components/useReduceMotion";
 import { fonts } from "../../theme";
 import { eyeMovesCopy as copy, worldCopy } from "./copy";
-import {
-  eyeMovePath,
-  eyeMovePoint,
-  eyeRoutine,
-  type EyeMove,
-  type EyeMoveWho,
-  type EyeStep,
-} from "./logic";
-import { ChoiceCard, GameCompletion, GameIntro, GameShell, useSuccessSound, world } from "./ui";
+import { eyeMovePath, eyeMovePoint, eyeRoutine, type EyeMove, type EyeStep } from "./logic";
+import { GameCompletion, GameIntro, GameShell, useSuccessSound, world } from "./ui";
 
 const BUTTERFLY = 56;
 // Room between the butterfly and the edge of its sky.
@@ -42,12 +35,11 @@ export function EyeMovesGame({
   onComplete: () => Promise<string | null>;
   onExit: () => void;
 }) {
-  const [who, setWho] = useState<EyeMoveWho>("child");
   const [stage, setStage] = useState<"intro" | "play" | "done">("intro");
   const [index, setIndex] = useState(0);
   const [starNote, setStarNote] = useState<string | null>(null);
   const [area, setArea] = useState<Area | null>(null);
-  const steps = useMemo(() => eyeRoutine(who), [who]);
+  const steps = useMemo(() => eyeRoutine(), []);
   const step = steps[index]!;
   const still = useReduceMotion();
   const success = useSuccessSound();
@@ -83,25 +75,7 @@ export function EyeMovesGame({
             setIndex(0);
             setStage("play");
           }}
-        >
-          <View style={styles.who}>
-            <Text style={styles.whoTitle}>{copy.who}</Text>
-            <View style={styles.row}>
-              <ChoiceCard
-                emoji="🧒"
-                label={copy.child}
-                state={who === "child" ? "right" : "idle"}
-                onPress={() => setWho("child")}
-              />
-              <ChoiceCard
-                emoji="🧑"
-                label={copy.adult}
-                state={who === "adult" ? "right" : "idle"}
-                onPress={() => setWho("adult")}
-              />
-            </View>
-          </View>
-        </GameIntro>
+        />
       </GameShell>
     );
   }
@@ -365,15 +339,6 @@ function Countdown({ left }: { left: number }) {
 }
 
 const styles = StyleSheet.create({
-  who: { alignSelf: "stretch", gap: 10 },
-  whoTitle: {
-    fontFamily: fonts.extraBold,
-    fontWeight: "800",
-    fontSize: 16,
-    color: world.navy,
-    textAlign: "center",
-  },
-  row: { flexDirection: "row", gap: 10 },
   label: {
     alignSelf: "center",
     alignItems: "center",

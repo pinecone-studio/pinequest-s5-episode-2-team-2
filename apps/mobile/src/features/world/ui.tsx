@@ -195,10 +195,7 @@ export function ChoiceCard({
   );
 }
 
-/**
- * The story screen before a game: Нүдхэн, the story, an honest note, any choices (`children`)
- * and a big start button.
- */
+/** The story screen before a game: Нүдхэн, the story, an honest note and a big start button. */
 export function GameIntro({
   pose,
   story,
@@ -206,7 +203,6 @@ export function GameIntro({
   start,
   onStart,
   picture,
-  children,
 }: {
   pose: MascotVariant;
   story: string;
@@ -214,7 +210,6 @@ export function GameIntro({
   start: string;
   onStart: () => void;
   picture?: ReactNode;
-  children?: ReactNode;
 }) {
   return (
     <View style={styles.intro}>
@@ -222,7 +217,6 @@ export function GameIntro({
       <Mascot variant={pose} size={180} motion="pop" halo={world.white} />
       <Text style={styles.story}>{story}</Text>
       {note ? <Text style={styles.note}>{note}</Text> : null}
-      {children}
       <View style={styles.wide}>
         <Button label={start} onPress={onStart} />
       </View>

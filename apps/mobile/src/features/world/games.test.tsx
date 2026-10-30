@@ -155,13 +155,12 @@ test("the close button leaves any game at any time without a star", async () => 
   expect(onComplete).not.toHaveBeenCalled();
 });
 
-test("eye moves: choose who, follow every move, blink, rest and finish with a chime", async () => {
+test("eye moves: follow every move, blink, rest and finish with a chime", async () => {
   await render(<EyeMovesGame onComplete={onComplete} onExit={onExit} />);
   expect(text()).toContain(eyeMovesCopy.story);
   expect(text()).toContain(eyeMovesCopy.note);
-  expect(byLabel(eyeMovesCopy.child).props.accessibilityState).toEqual({ selected: true });
-  await press(byLabel(eyeMovesCopy.adult));
-  expect(byLabel(eyeMovesCopy.adult).props.accessibilityState).toEqual({ selected: true });
+  // One routine for everyone: no choice to make before starting.
+  expect(renderer.root.findAll((n) => String(n.type) === "Pressable")).toHaveLength(1);
   await press(buttonByLabel(eyeMovesCopy.start));
 
   // The sky is measured before the butterfly flies.
@@ -169,7 +168,7 @@ test("eye moves: choose who, follow every move, blink, rest and finish with a ch
   await act(async () =>
     sky.props.onLayout({ nativeEvent: { layout: { width: 340, height: 480 } } }),
   );
-  const steps = eyeRoutine("adult");
+  const steps = eyeRoutine();
   for (const [i, step] of steps.entries()) {
     expect(text()).toContain(eyeMovesCopy.step(i + 1, steps.length));
     if (step.kind === "move") {
@@ -197,10 +196,10 @@ test("eye moves: choose who, follow every move, blink, rest and finish with a ch
   expect(text()).toContain(eyeMovesCopy.story);
 });
 
-test("eye moves: children get the shorter routine, skip moves on and the rest counts down", async () => {
+test("eye moves: skip moves on and the rest counts down", async () => {
   await render(<EyeMovesGame onComplete={onComplete} onExit={onExit} />);
   await press(buttonByLabel(eyeMovesCopy.start));
-  const steps = eyeRoutine("child");
+  const steps = eyeRoutine();
   expect(text()).toContain(eyeMovesCopy.step(1, steps.length));
   for (let i = 0; i < steps.length - 1; i++) await press(buttonByLabel(worldCopy.skip));
   const rest = steps.at(-1)!;

@@ -135,15 +135,15 @@ test("every voice clip has a unique file name and a line to say", () => {
   }
 });
 
-test("eye moves: every direction, then blinks and a rest; children's routine is shorter", () => {
-  for (const who of ["child", "adult"] as const) {
-    const steps = eyeRoutine(who);
-    expect(steps.flatMap((s) => (s.kind === "move" ? [s.move] : []))).toEqual(EYE_MOVES);
-    expect(steps.slice(-2).map((s) => s.kind)).toEqual(["blink", "rest"]);
-  }
-  expect(routineSeconds(eyeRoutine("child"))).toBeLessThanOrEqual(90);
-  expect(routineSeconds(eyeRoutine("adult"))).toBeLessThanOrEqual(150);
-  expect(routineSeconds(eyeRoutine("child"))).toBeLessThan(routineSeconds(eyeRoutine("adult")));
+test("eye moves: every direction slowly, then blinks and a rest, in about a minute and a half", () => {
+  const steps = eyeRoutine();
+  expect(steps.flatMap((s) => (s.kind === "move" ? [s.move] : []))).toEqual(EYE_MOVES);
+  expect(steps.slice(-2).map((s) => s.kind)).toEqual(["blink", "rest"]);
+  // Slow enough to follow: at least four seconds a round.
+  for (const s of steps)
+    if (s.kind === "move") expect(s.seconds / s.cycles).toBeGreaterThanOrEqual(4);
+  expect(routineSeconds(steps)).toBeGreaterThanOrEqual(60);
+  expect(routineSeconds(steps)).toBeLessThanOrEqual(120);
 });
 
 test("eye moves stay in the sky and trace their shapes", () => {

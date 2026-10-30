@@ -296,8 +296,6 @@ export function cleanOutfit(saved: unknown, totalStars: number): Outfit {
 
 // ── Eye moves ───────────────────────────────────────────────────────────────────────────────────
 
-/** Who follows the butterfly: children do fewer, slower rounds and shorter breaks. */
-export type EyeMoveWho = "child" | "adult";
 export type EyeMove =
   "sideways" | "upDown" | "diagonalUp" | "diagonalDown" | "circleRight" | "circleLeft" | "eight";
 export const EYE_MOVES: EyeMove[] = [
@@ -314,19 +312,15 @@ export type EyeStep =
   | { kind: "blink"; seconds: number }
   | { kind: "rest"; seconds: number };
 
-/** Every move in turn, slow enough to follow with the eyes, then quick blinks and a rest. */
-export function eyeRoutine(who: EyeMoveWho): EyeStep[] {
-  const cycles = who === "child" ? 2 : 3;
-  const perCycle = who === "child" ? 4 : 3.5;
+/**
+ * Every move in turn, two slow rounds each so children and adults can both follow, then quick
+ * blinks and a rest with closed eyes: about a minute and a half.
+ */
+export function eyeRoutine(): EyeStep[] {
   return [
-    ...EYE_MOVES.map((move) => ({
-      kind: "move" as const,
-      move,
-      cycles,
-      seconds: cycles * perCycle,
-    })),
-    { kind: "blink", seconds: who === "child" ? 10 : 15 },
-    { kind: "rest", seconds: who === "child" ? 10 : 20 },
+    ...EYE_MOVES.map((move) => ({ kind: "move" as const, move, cycles: 2, seconds: 8 })),
+    { kind: "blink", seconds: 12 },
+    { kind: "rest", seconds: 15 },
   ];
 }
 
